@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<section class="hero-section text-center text-white rounded-3 p-5 mb-5 shadow-lg">
+    <div class="container py-5">
+        <h1 class="display-4 fw-bold">Data Bundles that Never Expire</h1>
+        <p class="lead mb-4">Get up to 50% off on MTN, Telecel, and AT data. Instant delivery to your MoMo number.</p>
+        
+        <a href="/shop" class="btn btn-warning btn-lg px-5 py-3 fw-bold rounded-pill shadow hover-effect">
+            START SAVING NOW 
+        </a>
+        
+        <p class="mt-3 small text-white-50">Secured by Paystack™ • No Hidden Fees</p>
+    </div>
+</section>
+
+<section class="py-4">
+    <div class="row text-center g-4">
+        <div class="col-md-4">
+            <div class="card h-100 border-0 shadow-sm p-4 hover-card">
+                <div class="display-4 text-primary mb-3"><img src="https://tse2.mm.bing.net/th/id/OIP.4RbP6AS2m_u_q8KCRVraPQHaHa?rs=1&pid=ImgDetMain&o=7&rm=3" width="100"></div>
+                <h4 class="fw-bold">Instant Speed</h4>
+                <p class="text-muted">Our automated system processes orders immediately. No more waiting hours for data.</p>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card h-100 border-0 shadow-sm p-4 hover-card">
+                <div class="display-4 text-primary mb-3"><img src="https://tse1.mm.bing.net/th/id/OIP.B82w30mnRzHYxcY5aDaFnwHaHa?rs=1&pid=ImgDetMain&o=7&rm=3" width="100"></div>
+                <h4 class="fw-bold">Secure Payment</h4>
+                <p class="text-muted">We use Paystack™ to process payments. We never see your details.</p>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card h-100 border-0 shadow-sm p-4 hover-card">
+                <div class="display-4 text-primary mb-3"><img src="https://www.sgrlaw.com/wp-content/uploads/2017/03/Homepage_News-PR-graph.jpg" width="100"></div>
+                <h4 class="fw-bold">Unbeatable Rates</h4>
+                <p class="text-muted">Why pay GHS 400 for 20GB? Get the same bundle here for half the price.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="py-5 mt-5 bg-white rounded-3 shadow-sm border">
+    <div class="container text-center">
+        <h2 class="fw-bold mb-5">How It Works</h2>
+        <div class="row">
+            <div class="col-md-4">
+                <span class="badge bg-primary rounded-circle p-3 mb-3 fs-4">1</span>
+                <h5>Select Network</h5>
+                <p class="small text-muted">Choose MTN, Telecel, or AT</p>
+            </div>
+            <div class="col-md-4">
+                 <span class="badge bg-primary rounded-circle p-3 mb-3 fs-4">2</span>
+                <h5>Enter Number</h5>
+                <p class="small text-muted">Type your phone number & Pay</p>
+            </div>
+            <div class="col-md-4">
+                 <span class="badge bg-success rounded-circle p-3 mb-3 fs-4">3</span>
+                <h5>Receive Data</h5>
+                <p class="small text-muted">Get your SMS alert instantly</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<style>
+    /* Gradient Background for Hero */
+    .hero-section {
+        background: linear-gradient(135deg, #003366 0%, #0056b3 100%);
+        /* You can add a background image url here if you want */
+    }
+
+    /* Make the button jump when hovered */
+    .hover-effect:hover {
+        transform: translateY(-3px);
+        transition: transform 0.2s;
+    }
+
+    /* Make cards float up when hovered */
+    .hover-card {
+        transition: transform 0.3s;
+    }
+    .hover-card:hover {
+        transform: translateY(-10px);
+        background-color: #f8faff;
+    }
+</style>
+
+{% endblock %}
