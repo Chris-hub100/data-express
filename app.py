@@ -1,53 +1,13 @@
-import smtplib
-import threading
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
-from flask import Flask, render_template, request, jsonify # <--- ADDED request, jsonify
-import requests # <--- ADDED requests (needed to talk to Paystack)
+from flask import Flask, render_template, request, jsonify
+import requests
+import os
 
 app = Flask(__name__)
 
 # --- CONFIGURATION ---
-# ⚠️ REPLACE THIS WITH YOUR LIVE SECRET KEY (Starts with sk_live_)
+# Use 'os.environ.get' so you can use Render's safe environment variables later
+# For now, you can paste your LIVE secret key here if you want.
 PAYSTACK_SECRET_KEY = "sk_test_205609e95584b8704c90e2c8c72b6f1dbcee60db"
-
-EMAIL_SENDER = "tettehchris100@gmail.com"
-EMAIL_PASSWORD = "uhfm zzbr jyrr lwun"
-ADMIN_EMAIL = "tettehchris100@gmail.com"
-
-# --- EMAIL LOGIC ---
-def send_alert(order_details):
-    try:
-        subject = f"💰 NEW ORDER: {order_details['bundle']}"
-        body = f"""
-        NEW SALE ALERT!
-        -------------------------
-        Customer: {order_details['name']}
-        Phone:    {order_details['phone']}
-        Bundle:   {order_details['bundle']}
-        Ref Code: {order_details['ref']}
-        -------------------------
-        ACTION REQUIRED:
-        Send {order_details['bundle']} to {order_details['phone']} now.
-        """
-
-        msg = MIMEMultipart()
-        msg['From'] = "DataExpress Bot"
-        msg['To'] = ADMIN_EMAIL
-        msg['Subject'] = subject
-        msg.attach(MIMEText(body, 'plain'))
-
-        # Connect to Gmail Server
-        server = smtplib.SMTP('smtp.gmail.com', 587)
-        server.starttls()
-        server.login(EMAIL_SENDER, EMAIL_PASSWORD)
-        text = msg.as_string()
-        server.sendmail(EMAIL_SENDER, ADMIN_EMAIL, text)
-        server.quit()
-        print("✅ Email Alert Sent!")
-        
-    except Exception as e:
-        print(f"❌ Failed to send email: {e}")
 
 # --- ROUTES ---
 
@@ -65,9 +25,10 @@ def success_page():
 
 @app.route('/buy/<network>')
 def product_page(network):
+    # Your Price List
     pricing = {
         "mtn": [
-            {"name": "5GB Non-Expiry", "price": 0.1}, # 10 Pesewas for testing
+            {"name": "5GB Non-Expiry", "price": 25}, # Set real prices now
             {"name": "10GB Non-Expiry", "price": 45}
         ],
         "telecel": [
@@ -83,8 +44,7 @@ def product_page(network):
                            network_name=network.upper(), 
                            bundles=selected_bundles)
 
-
-# --- THE FIXED VERIFICATION ROUTE ---
+# --- VERIFICATION ROUTE (Fast Version) ---
 @app.route('/verify_payment', methods=['POST'])
 def verify_payment():
     data = request.json
@@ -100,21 +60,8 @@ def verify_payment():
         
         # 2. Check if Paystack says "success"
         if json_resp['status'] is True and json_resp['data']['status'] == "success":
-            
-            # 3. SUCCESS! 
-            order_info = {
-                "name": data['name'],
-                "phone": data['phone'],
-                "bundle": data['bundle'],
-                "ref": reference
-            }
-            
-            # --- THE FIX: RUN EMAIL IN BACKGROUND ---
-            # We tell Python: "Do this email stuff later, don't block the user."
-            email_thread = threading.Thread(target=send_alert, args=(order_info,))
-            email_thread.start()
-            
-            # 4. Return success IMMEDIATELY to the frontend
+            # SUCCESS! Return immediately so the user sees the Thank You page.
+            # We rely on Paystack to email YOU the receipt.
             return jsonify({"status": "success"})
         else:
             return jsonify({"status": "failed"})
