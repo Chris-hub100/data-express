@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="mb-4">
+    <a href="/" class="text-decoration-none text-muted fw-bold">
+        <i class="bi bi-arrow-left"></i> Home
+    </a>
+</div>
+<div class="text-center mb-5">
+    <h2>Select Your Network</h2>
+    <p class="text-muted">Choose a provider to view bundles</p>
+</div>
+
+<div class="row g-4">
+    <div class="col-md-4">
+        <a href="/buy/mtn" class="text-decoration-none">
+            <div class="card shadow-sm h-100 text-center p-4">
+                <img src="https://logos-world.net/wp-content/uploads/2023/01/MTN-Logo-500x281.jpg" width="100" class="mx-auto d-block mb-3">
+                <p class="text-muted">Super Fast 4G</p>
+                <button class="btn btn-outline-dark mt-2">View Bundles</button>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-4">
+        <a href="/buy/telecel" class="text-decoration-none">
+            <div class="card shadow-sm h-100 text-center p-4">
+                <img src="https://tse3.mm.bing.net/th/id/OIP.dEwStktAhcQlKjm1wlSZugHaEJ?w=768&h=430&rs=1&pid=ImgDetMain&o=7&rm=3" width="120" class="mx-auto d-block mb-3">
+                <p class="text-muted">Best Value</p>
+                <button class="btn btn-outline-dark mt-2">View Bundles</button>
+            </div>
+        </a>
+    </div>
+
+    <div class="col-md-4">
+        <a href="/buy/at" class="text-decoration-none">
+            <div class="card shadow-sm h-100 text-center p-4">
+                <img src="https://www.techfocus24.com/wp-content/uploads/2023/06/d586fa41-972d-4baf-9c23-8fa09208f342.jpeg" width="100" class="mx-auto d-block mb-3">
+                <p class="text-muted">Big Data</p>
+                <button class="btn btn-outline-dark mt-2">View Bundles</button>
+            </div>
+        </a>
+    </div>
+</div>
+{% endblock %}

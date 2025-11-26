@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="row justify-content-center mt-5">
+    <div class="col-md-6 text-center">
+        
+        <div class="card shadow-sm p-5 border-0 rounded-3">
+            <div class="success-icon">
+                ✓
+            </div>
+
+            <h2 class="fw-bold text-success mb-3">Payment Successful!</h2>
+            <p class="text-muted lead">Thank you for your order.</p>
+
+            <hr class="my-4">
+
+            <div class="text-start bg-light p-3 rounded mb-4">
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="text-muted">Status:</span>
+                    <span class="badge bg-warning text-dark">Processing...</span>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="text-muted">Network:</span>
+                    <span class="fw-bold text-uppercase" id="receipt-network">Loading...</span>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <span class="text-muted">Phone:</span>
+                    <span class="fw-bold" id="receipt-phone">Loading...</span>
+                </div>
+            </div>
+
+            <div class="alert alert-info small text-start">
+                <strong><i class="bi bi-info-circle"></i> What happens next?</strong><br>
+                Your data bundle is being processed manually. You will receive an SMS alert within <strong>15 minutes</strong>. 
+                (Orders placed after 10 PM will be sent the next morning).
+            </div>
+
+            <div class="d-grid gap-2 mt-4">
+                <a href="/" class="btn btn-primary">Return Home</a>
+                <a href="mailto:support@dataexpress.store" class="btn btn-outline-secondary">Contact Support</a>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    // This grabs the ?phone=xxx and ?network=xxx from the address bar
+    const urlParams = new URLSearchParams(window.location.search);
+    document.getElementById('receipt-phone').innerText = urlParams.get('phone') || "N/A";
+    document.getElementById('receipt-network').innerText = urlParams.get('network') || "Bundle";
+</script>
+
+{% endblock %}
