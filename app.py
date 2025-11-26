@@ -1,15 +1,20 @@
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-from flask import Flask, render_template
+from flask import Flask, render_template, request, jsonify # <--- ADDED request, jsonify
+import requests # <--- ADDED requests (needed to talk to Paystack)
 
 app = Flask(__name__)
 
 # --- CONFIGURATION ---
-EMAIL_SENDER = "tettehchris100@gmail.com"  # <--- PUT YOUR GMAIL HERE
-EMAIL_PASSWORD = "uhfm zzbr jyrr lwun" # <--- PUT YOUR 16-LETTER APP PASSWORD HERE
-ADMIN_EMAIL = "tettehchris100@gmail.com"   # <--- Where should the alert go? (Your phone)
+# ⚠️ REPLACE THIS WITH YOUR LIVE SECRET KEY (Starts with sk_live_)
+PAYSTACK_SECRET_KEY = "sk_test_205609e95584b8704c90e2c8c72b6f1dbcee60db"
 
+EMAIL_SENDER = "tettehchris100@gmail.com"
+EMAIL_PASSWORD = "uhfm zzbr jyrr lwun"
+ADMIN_EMAIL = "tettehchris100@gmail.com"
+
+# --- EMAIL LOGIC ---
 def send_alert(order_details):
     try:
         subject = f"💰 NEW ORDER: {order_details['bundle']}"
@@ -33,7 +38,7 @@ def send_alert(order_details):
 
         # Connect to Gmail Server
         server = smtplib.SMTP('smtp.gmail.com', 587)
-        server.starttls() # Secure the connection
+        server.starttls()
         server.login(EMAIL_SENDER, EMAIL_PASSWORD)
         text = msg.as_string()
         server.sendmail(EMAIL_SENDER, ADMIN_EMAIL, text)
@@ -43,12 +48,12 @@ def send_alert(order_details):
     except Exception as e:
         print(f"❌ Failed to send email: {e}")
 
-# 1. LANDING PAGE
+# --- ROUTES ---
+
 @app.route('/')
 def home():
-    return render_template('home.html') # Create a simple welcome page
+    return render_template('home.html')
 
-# 2. SHOP PAGE ( The Grid)
 @app.route('/shop')
 def shop():
     return render_template('shop.html')
@@ -57,13 +62,11 @@ def shop():
 def success_page():
     return render_template('success.html')
 
-# 3. DYNAMIC PRODUCT PAGE
 @app.route('/buy/<network>')
 def product_page(network):
-    # This acts like a database of your prices
     pricing = {
         "mtn": [
-            {"name": "5GB Non-Expiry", "price": 0.1},
+            {"name": "5GB Non-Expiry", "price": 0.1}, # 10 Pesewas for testing
             {"name": "10GB Non-Expiry", "price": 45}
         ],
         "telecel": [
@@ -74,15 +77,44 @@ def product_page(network):
             {"name": "Big Time 5GB", "price": 15}
         ]
     }
-
-    
-    # Get the bundles for the clicked network (or return empty if not found)
     selected_bundles = pricing.get(network, [])
-    
     return render_template('product.html', 
                            network_name=network.upper(), 
                            bundles=selected_bundles)
 
+# --- THE MISSING VERIFICATION ROUTE ---
+@app.route('/verify_payment', methods=['POST'])
+def verify_payment():
+    data = request.json
+    reference = data.get('reference')
+    
+    # 1. Ask Paystack: "Is this transaction real?"
+    headers = {"Authorization": f"Bearer {PAYSTACK_SECRET_KEY}"}
+    url = f"https://api.paystack.co/transaction/verify/{reference}"
+    
+    try:
+        response = requests.get(url, headers=headers)
+        json_resp = response.json()
+        
+        # 2. Check if Paystack says "success"
+        if json_resp['status'] is True and json_resp['data']['status'] == "success":
+            
+            # 3. SUCCESS! Send the Email Alert
+            order_info = {
+                "name": data['name'],
+                "phone": data['phone'],
+                "bundle": data['bundle'],
+                "ref": reference
+            }
+            send_alert(order_info)
+            
+            return jsonify({"status": "success"})
+        else:
+            return jsonify({"status": "failed"})
+            
+    except Exception as e:
+        print(f"Error connecting to Paystack: {e}")
+        return jsonify({"status": "error"})
+
 if __name__ == '__main__':
-    # host='0.0.0.0' means "Open to the network"
     app.run(host='0.0.0.0', port=5000, debug=True)
