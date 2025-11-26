@@ -1,4 +1,5 @@
 import smtplib
+import threading
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from flask import Flask, render_template, request, jsonify # <--- ADDED request, jsonify
@@ -82,7 +83,8 @@ def product_page(network):
                            network_name=network.upper(), 
                            bundles=selected_bundles)
 
-# --- THE MISSING VERIFICATION ROUTE ---
+
+# --- THE FIXED VERIFICATION ROUTE ---
 @app.route('/verify_payment', methods=['POST'])
 def verify_payment():
     data = request.json
@@ -99,15 +101,20 @@ def verify_payment():
         # 2. Check if Paystack says "success"
         if json_resp['status'] is True and json_resp['data']['status'] == "success":
             
-            # 3. SUCCESS! Send the Email Alert
+            # 3. SUCCESS! 
             order_info = {
                 "name": data['name'],
                 "phone": data['phone'],
                 "bundle": data['bundle'],
                 "ref": reference
             }
-            send_alert(order_info)
             
+            # --- THE FIX: RUN EMAIL IN BACKGROUND ---
+            # We tell Python: "Do this email stuff later, don't block the user."
+            email_thread = threading.Thread(target=send_alert, args=(order_info,))
+            email_thread.start()
+            
+            # 4. Return success IMMEDIATELY to the frontend
             return jsonify({"status": "success"})
         else:
             return jsonify({"status": "failed"})
