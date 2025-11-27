@@ -1,11 +1,19 @@
 {% extends "base.html" %}
 
 {% block content %}
+
 <div class="mb-3">
-    <a href="/shop" class="text-decoration-none text-muted fw-bold" style="font-size: 0.9rem;">
-        <i class="bi bi-arrow-left"></i> Back to Networks
-    </a>
+    {% if is_voucher %}
+        <a href="/vouchers" class="text-decoration-none text-muted fw-bold" style="font-size: 0.9rem;">
+            <i class="bi bi-arrow-left"></i> Back to Gift Cards
+        </a>
+    {% else %}
+        <a href="/shop" class="text-decoration-none text-muted fw-bold" style="font-size: 0.9rem;">
+            <i class="bi bi-arrow-left"></i> Back to Networks
+        </a>
+    {% endif %}
 </div>
+
 <div class="container mt-4">
     
     <h3 class="fw-bold mb-3">Buy {{ network_name }} Bundles</h3>
@@ -36,8 +44,27 @@
             <h5 class="fw-bold mb-3 text-primary">Finish Order</h5>
 
             <div class="mb-4">
-                <label class="form-label fw-bold">Enter Recipient Number</label>
-                <input type="tel" id="phone" class="form-control form-control-lg bg-light" placeholder="05xxxxxxxx" required>
+                <label class="form-label fw-bold">
+                    {% if input_type == 'id' %}
+                        Enter Player ID / User ID
+                    
+                    {% elif is_voucher %}
+                        Enter WhatsApp Number (to receive code)
+                    
+                    {% else %}
+                        Enter MoMo Number (to receive data)
+                    {% endif %}
+                </label>
+
+                <input type="text" id="customer_input" class="form-control form-control-lg bg-light" 
+                       placeholder="{% if input_type == 'id' %}e.g. 674839201{% else %}05xxxxxxxx{% endif %}" 
+                       required>
+                
+                {% if input_type == 'id' %}
+                <div class="form-text text-primary small mt-1">
+                    <i class="bi bi-info-circle"></i> Found in your game profile
+                </div>
+                {% endif %}
             </div>
 
             <div class="d-grid">
@@ -54,45 +81,38 @@
     const publicKey = "pk_test_4d5f7d2417619f29633bc5004e1dafdbf3629a3f"; 
 
     function selectBundle(cardElement, price, name) {
-        // 1. Highlight the card visually
+        // 1. Highlight card
         let cards = document.querySelectorAll('.bundle-card');
         cards.forEach(c => c.classList.remove('active'));
         cardElement.classList.add('active');
 
-        // 2. Store the data
+        // 2. Store Data
         document.getElementById('selected_price').value = price;
         document.getElementById('selected_name').value = name;
 
-        // 3. REVEAL THE CHECKOUT SECTION
+        // 3. Show Form
         let section = document.getElementById('checkoutSection');
         let btn = document.getElementById('payBtn');
         
-        // Remove the 'd-none' class to show it
         section.classList.remove('d-none');
-        
-        // Update button text
-        btn.innerHTML = `Pay GHS ${price} for ${name}`;
+        btn.innerHTML = `Pay GHS ${price}`; // Simplified text
 
-        // 4. SMOOTH SCROLL (UX Magic)
-        // Automatically scroll down so the user sees the input
+        // 4. Scroll & Focus
         section.scrollIntoView({behavior: "smooth", block: "start"});
-        
-        // Focus the cursor on the phone box so they can type immediately
-        // (Wait 500ms for the scroll to finish)
         setTimeout(() => {
-            document.getElementById("phone").focus();
+            document.getElementById("customer_input").focus();
         }, 500);
     }
 
     function payWithPaystack(e) {
         e.preventDefault();
         
-        let phone = document.getElementById("phone").value;
+        let customerData = document.getElementById("customer_input").value;
         let amount = document.getElementById("selected_price").value;
         let bundleName = document.getElementById("selected_name").value;
 
-        if (!amount) { alert("Please select a bundle"); return; }
-        if (phone.length < 10) { alert("Enter a valid phone number"); return; }
+        if (!amount) { alert("Please select a package"); return; }
+        if (customerData === "") { alert("Please fill in the required info"); return; }
 
         let handler = PaystackPop.setup({
             key: publicKey,
@@ -101,12 +121,12 @@
             currency: "GHS",
             metadata: {
                 custom_fields: [
-                    { display_name: "Phone", variable_name: "phone", value: phone },
-                    { display_name: "Bundle", variable_name: "bundle", value: bundleName }
+                    { display_name: "Recipient Info", variable_name: "recipient_info", value: customerData },
+                    { display_name: "Item", variable_name: "bundle", value: bundleName }
                 ]
             },
             callback: function(response) {
-                verifyTransaction(response.reference, "Customer", phone, bundleName);
+                verifyTransaction(response.reference, "Customer", customerData, bundleName);
             }
         });
 
@@ -123,6 +143,7 @@
         .then(res => res.json())
         .then(data => {
             if(data.status === "success") {
+                // Redirect with generic phone parameter
                 window.location.href = `/success?phone=${phone}&network=${bundle}`;
             } else {
                 alert("Verification Failed.");

@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="mb-3">
+    <a href="/" class="text-decoration-none text-muted fw-bold">
+        <i class="bi bi-arrow-left"></i> Back to Home
+    </a>
+</div>
+
+<div class="text-center mb-5">
+    <h3 class="fw-bold">DataExpress tv+</h3>
+    <p class="text-muted small">Don't know what to watch, checkout our curated list of upcoming and released movies</p>
+</div>
+
+<div class="row g-4 justify-content-center">
+    {% for video in videos %}
+    <div class="col-md-6 col-lg-4">
+        
+        <div class="card shadow border-0 h-100 bg-black text-white overflow-hidden" style="border-radius: 15px;">
+            
+            <div class="ratio ratio-16x9 video-wrapper" id="wrapper-{{ video.id }}" onclick="playVideo('{{ video.id }}')">
+                
+                <img src="https://img.youtube.com/vi/{{ video.id}}/hqdefault.jpg" class="video-thumbnail" alt="{{ video.title }}">
+                
+                <div class="play-icon-overlay">
+                    <i class="bi bi-play-fill"></i>
+                </div>
+
+            </div>
+
+            <div class="card-body text-center bg-dark">
+                <h5 class="fw-bold text-white mb-1">{{ video.title }}</h5>
+                <p class="small text-secondary mb-3">Official trailer by {{ video.creator }}</p>
+                <div class="d-grid gap-2">
+                    <a href="/shop" class="btn btn-warning btn-sm rounded-pill fw-bold">
+                        <i class="bi bi-wifi"></i> Buy Data and go stream
+                    </a>
+                </div>
+            </div>
+
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<div style="height: 80px;"></div>
+
+<script>
+    let currentPlayingId = null;
+
+    function playVideo(videoId) {
+        // 1. If there is already a video playing, STOP IT (Revert to image)
+        if (currentPlayingId && currentPlayingId !== videoId) {
+            let oldWrapper = document.getElementById('wrapper-' + currentPlayingId);
+            if (oldWrapper) {
+                // We overwrite the HTML back to the image version
+                oldWrapper.innerHTML = `
+                    <img src="https://img.youtube.com/vi/${currentPlayingId}/hqdefault.jpg" class="video-thumbnail">
+                    <div class="play-icon-overlay"><i class="bi bi-play-fill"></i></div>
+                `;
+            }
+        }
+
+        // 2. Play the NEW video
+        let wrapper = document.getElementById('wrapper-' + videoId);
+        // We inject the iframe with autoplay=1
+        wrapper.innerHTML = `
+            <iframe src="https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1" 
+                    title="YouTube video" 
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                    allowfullscreen
+                    style="width:100%; height:100%; border:0;">
+            </iframe>
+        `;
+
+        // 3. Remember this ID so we can stop it next time
+        currentPlayingId = videoId;
+    }
+</script>
+
+{% endblock %}

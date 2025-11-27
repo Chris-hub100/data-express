@@ -13,14 +13,57 @@
     </style>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=2">
+    
+
 </head>
 <body>
 
-    <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm mb-4">
+    <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm mb-4 sticky-top">
         <div class="container">
-            <a class="navbar-brand" href="/"><img src="https://th.bing.com/th/id/R.cce64e6dd762ca94cd0b9985bdca0dab?rik=zOFoQSlC%2fe3GfQ&pid=ImgRaw&r=0" width="30" class="mx-auto d-block mb-2"> DataExpress</a>
-            <div class="ms-auto">
-                <a href="/shop" class="btn btn-primary btn-sm">Buy Data</a>
+            
+            <a class="navbar-brand d-flex align-items-center gap-2" href="/">
+                <i class="bi bi-wifi text-primary"></i> 
+                DataExpress™
+            </a>
+
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#desktopMenu">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div class="collapse navbar-collapse" id="desktopMenu">
+                <ul class="navbar-nav ms-auto align-items-center gap-3">
+                    
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.path == '/' %}active text-primary fw-bold{% endif %}" href="/">
+                            Home
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.path == '/shop' or '/buy/mtn' in request.path or '/buy/telecel' in request.path or '/buy/at' in request.path %}active text-primary fw-bold{% endif %}" href="/shop">
+                            Buy Data
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.path == '/vouchers' or '/buy/netflix' in request.path or '/buy/showmax' in request.path %}active text-primary fw-bold{% endif %}" href="/vouchers">
+                            Gift Cards
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.path == '/tv' %}active text-primary fw-bold{% endif %}" href="/tv">
+                            TV <span class="badge bg-danger rounded-pill" style="font-size: 0.6rem;">NEW</span>
+                        </a>
+                    </li>
+
+                    <li class="nav-item ms-2">
+                        <button class="btn btn-outline-primary btn-sm rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#contactModal">
+                            <i class="bi bi-headset"></i> Support
+                        </button>
+                    </li>
+
+                </ul>
             </div>
         </div>
     </nav>
@@ -30,23 +73,70 @@
     </div>
 
     <footer class="text-center py-4 text-muted mt-5 mb-5 pb-5">
-    <small>&copy; 2025 DataExpress Ghana</small>
+    <small>&copy; 2025 DataExpress Ghana, All rights reserved.</small>
 </footer>
 <nav class="navbar fixed-bottom navbar-light bg-white border-top shadow-lg d-md-none" style="padding-bottom: 15px;">
     <div class="container-fluid d-flex justify-content-around text-center">
         
-        <a href="/" class="nav-link text-muted">
-            <i class="bi bi-house-door-fill fs-4"></i>
-            <div style="font-size: 10px;">Home</div>
-        </a>
+        {% if request.path == '/' %}
+            <a href="/" class="nav-link text-primary">
+                <div class="bg-primary rounded-circle text-white d-flex align-items-center justify-content-center shadow" 
+                     style="width: 50px; height: 50px; margin-top: -30px; border: 4px solid white;">
+                    <i class="bi bi-house-door-fill fs-4"></i>
+                </div>
+                <div style="font-size: 10px; margin-top: 5px;" class="fw-bold">Home</div>
+            </a>
+        {% else %}
+            <a href="/" class="nav-link text-muted">
+                <i class="bi bi-house-door-fill fs-4"></i>
+                <div style="font-size: 10px;">Home</div>
+            </a>
+        {% endif %}
 
-        <a href="/shop" class="nav-link text-primary">
-            <div class="bg-primary rounded-circle text-white d-flex align-items-center justify-content-center" 
-                 style="width: 50px; height: 50px; margin-top: -30px; border: 4px solid white;">
+        {% if request.path == '/shop' or '/buy/mtn' in request.path or '/buy/telecel' in request.path or '/buy/at' in request.path %}
+            <a href="/shop" class="nav-link text-primary">
+                <div class="bg-primary rounded-circle text-white d-flex align-items-center justify-content-center shadow" 
+                     style="width: 50px; height: 50px; margin-top: -30px; border: 4px solid white;">
+                    <i class="bi bi-cart-fill fs-4"></i>
+                </div>
+                <div style="font-size: 10px; margin-top: 5px;" class="fw-bold">Shop</div>
+            </a>
+        {% else %}
+            <a href="/shop" class="nav-link text-muted">
                 <i class="bi bi-cart-fill fs-4"></i>
-            </div>
-            <div style="font-size: 10px; margin-top: 5px;" class="fw-bold">Shop</div>
-        </a>
+                <div style="font-size: 10px;">Shop</div>
+            </a>
+        {% endif %}
+
+        {% if request.path == '/vouchers' or '/buy/netflix' in request.path or '/buy/showmax' in request.path %}
+            <a href="/vouchers" class="nav-link text-primary">
+                <div class="bg-primary rounded-circle text-white d-flex align-items-center justify-content-center shadow" 
+                     style="width: 50px; height: 50px; margin-top: -30px; border: 4px solid white;">
+                    <i class="bi bi-gift-fill fs-4"></i>
+                </div>
+                <div style="font-size: 10px; margin-top: 5px;" class="fw-bold">Cards</div>
+            </a>
+        {% else %}
+            <a href="/vouchers" class="nav-link text-muted">
+                <i class="bi bi-gift-fill fs-4"></i>
+                <div style="font-size: 10px;">Cards</div>
+            </a>
+        {% endif %}
+
+        {% if request.path == '/tv' %}
+            <a href="/tv" class="nav-link text-primary">
+                <div class="bg-primary rounded-circle text-white d-flex align-items-center justify-content-center shadow" 
+                     style="width: 50px; height: 50px; margin-top: -30px; border: 4px solid white;">
+                    <i class="bi bi-play-btn-fill fs-4"></i>
+                </div>
+                <div style="font-size: 10px; margin-top: 5px;" class="fw-bold">TV</div>
+            </a>
+        {% else %}
+            <a href="/tv" class="nav-link text-muted">
+                <i class="bi bi-play-btn-fill fs-4"></i>
+                <div style="font-size: 10px;">TV</div>
+            </a>
+        {% endif %}
 
         <a href="#" class="nav-link text-muted" data-bs-toggle="modal" data-bs-target="#contactModal">
             <i class="bi bi-headset fs-4"></i>
