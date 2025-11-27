@@ -157,3 +157,56 @@ body {
 .video-wrapper:hover .play-icon-overlay {
     transform: translate(-50%, -50%) scale(1.1); /* Pulse effect */
 }
+
+/* --- RENTABLE AD SPACE --- */
+.ad-billboard {
+    border: 2px dashed #cbd5e0; /* Dashed Grey Border */
+    background-color: #f8f9fa;
+    border-radius: 15px;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+}
+
+.ad-billboard:hover {
+    border-color: #003366; /* Turns Blue on Hover */
+    background-color: #e6f0ff;
+    transform: translateY(-3px);
+}
+
+.ad-billboard .badge-traffic {
+    background-color: #28a745; /* Green */
+    color: white;
+    font-size: 0.7rem;
+    padding: 5px 10px;
+    border-radius: 20px;
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+/* --- SMART BOTTOM NAV --- */
+#mobileBottomNav {
+    transition: transform 0.3s ease-in-out; /* Smooth slide effect */
+    z-index: 1050; /* Stay on top of everything else */
+}
+
+/* Class to hide it (Slide down off-screen) */
+.nav-hidden {
+    transform: translateY(100%) !important;
+}
+
+/* Footer Links Style */
+.footer-link {
+    color: #b0c4de; /* Light Blue-Grey */
+    text-decoration: none;
+    margin-bottom: 8px;
+    display: block;
+    transition: color 0.2s;
+}
+.footer-link:hover {
+    color: #ffc107; /* Yellow on hover */
+    padding-left: 5px; /* Slight movement */
+}

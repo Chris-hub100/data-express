@@ -21,47 +21,73 @@ def shop():
 def success_page():
     return render_template('success.html')
 
+@app.route('/terms')
+def terms_page():
+    return render_template('terms.html')
+
 # --- 1. THE CINEMA PAGE (YouTube Movie Trailers) ---
 @app.route('/tv')
 def tv_page():
     # Official Movie Trailers (2025 Blockbusters)
     videos = [
         {
+            "type": "video",
             "id": "lMXh6vjiZrI",  # Mufasa: The Lion King (Disney)
             "title": "Mufasa: The Lion King",
             "creator": "Disney"
         },
         {
+            "type": "video",
             "id": "1pHDWnXmK7Y",  # Captain America: Brave New World (Marvel)
             "title": "Captain America 4",
             "creator": "Marvel Studios"
         },
         {
+            "type": "video",
             "id": "lQBmZBJCYcY",  # Squid Game Season 2 (Netflix)
             "title": "Squid Game Season 2",
             "creator": "Netflix"
         },
         {
+            "type": "ad", # Special Type
+            "title": "Win like Drake with Stake",
+            "desc": "Instant Withdrawals via MoMo or Crypto. 200% Bonus.",
+            "link": "https://stake.com/?c=TqdL9FFw", # Put your link here
+            "image": "/static/images/stake-logo-navy.png"
+        },
+        {
+            "type": "video",
             "id": "dSDpoobO6yM", # Five Nights at Freddy's (Universal)
             "title": "Five Nights at Freddy's",
             "creator": "Universal Pictures"
         },
         {
+            "type": "video",
             "id": "az8M5Mai0X4", # Anaconda (Sony)
             "title": "Anaconda",
             "creator": "Sony Pictures"
         },
         {
+            "type": "video",
             "id": "EOwTdTZA8D8", # 28 Years Later (Sony)
             "title": "28 Years Later",
             "creator": "Sony Pictures"
         },
         {
+            "type": "video",
             "id": "n0pqP6ClcE8", # Rental Family (Searchlight)
             "title": "Rental Family",
             "creator": "Searchlight Pictures"
         },
         {
+            "type": "ad", # Special Type
+            "title": "Stake and Win",
+            "desc": "Instant Withdrawals via MoMo or Crypto. 200% Bonus.",
+            "link": "https://stake.com/?c=TqdL9FFw", # Put your link here
+            "image": "/static/images/stake-logo-navy.png"
+        },
+        {
+            "type": "video",
             "id": "R4wiXj9NmEE", # Send Help (20th Century)
             "title": "Send Help",
             "creator": "20th Century Studios"
@@ -94,7 +120,7 @@ def voucher_page():
         {
             "name": "Call of Duty: Mobile",
             "image": "https://d13ms5efar3wc5.cloudfront.net/eyJidWNrZXQiOiJpbWFnZXMtY2Fycnkxc3QtcHJvZHVjdHMiLCJrZXkiOiI4NmYyM2EwNi00MjI4LTQyNzctOTQwMS00ZWVlZTBkY2NmMzgucG5nLndlYnAiLCJlZGl0cyI6eyJyZXNpemUiOnsid2lkdGgiOjc2OH19LCJ3ZWJwIjp7InF1YWxpdHkiOjc1fX0=",
-            "link": "cod",
+            "link": "codm",
             "desc": "COD Points"
         },
         {
@@ -106,7 +132,7 @@ def voucher_page():
         {
             "name": "Call of Duty: Mobile",
             "image": "https://d13ms5efar3wc5.cloudfront.net/eyJidWNrZXQiOiJpbWFnZXMtY2Fycnkxc3QtcHJvZHVjdHMiLCJrZXkiOiI4NmYyM2EwNi00MjI4LTQyNzctOTQwMS00ZWVlZTBkY2NmMzgucG5nLndlYnAiLCJlZGl0cyI6eyJyZXNpemUiOnsid2lkdGgiOjM4NH19LCJ3ZWJwIjp7InF1YWxpdHkiOjc1fX0=",
-            "link": "cod.",
+            "link": "codm.",
             "desc": "Battle Pass"
         }
     ]
@@ -151,7 +177,7 @@ def product_page(network):
             {"name": "1080 Diamonds", "price": 142, "input_type": "id"},
             {"name": "2200 Diamonds", "price": 275, "input_type": "id"},
         ],
-        "cod": [
+        "codm": [
             {"name": "880 CP", "price": 145, "input_type": "id"},
             {"name": "30 CP", "price": 7, "input_type": "id"},
             {"name": "80 CP", "price": 15, "input_type": "id"},
@@ -171,7 +197,7 @@ def product_page(network):
             {"name": "4999 Silver", "price": 780, "input_type": "id"},
             {"name": "9999 Silver", "price": 1550, "input_type": "id"},
         ],
-        "kaspersky": [
+        "codm.": [
             {"name": "Battle Pass Premium", "price": 40, "input_type": "id"},
             {"name": "Battle Pass Premium Bundle", "price": 93, "input_type": "id"}
         ]
