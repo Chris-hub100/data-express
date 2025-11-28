@@ -10,7 +10,7 @@
 
 <div class="text-center mb-5">
     <h3 class="fw-bold">DataExpress tv+</h3>
-    <p class="text-muted small">Don't know what to watch, pick from our curated list of both relesed and unreleased movies and go stream.</p>
+    <p class="text-muted small">Don't know what to watch, pick from our curated list of both released and unreleased movies and go stream.</p>
 </div>
 
 <div class="row g-4 justify-content-center">
@@ -70,13 +70,45 @@
     {% endfor %}
 </div>
 
+<!-- "NEW CONTENT" BANNER -->
+<!-- Added 'mt-5' to push it away from the video cards -->
+<div class="container mt-5 mb-5">
+    <div class="d-flex justify-content-center">
+        <div class="bg-white shadow-sm rounded-pill px-4 py-2 d-flex align-items-center border animate-pulse" style="border-color: #e0e0e0;">
+            
+            <div class="bg-success rounded-circle p-2 me-3 d-flex align-items-center justify-content-center" style="width: 35px; height: 35px;">
+                <i class="bi bi-stars text-white"></i>
+            </div>
+            
+            <div class="text-start">
+                <p class="mb-0 fw-bold text-dark" style="font-size: 0.9rem; line-height: 1.2;">New Content Added Daily</p>
+                <p class="mb-0 text-muted" style="font-size: 0.75rem;">Check back everyday for fresh trailers!</p>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- Animation Style -->
+<style>
+    .animate-pulse {
+        animation: subtlePulse 3s infinite;
+    }
+    @keyframes subtlePulse {
+        0% { transform: scale(1); box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        50% { transform: scale(1.02); box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+        100% { transform: scale(1); box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+    }
+</style>
+
+<!-- Bottom Spacer for Mobile Menu -->
 <div style="height: 80px;"></div>
 
+<!-- JAVASCRIPT FOR SMART PLAYER -->
 <script>
     let currentPlayingId = null;
 
     function playVideo(videoId) {
-        // 1. Stop any currently playing video (Revert to image)
         if (currentPlayingId && currentPlayingId !== videoId) {
             let oldWrapper = document.getElementById('wrapper-' + currentPlayingId);
             if (oldWrapper) {
@@ -87,7 +119,6 @@
             }
         }
 
-        // 2. Inject the YouTube Player into the clicked card
         let wrapper = document.getElementById('wrapper-' + videoId);
         wrapper.innerHTML = `
             <iframe src="https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1" 
@@ -98,7 +129,6 @@
             </iframe>
         `;
 
-        // 3. Update state
         currentPlayingId = videoId;
     }
 </script>

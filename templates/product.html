@@ -47,17 +47,19 @@
                 <label class="form-label fw-bold">
                     {% if input_type == 'id' %}
                         Enter Player ID / User ID
-                    
+                    {% elif input_type == 'email' %}
+                        Enter Delivery Email Address 📧
                     {% elif is_voucher %}
-                        Enter WhatsApp Number (to receive code)
-                    
+                        Enter WhatsApp Number (for code)
                     {% else %}
                         Enter MoMo Number (to receive data)
                     {% endif %}
                 </label>
 
-                <input type="text" id="customer_input" class="form-control form-control-lg bg-light" 
-                       placeholder="{% if input_type == 'id' %}e.g. 674839201{% else %}05xxxxxxxx{% endif %}" 
+                <input type="{% if input_type == 'email' %}email{% else %}text{% endif %}" 
+                       id="customer_input" 
+                       class="form-control form-control-lg bg-light" 
+                       placeholder="{% if input_type == 'id' %}e.g. 674839201{% elif input_type == 'email' %}name@example.com{% else %}05xxxxxxxx{% endif %}" 
                        required>
                 
                 {% if input_type == 'id' %}
@@ -65,6 +67,13 @@
                     <i class="bi bi-info-circle"></i> Found in your game profile
                 </div>
                 {% endif %}
+                
+                {% if input_type == 'email' %}
+                <div class="form-text text-muted small mt-1">
+                    <i class="bi bi-lock-fill"></i> We will send the digital code to this inbox.
+                </div>
+                {% endif %}
+
             </div>
 
             <div class="d-grid">

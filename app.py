@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, jsonify
 import requests
 import os
+import random # <--- Add this line
 
 app = Flask(__name__)
 
@@ -28,72 +29,99 @@ def terms_page():
 # --- 1. THE CINEMA PAGE (YouTube Movie Trailers) ---
 @app.route('/tv')
 def tv_page():
-    # Official Movie Trailers (2025 Blockbusters)
-    videos = [
-        {
-            "type": "video",
-            "id": "lMXh6vjiZrI",  # Mufasa: The Lion King (Disney)
-            "title": "Mufasa: The Lion King",
-            "creator": "Disney"
-        },
-        {
-            "type": "video",
-            "id": "1pHDWnXmK7Y",  # Captain America: Brave New World (Marvel)
-            "title": "Captain America 4",
-            "creator": "Marvel Studios"
-        },
-        {
-            "type": "video",
-            "id": "lQBmZBJCYcY",  # Squid Game Season 2 (Netflix)
-            "title": "Squid Game Season 2",
-            "creator": "Netflix"
-        },
-        {
-            "type": "ad", # Special Type
-            "title": "Win like Drake with Stake",
-            "desc": "Instant Withdrawals via MoMo or Crypto. 200% Bonus.",
-            "link": "https://stake.com/?c=TqdL9FFw", # Put your link here
-            "image": "/static/images/stake-logo-navy.png"
-        },
-        {
-            "type": "video",
-            "id": "dSDpoobO6yM", # Five Nights at Freddy's (Universal)
-            "title": "Five Nights at Freddy's",
-            "creator": "Universal Pictures"
-        },
-        {
-            "type": "video",
-            "id": "az8M5Mai0X4", # Anaconda (Sony)
-            "title": "Anaconda",
-            "creator": "Sony Pictures"
-        },
-        {
-            "type": "video",
-            "id": "EOwTdTZA8D8", # 28 Years Later (Sony)
-            "title": "28 Years Later",
-            "creator": "Sony Pictures"
-        },
-        {
-            "type": "video",
-            "id": "n0pqP6ClcE8", # Rental Family (Searchlight)
-            "title": "Rental Family",
-            "creator": "Searchlight Pictures"
-        },
-        {
-            "type": "ad", # Special Type
-            "title": "Stake and Win",
-            "desc": "Instant Withdrawals via MoMo or Crypto. 200% Bonus.",
-            "link": "https://stake.com/?c=TqdL9FFw", # Put your link here
-            "image": "/static/images/stake-logo-navy.png"
-        },
-        {
-            "type": "video",
-            "id": "R4wiXj9NmEE", # Send Help (20th Century)
-            "title": "Send Help",
-            "creator": "20th Century Studios"
-        }
+    # A. THE MOVIE POOL (These will be shuffled)
+    movies = [
+        {"id": "43R9l7EkJwE", "title": "Predator: Badlands", "creator": "20th Century", "type": "video"},
+        {"id": "ZdC5mFHPldg", "title": "Mortal Kombat II", "creator": "Warner Bros", "type": "video"},
+        {"id": "OpThntO9ixc", "title": "Weapons", "creator": "Warner Bros", "type": "video"},
+        {"id": "8yh9BPUBbbQ", "title": "F1® The Movie", "creator": "Warner Bros", "type": "video"},
+        {"id": "-E3lMRx7HRQ", "title": "Now You See Me 3", "creator": "Lionsgate", "type": "video"},
+        {"id": "DCWcK4c-F8Q", "title": "The Amateur", "creator": "20th Century", "type": "video"},
+        {"id": "vEioDeOiqEs", "title": "Murderbot", "creator": "Apple TV", "type": "video"},
+        {"id": "bMgfsdYoEEo", "title": "The Conjuring: Last Rites", "creator": "Warner Bros", "type": "video"},
+        {"id": "dqolYtJGuf4", "title": "The Family Plan 2", "creator": "Apple TV", "type": "video"},
+        {"id": "AuYmKbtnmEA", "title": "Michael", "creator": "Universal", "type": "video"},
+        {"id": "5r-7eWDBc40", "title": "GOAT", "creator": "Sony Pictures", "type": "video"},
+        {"id": "tA1s65o_kYM", "title": "Mickey 17", "creator": "Warner Bros", "type": "video"},
+        {"id": "lMXh6vjiZrI", "title": "Mufasa: The Lion King", "creator": "Disney", "type": "video"},
+        {"id": "1pHDWnXmK7Y", "title": "Captain America 4", "creator": "Marvel", "type": "video"},
+        {"id": "lQBmZBJCYcY", "title": "Squid Game Season 2", "creator": "Netflix", "type": "video"},
+        {"id": "dSDpoobO6yM", "title": "Five Nights at Freddy's 2", "creator": "Universal", "type": "video"},
+        {"id": "az8M5Mai0X4", "title": "Anaconda", "creator": "Sony Pictures", "type": "video"},
+        {"id": "EOwTdTZA8D8", "title": "28 Years Later", "creator": "Sony Pictures", "type": "video"},
+        {"id": "n0pqP6ClcE8", "title": "Rental Family", "creator": "Searchlight", "type": "video"},
+        {"id": "R4wiXj9NmEE", "title": "Send Help", "creator": "20th Century", "type": "video"},
+        {"id": "zHhR3daI3bY", "title": "Man Vs Baby", "creator": "Netflix", "type": "video"},
+        {"id": "m3lgD59KrTw", "title": "Hedda", "creator": "Prime Video", "type": "video"},
+        {"id": "Hzk4ovnGOyw", "title": "Troll 2", "creator": "Netflix", "type": "video"},
+        {"id": "8seUGDLZRIo", "title": "Swiped", "creator": "Hulu", "type": "video"},
+        {"id": "vAtUHeMQ1F8", "title": "The Long Walk", "creator": "Lionsgate Movies", "type": "video"},
+        {"id": "M7LhGytiHFM", "title": "Shadow Force", "creator": "Lionsgate Movies", "type": "video"},
+        {"id": "o34WOE1a8aQ", "title": "Good Fortune", "creator": "Lionsgate Movies", "type": "video"},
+        {"id": "moiRCJR4ToY", "title": "The Blackening", "creator": "Lionsgate Movies", "type": "video"},
+        {"id": "H8ieN10lX40", "title": "Greenland 2", "creator": "Lionsgate Movies", "type": "video"},
+        {"id": "U9OkHjOnQPg", "title": "She Rides Shotgun", "creator": "Lionsgate Movies", "type": "video"},
+        {"id": "k_8YOQ0TMfM", "title": "Turbulence", "creator": "Lionsgate Movies", "type": "video"},
+        {"id": "_wpw2QHJNco", "title": "A House Of Dynamite", "creator": "Netflix", "type": "video"},
+        {"id": "MPjxijuBuSo", "title": "The Hunger Games: Sunrise on the Reaping", "creator": "Lionsgate Movies", "type": "video"},
+        {"id": "f5y-cziwmMw", "title": "Crime 101", "creator": "Amazon MGM Studios", "type": "video"},
+        {"id": "KD18ddeFuyM", "title": "The Running Man", "creator": "Paramount Pictures", "type": "video"},
+        {"id": "i36Zw32GfRQ", "title": "Reminders of Him", "creator": "Universal Pictures", "type": "video"},
+        {"id": "kr3wIXhmYpI", "title": "Strays", "creator": "Universal Pictures", "type": "video"},
+        {"id": "YShVEXb7-ic", "title": "Tron: Ares", "creator": "Disney", "type": "video"},
+        {"id": "IHikM7vFXsA", "title": "Roofman", "creator": "Paramount Pictures", "type": "video"},
+        {"id": "ZsAa9ofaL-g", "title": "Red Alert", "creator": "Paramount Plus", "type": "video"},
+        {"id": "z1xJAyVKAPY", "title": "The Black Demon", "creator": "Paramount Movies", "type": "video"},
+        {"id": "nfKO9rYDmE8", "title": "The Lost City", "creator": "Paramount Pictures", "type": "video"},
+        {"id": "R6W6YzhRuTA", "title": "SHELL", "creator": "Paramount Movies", "type": "video"}
     ]
-    return render_template('tv.html', videos=videos)
+
+    # B. SHUFFLE THE MOVIES
+    random.shuffle(movies)
+
+    # C. DEFINE THE ADS
+    ad_1 = {
+        "type": "ad",
+        "title": "Win like Drake with Stake",
+        "desc": "Instant Withdrawals via MoMo or Crypto. 200% Bonus.",
+        "link": "https://stake.com/?c=TqdL9FFw",
+        "image": "/static/images/stake-logo-navy.png"
+    }
+    
+    ad_2 = {
+        "type": "ad",
+        "title": "Sign up today, it may be your lucky day",
+        "desc": "The world's biggest crypto casino. Play now.",
+        "link": "https://stake.com/?c=TqdL9FFw",
+        "image": "/static/images/stake com-logo-navy.png"
+    }
+
+    ad_3 = {
+        "type": "ad",
+        "title": "Stake and Win",
+        "desc": "Join the winning team. 200% Deposit Match.",
+        "link": "https://stake.com/?c=TqdL9FFw",
+        "image": "/static/images/stake-logo-navy.png"
+    }
+
+    # D. INJECT ADS AT FIXED POSITIONS
+    # We insert from last to first to avoid messing up the index order#
+    # Insert Ad 3 near the bottom (Index 41 - The 42nd slot)
+    if len(movies) > 41: movies.insert(41, ad_3)
+    # Insert Ad 2 near the bottom (Index 32 - The 33rd slot)
+    if len(movies) > 32: movies.insert(32, ad_2)
+    # Insert Ad 1 near the bottom (Index 25 - The 26th slot)
+    if len(movies) > 25: movies.insert(25, ad_1)
+    # Insert Ad 3 near the bottom (Index 16)
+    if len(movies) > 16: movies.insert(16, ad_3)
+    # Insert Ad 2 in the middle (Index 8)
+    if len(movies) > 8: movies.insert(8, ad_2)
+    # Insert Ad 1 near the top (Index 3 - The 4th slot)
+    if len(movies) > 3: movies.insert(3, ad_1)
+     
+
+
+    return render_template('tv.html', videos=movies)
 
 # --- 2. THE VOUCHER MALL (Gift Cards Page) ---
 @app.route('/vouchers')
@@ -145,21 +173,40 @@ def product_page(network):
     pricing = {
         # --- DATA BUNDLES ---
         "mtn": [
-            {"name": "5GB Non-Expiry", "price": 25, "input_type": "phone"}, 
-            {"name": "10GB Non-Expiry", "price": 45, "input_type": "phone"}
+            {"name": "1GB Non-Expiry", "price": 6, "input_type": "phone"}, 
+            {"name": "2GB Non-Expiry", "price": 11, "input_type": "phone"},
+            {"name": "5GB Non-Expiry", "price": 27, "input_type": "phone"},
+            {"name": "10GB Non-Expiry", "price": 50, "input_type": "phone"},
+            {"name": "15GB Non-Expiry", "price": 70, "input_type": "phone"},
+            {"name": "20GB Non-Expiry", "price": 100, "input_type": "phone"},
+            {"name": "30GB Non-Expiry", "price": 150, "input_type": "phone"},
+            {"name": "40GB Non-Expiry", "price": 190, "input_type": "phone"},
+            {"name": "50GB Non-Expiry", "price": 230, "input_type": "phone"},
         ],
         "telecel": [
-            {"name": "10GB Special", "price": 30, "input_type": "phone"},
-            {"name": "20GB Special", "price": 55, "input_type": "phone"}
+            {"name": "10GB Special", "price": 40, "input_type": "phone"},
+            {"name": "15GB Special", "price": 60, "input_type": "phone"},
+            {"name": "20GB Non-Expiry", "price": 90, "input_type": "phone"},
+            {"name": "25GB Non-Expiry", "price": 120, "input_type": "phone"},
+            {"name": "30GB Non-Expiry", "price": 130, "input_type": "phone"},
+            {"name": "40GB Non-Expiry", "price": 160, "input_type": "phone"},
+            {"name": "50GB Non-Expiry", "price": 200, "input_type": "phone"},
+            {"name": "100GB Non-Expiry", "price": 380, "input_type": "phone"},
         ],
         "at": [
-            {"name": "Big Time 5GB", "price": 15, "input_type": "phone"}
+            {"name": "1GB Non-Expiry", "price": 15, "input_type": "phone"},
+            {"name": "3GB Non-Expiry", "price": 45, "input_type": "phone"},
+            {"name": "4GB Non-Expiry", "price": 45, "input_type": "phone"},
+            {"name": "5GB Non-Expiry", "price": 45, "input_type": "phone"},
+            {"name": "8GB Non-Expiry", "price": 45, "input_type": "phone"},
+            {"name": "10GB Non-Expiry", "price": 45, "input_type": "phone"},
+            {"name": "12GB Non-Expiry", "price": 45, "input_type": "phone"},
         ],
 
         # --- VOUCHERS ---
         "audiomack": [
-            {"name": "Audiomack Day Pass", "price": 3, "input_type": "phone"},
-            {"name": "Audiomack Monthly Pass", "price": 25, "input_type": "phone"}
+            {"name": "Audiomack Day Pass", "price": 3, "input_type": "email"},
+            {"name": "Audiomack Monthly Pass", "price": 25, "input_type": "email"}
         ],
         "fcmobile": [
             {"name": "40 FC Points", "price": 7, "input_type": "id"},
