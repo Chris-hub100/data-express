@@ -11,9 +11,10 @@
 <div class="row justify-content-center mt-5">
     <div class="col-md-6 text-center">
         
+        <!-- 1. THE BIG GREEN CHECKMARK -->
         <div class="card shadow-sm p-5 border-0 rounded-3">
             <div class="success-icon">
-                ✓
+                <i class="bi bi-check-lg"></i>
             </div>
 
             <h2 class="fw-bold text-success mb-3">Payment Successful!</h2>
@@ -21,41 +22,73 @@
 
             <hr class="my-4">
 
-            <div class="text-start bg-light p-3 rounded mb-4">
-                <div class="d-flex justify-content-between mb-2">
+            <!-- 2. ORDER DETAILS (Dynamic) -->
+            <div class="text-start bg-light p-4 rounded-3 mb-4 border">
+                
+                <div class="d-flex justify-content-between mb-3">
                     <span class="text-muted">Status:</span>
                     <span class="badge bg-warning text-dark">Processing...</span>
                 </div>
-                <div class="d-flex justify-content-between mb-2">
-                    <span class="text-muted">Network:</span>
-                    <span class="fw-bold text-uppercase" id="receipt-network">Loading...</span>
+                
+                <div class="d-flex justify-content-between mb-3">
+                    <span class="text-muted">Item:</span>
+                    <span class="fw-bold text-dark text-end" id="receipt-network">Loading...</span>
                 </div>
+                
                 <div class="d-flex justify-content-between">
-                    <span class="text-muted">Phone:</span>
-                    <span class="fw-bold" id="receipt-phone">Loading...</span>
+                    <!-- This Label changes (Phone / ID / Email) -->
+                    <span class="text-muted" id="receipt-label">Recipient:</span>
+                    <span class="fw-bold text-dark text-end" id="receipt-data">Loading...</span>
                 </div>
             </div>
 
-            <div class="alert alert-info small text-start">
-                <strong><i class="bi bi-info-circle"></i> What happens next?</strong><br>
-                Your data bundle is being processed manually. You will receive an SMS alert within <strong>15 minutes</strong>. 
-                (Orders placed after 10 PM will be sent the next morning).
+            <!-- 3. MANAGING EXPECTATIONS -->
+            <div class="alert alert-info small text-start d-flex gap-3 align-items-start">
+                <i class="bi bi-info-circle-fill fs-5 mt-1"></i>
+                <div>
+                    <strong>What happens next?</strong><br>
+                    We are processing your order manually. 
+                    You will receive your package via <strong>WhatsApp, SMS, or Email</strong> within 15 minutes.
+                </div>
             </div>
 
+            <!-- 4. ACTIONS -->
             <div class="d-grid gap-2 mt-4">
                 <a href="/" class="btn btn-primary">Return Home</a>
-                <a href="mailto:support@dataexpress.store" class="btn btn-outline-secondary">Contact Support</a>
+                <a href="https://wa.me/233535333868" class="btn btn-outline-success">
+                    <i class="bi bi-whatsapp"></i> Contact Support
+                </a>
             </div>
+            
+            <!-- 5. UPSELL (Passive Income Slot) -->
+            <div class="mt-4 pt-3 border-top">
+                <p class="small text-muted mb-2">Sponsored</p>
+                <a href="https://stake.com/?c=TqdL9FFw" target="_blank" class="text-decoration-none">
+                    <div class="d-flex align-items-center justify-content-center gap-2 text-dark fw-bold border rounded p-2 hover-lift">
+                        <img src="/static/images/stake-logo-navy.png" height="20" alt="Stake">
+                        <span>Register & Get 200% Bonus</span>
+                    </div>
+                </a>
+            </div>
+
         </div>
 
     </div>
 </div>
 
+<!-- Dynamic Script to read URL params -->
 <script>
-    // This grabs the ?phone=xxx and ?network=xxx from the address bar
     const urlParams = new URLSearchParams(window.location.search);
-    document.getElementById('receipt-phone').innerText = urlParams.get('phone') || "N/A";
-    document.getElementById('receipt-network').innerText = urlParams.get('network') || "Bundle";
+    
+    // Get Data from URL
+    const recipient = urlParams.get('recipient') || "N/A";
+    const network = urlParams.get('network') || "Bundle";
+    const label = urlParams.get('label') || "Recipient Info"; // Default fallback
+
+    // Update HTML
+    document.getElementById('receipt-data').innerText = recipient;
+    document.getElementById('receipt-network').innerText = network;
+    document.getElementById('receipt-label').innerText = label + ":"; // Add colon
 </script>
 
 {% endblock %}

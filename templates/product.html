@@ -2,16 +2,12 @@
 
 {% block content %}
 
+<!-- 1. BACK NAVIGATION -->
 <div class="mb-3">
-    {% if is_voucher %}
-        <a href="/vouchers" class="text-decoration-none text-muted fw-bold" style="font-size: 0.9rem;">
-            <i class="bi bi-arrow-left"></i> Back to Gift Cards
-        </a>
-    {% else %}
-        <a href="/shop" class="text-decoration-none text-muted fw-bold" style="font-size: 0.9rem;">
-            <i class="bi bi-arrow-left"></i> Back to Networks
-        </a>
-    {% endif %}
+    <!-- We use 'is_voucher' passed from Python to decide where to go back -->
+    <a href="{% if is_voucher %}/vouchers{% else %}/shop{% endif %}" class="text-decoration-none text-muted fw-bold" style="font-size: 0.9rem;">
+        <i class="bi bi-arrow-left"></i> Back to Menu
+    </a>
 </div>
 
 <div class="container mt-4">
@@ -21,6 +17,7 @@
     
     <form id="paymentForm">
         
+        <!-- 2. SCROLLING CARDS -->
         <div class="scrolling-wrapper mb-4">
             {% for bundle in bundles %}
             <div class="card bundle-card text-center p-3" 
@@ -39,6 +36,7 @@
         <input type="hidden" id="selected_price" value="">
         <input type="hidden" id="selected_name" value="">
 
+        <!-- 3. CHECKOUT FORM (Hidden initially) -->
         <div id="checkoutSection" class="card p-4 shadow-sm border-0 mb-5 d-none animate__fadeIn">
             
             <h5 class="fw-bold mb-3 text-primary">Finish Order</h5>
@@ -56,12 +54,14 @@
                     {% endif %}
                 </label>
 
+                <!-- Dynamic Input Type -->
                 <input type="{% if input_type == 'email' %}email{% else %}text{% endif %}" 
                        id="customer_input" 
                        class="form-control form-control-lg bg-light" 
                        placeholder="{% if input_type == 'id' %}e.g. 674839201{% elif input_type == 'email' %}name@example.com{% else %}05xxxxxxxx{% endif %}" 
                        required>
                 
+                <!-- Helpers -->
                 {% if input_type == 'id' %}
                 <div class="form-text text-primary small mt-1">
                     <i class="bi bi-info-circle"></i> Found in your game profile
@@ -73,7 +73,6 @@
                     <i class="bi bi-lock-fill"></i> We will send the digital code to this inbox.
                 </div>
                 {% endif %}
-
             </div>
 
             <div class="d-grid">
@@ -86,27 +85,29 @@
     </form>
 </div>
 
+<!-- JAVASCRIPT LOGIC -->
 <script>
+    // ⚠️ Replace this with your LIVE Public Key from Paystack Dashboard
     const publicKey = "pk_test_4d5f7d2417619f29633bc5004e1dafdbf3629a3f"; 
+    
+    // Pass variables safely to JS (Using quotes prevents VS Code errors)
+    const inputType = "{{ input_type }}"; 
+    const isVoucher = "{{ is_voucher }}" === "True"; // This turns the string "True" into a real boolean
 
     function selectBundle(cardElement, price, name) {
-        // 1. Highlight card
         let cards = document.querySelectorAll('.bundle-card');
         cards.forEach(c => c.classList.remove('active'));
         cardElement.classList.add('active');
 
-        // 2. Store Data
         document.getElementById('selected_price').value = price;
         document.getElementById('selected_name').value = name;
 
-        // 3. Show Form
         let section = document.getElementById('checkoutSection');
         let btn = document.getElementById('payBtn');
         
         section.classList.remove('d-none');
-        btn.innerHTML = `Pay GHS ${price}`; // Simplified text
+        btn.innerHTML = `Pay GHS ${price}`; 
 
-        // 4. Scroll & Focus
         section.scrollIntoView({behavior: "smooth", block: "start"});
         setTimeout(() => {
             document.getElementById("customer_input").focus();
@@ -123,6 +124,12 @@
         if (!amount) { alert("Please select a package"); return; }
         if (customerData === "") { alert("Please fill in the required info"); return; }
 
+        // Dynamic Label for Paystack
+        let fieldLabel = "Mobile Number";
+        if (inputType === 'id') { fieldLabel = "Player ID"; }
+        else if (inputType === 'email') { fieldLabel = "Email Address"; }
+        else if (isVoucher) { fieldLabel = "WhatsApp Number"; }
+
         let handler = PaystackPop.setup({
             key: publicKey,
             email: "customer@dataexpress.store",
@@ -130,30 +137,30 @@
             currency: "GHS",
             metadata: {
                 custom_fields: [
-                    { display_name: "Recipient Info", variable_name: "recipient_info", value: customerData },
-                    { display_name: "Item", variable_name: "bundle", value: bundleName }
+                    { display_name: fieldLabel, variable_name: "recipient_info", value: customerData },
+                    { display_name: "Item Purchased", variable_name: "bundle", value: bundleName }
                 ]
             },
             callback: function(response) {
-                verifyTransaction(response.reference, "Customer", customerData, bundleName);
+                verifyTransaction(response.reference, customerData, bundleName, fieldLabel);
             }
         });
 
         handler.openIframe();
     }
 
-    function verifyTransaction(ref, name, phone, bundle) {
+    function verifyTransaction(ref, data, bundle, label) {
         document.getElementById("payBtn").innerText = "Verifying...";
+         
          fetch("/verify_payment", {
             method: "POST",
             headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ reference: ref, name: name, phone: phone, bundle: bundle })
+            body: JSON.stringify({ reference: ref, name: "Customer", phone: data, bundle: bundle })
         })
         .then(res => res.json())
-        .then(data => {
-            if(data.status === "success") {
-                // Redirect with generic phone parameter
-                window.location.href = `/success?phone=${phone}&network=${bundle}`;
+        .then(resData => {
+            if(resData.status === "success") {
+                window.location.href = `/success?recipient=${encodeURIComponent(data)}&network=${encodeURIComponent(bundle)}&label=${encodeURIComponent(label)}`;
             } else {
                 alert("Verification Failed.");
             }
