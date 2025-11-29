@@ -14,6 +14,10 @@ PAYSTACK_SECRET_KEY = "sk_test_205609e95584b8704c90e2c8c72b6f1dbcee60db"
 def home():
     return render_template('home.html')
 
+@app.route('/healthz')
+def health_check():
+    return "OK", 200
+
 @app.route('/shop')
 def shop():
     return render_template('shop.html')
