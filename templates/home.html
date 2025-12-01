@@ -84,18 +84,70 @@
 
 <div style="height: 80px;"></div>
 
+{% if welcome_msg %}
+<div class="modal fade" id="qrMessageModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-4 border-0 shadow-lg">
+            
+            <div class="modal-body text-center p-5">
+                <!-- Dynamic Icon Based on 'welcome_type' -->
+                <div class="mb-4">
+                     {% if welcome_type == 'danger' %}
+                        <!-- Red Warning Icon (For Front Shirt) -->
+                        <div class="bg-danger bg-opacity-10 rounded-circle d-inline-flex p-3 animate-pulse text-danger">
+                            <i class="bi bi-exclamation-triangle-fill display-1"></i>
+                        </div>
+                        <h2 class="fw-bold text-dark mt-3 mb-2">Busted! 🚨</h2>
+                     
+                     {% elif welcome_type == 'success' %}
+                        <!-- Green Trophy Icon (For Back Shirt) -->
+                        <div class="bg-success bg-opacity-10 rounded-circle d-inline-flex p-3 animate-pulse text-success">
+                            <i class="bi bi-trophy-fill display-1"></i>
+                        </div>
+                        <h2 class="fw-bold text-dark mt-3 mb-2">You Found It! 🎯</h2>
+                     
+                     {% else %}
+                        <!-- Default Info Icon -->
+                        <div class="bg-primary bg-opacity-10 rounded-circle d-inline-flex p-3 animate-pulse text-primary">
+                            <i class="bi bi-emoji-sunglasses-fill display-1"></i>
+                        </div>
+                        <h2 class="fw-bold text-dark mt-3 mb-2">Welcome! 👋</h2>
+                     {% endif %}
+                </div>
+
+                <!-- The Message from Python -->
+                <p class="text-muted fs-5 mb-4">{{ welcome_msg }}</p>
+
+                <button type="button" class="btn btn-dark rounded-pill px-5 py-2 fw-bold shadow-sm" data-bs-dismiss="modal">
+                    Let's Go 🚀
+                </button>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- Script to Auto-Open the Modal -->
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        var myModal = new bootstrap.Modal(document.getElementById('qrMessageModal'));
+        myModal.show();
+    });
+</script>
+{% endif %}
+
+<!-- Styles -->
 <style>
-    .hover-scale {
-        transition: transform 0.2s;
-    }
-    .hover-scale:hover {
-        transform: scale(1.05);
-    }
-    .hover-lift {
-        transition: transform 0.3s;
-    }
-    .hover-lift:hover {
-        transform: translateY(-5px);
+    .hover-scale { transition: transform 0.2s; }
+    .hover-scale:hover { transform: scale(1.05); }
+    .hover-lift { transition: transform 0.3s; }
+    .hover-lift:hover { transform: translateY(-5px); }
+    
+    .animate-pulse { animation: pulse 2s infinite; }
+    @keyframes pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.1); }
+        100% { transform: scale(1); }
     }
 </style>
 
