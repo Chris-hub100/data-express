@@ -12,7 +12,23 @@ PAYSTACK_SECRET_KEY = "sk_test_205609e95584b8704c90e2c8c72b6f1dbcee60db"
 
 @app.route('/')
 def home():
-    return render_template('home.html')
+    # Check for QR Code scans
+    source = request.args.get('ref')
+    welcome_msg = None
+    welcome_type = "info"
+
+    if source == 'front':
+        welcome_msg = "⚠️ You disobeyed the shirt! But since you're a rebel, here are some illegal prices."
+        welcome_type = "danger"
+    elif source == 'back':
+        welcome_msg = "👀 Nice catch! You were fast enough to scan. Here is your reward."
+        welcome_type = "success"
+    elif source == 'tshirt':
+        welcome_msg = "Hey Scholar! 👋 Check out our Student Specials below."
+        welcome_type = "primary"
+
+    return render_template('home.html', welcome_msg=welcome_msg, welcome_type=welcome_type)
+
 
 @app.route('/healthz')
 def health_check():
@@ -177,34 +193,34 @@ def product_page(network):
     pricing = {
         # --- DATA BUNDLES ---
         "mtn": [
-            {"name": "1GB Non-Expiry", "price": 6, "input_type": "phone"}, 
-            {"name": "2GB Non-Expiry", "price": 11, "input_type": "phone"},
-            {"name": "5GB Non-Expiry", "price": 27, "input_type": "phone"},
-            {"name": "10GB Non-Expiry", "price": 50, "input_type": "phone"},
-            {"name": "15GB Non-Expiry", "price": 70, "input_type": "phone"},
-            {"name": "20GB Non-Expiry", "price": 100, "input_type": "phone"},
-            {"name": "30GB Non-Expiry", "price": 150, "input_type": "phone"},
-            {"name": "40GB Non-Expiry", "price": 190, "input_type": "phone"},
-            {"name": "50GB Non-Expiry", "price": 230, "input_type": "phone"},
+            {"name": "1GB Non-Expiry", "price": 5.5, "input_type": "phone", "active": True}, 
+            {"name": "2GB Non-Expiry", "price": 10.5, "input_type": "phone", "active": True},
+            {"name": "5GB Non-Expiry", "price": 25, "input_type": "phone", "active": True },
+            {"name": "10GB Non-Expiry", "price": 46, "input_type": "phone", "active": True},
+            {"name": "15GB Non-Expiry", "price": 66, "input_type": "phone", "active": True},
+            {"name": "20GB Non-Expiry", "price": 88, "input_type": "phone", "active": True},
+            {"name": "30GB Non-Expiry", "price": 132, "input_type": "phone", "active": True},
+            {"name": "40GB Non-Expiry", "price": 180, "input_type": "phone", "active": True},
+            {"name": "50GB Non-Expiry", "price": 215, "input_type": "phone", "active": True},
         ],
         "telecel": [
-            {"name": "10GB Special", "price": 40, "input_type": "phone"},
-            {"name": "15GB Special", "price": 60, "input_type": "phone"},
-            {"name": "20GB Non-Expiry", "price": 90, "input_type": "phone"},
-            {"name": "25GB Non-Expiry", "price": 120, "input_type": "phone"},
-            {"name": "30GB Non-Expiry", "price": 130, "input_type": "phone"},
-            {"name": "40GB Non-Expiry", "price": 160, "input_type": "phone"},
-            {"name": "50GB Non-Expiry", "price": 200, "input_type": "phone"},
-            {"name": "100GB Non-Expiry", "price": 380, "input_type": "phone"},
+            {"name": "10GB Special", "price": 40, "input_type": "phone", "active": False},
+            {"name": "15GB Special", "price": 60, "input_type": "phone", "active": False},
+            {"name": "20GB Non-Expiry", "price": 90, "input_type": "phone", "active": False},
+            {"name": "25GB Non-Expiry", "price": 120, "input_type": "phone", "active": False},
+            {"name": "30GB Non-Expiry", "price": 130, "input_type": "phone", "active": False},
+            {"name": "40GB Non-Expiry", "price": 160, "input_type": "phone", "active": False},
+            {"name": "50GB Non-Expiry", "price": 200, "input_type": "phone", "active": False},
+            {"name": "100GB Non-Expiry", "price": 380, "input_type": "phone", "active": False},
         ],
         "at": [
-            {"name": "1GB Non-Expiry", "price": 15, "input_type": "phone"},
-            {"name": "3GB Non-Expiry", "price": 45, "input_type": "phone"},
-            {"name": "4GB Non-Expiry", "price": 45, "input_type": "phone"},
-            {"name": "5GB Non-Expiry", "price": 45, "input_type": "phone"},
-            {"name": "8GB Non-Expiry", "price": 45, "input_type": "phone"},
-            {"name": "10GB Non-Expiry", "price": 45, "input_type": "phone"},
-            {"name": "12GB Non-Expiry", "price": 45, "input_type": "phone"},
+            {"name": "1GB Non-Expiry", "price": 15, "input_type": "phone", "active": False},
+            {"name": "3GB Non-Expiry", "price": 45, "input_type": "phone", "active": False},
+            {"name": "4GB Non-Expiry", "price": 45, "input_type": "phone", "active": False},
+            {"name": "5GB Non-Expiry", "price": 45, "input_type": "phone", "active": False},
+            {"name": "8GB Non-Expiry", "price": 45, "input_type": "phone", "active": False},
+            {"name": "10GB Non-Expiry", "price": 45, "input_type": "phone", "active": False},
+            {"name": "12GB Non-Expiry", "price": 45, "input_type": "phone", "active": False},
         ],
 
         # --- VOUCHERS ---

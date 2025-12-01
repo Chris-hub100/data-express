@@ -2,6 +2,27 @@
 
 {% block content %}
 
+<!-- ... inside block content ... -->
+
+<!-- WELCOME ALERT (Only shows if they scanned a QR) -->
+{% if welcome_msg %}
+<div class="container mt-3">
+    <div class="alert alert-{{ welcome_type }} text-center shadow-sm rounded-4 border-0 animate__fadeIn">
+        <div class="d-flex align-items-center justify-content-center gap-2">
+            {% if welcome_type == 'danger' %}
+                <i class="bi bi-exclamation-triangle-fill fs-4"></i>
+            {% else %}
+                <i class="bi bi-check-circle-fill fs-4"></i>
+            {% endif %}
+            
+            <span class="fw-bold">{{ welcome_msg }}</span>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- 1. HERO SECTION ... -->
+
 <div class="text-center text-white rounded-4 mb-5 shadow d-flex flex-column justify-content-center align-items-center position-relative overflow-hidden" 
      style="background: linear-gradient(135deg, #003366 0%, #0056b3 100%); min-height: 400px; padding: 30px;">
     
