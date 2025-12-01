@@ -18,10 +18,10 @@ def home():
     welcome_type = "info"
 
     if source == 'front':
-        welcome_msg = "😂 You just wasted your time and your data scanning this. Anyway, just to cover for your loss check out some of our amazing deals."
+        welcome_msg = "You just wasted your time and your data scanning this. Anyway, just to cover for your loss check out some of our amazing deals. Also, don't forget to bookmark this site cause I know you'll come back for more"
         welcome_type = "success"
     elif source == 'back':
-        welcome_msg = "👀 Nice catch! They say curiousity kills the cat but this time it blesses it. Go explore your rewards."
+        welcome_msg = "Nice catch! They say curiousity kills the cat but this time it blesses it. Go explore your rewards. Also, don't forget to bookmark this site cause I know you'll come back for more"
         welcome_type = "primary"
     elif source == 'tshirt':
         welcome_msg = "Hey Scholar! 👋 Check out our Student Specials below."

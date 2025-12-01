@@ -2,24 +2,6 @@
 
 {% block content %}
 
-<!-- ... inside block content ... -->
-
-<!-- WELCOME ALERT (Only shows if they scanned a QR) -->
-{% if welcome_msg %}
-<div class="container mt-3">
-    <div class="alert alert-{{ welcome_type }} text-center shadow-sm rounded-4 border-0 animate__fadeIn">
-        <div class="d-flex align-items-center justify-content-center gap-2">
-            {% if welcome_type == 'danger' %}
-                <i class="bi bi-exclamation-triangle-fill fs-4"></i>
-            {% else %}
-                <i class="bi bi-check-circle-fill fs-4"></i>
-            {% endif %}
-            
-            <span class="fw-bold">{{ welcome_msg }}</span>
-        </div>
-    </div>
-</div>
-{% endif %}
 
 <!-- 1. HERO SECTION ... -->
 
@@ -104,14 +86,14 @@
                         <div class="bg-success bg-opacity-10 rounded-circle d-inline-flex p-3 animate-pulse text-success">
                             <i class="bi bi-trophy-fill display-1"></i>
                         </div>
-                        <h2 class="fw-bold text-dark mt-3 mb-2">You Found It! 🎯</h2>
+                        <h2 class="fw-bold text-dark mt-3 mb-2">😂</h2>
                      
                      {% else %}
                         <!-- Default Info Icon -->
                         <div class="bg-primary bg-opacity-10 rounded-circle d-inline-flex p-3 animate-pulse text-primary">
                             <i class="bi bi-emoji-sunglasses-fill display-1"></i>
                         </div>
-                        <h2 class="fw-bold text-dark mt-3 mb-2">Welcome! 👋</h2>
+                        <h2 class="fw-bold text-dark mt-3 mb-2">👀</h2>
                      {% endif %}
                 </div>
 
@@ -119,7 +101,7 @@
                 <p class="text-muted fs-5 mb-4">{{ welcome_msg }}</p>
 
                 <button type="button" class="btn btn-dark rounded-pill px-5 py-2 fw-bold shadow-sm" data-bs-dismiss="modal">
-                    Let's Go 🚀
+                    Let's Dive In
                 </button>
             </div>
 
