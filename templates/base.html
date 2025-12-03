@@ -185,6 +185,28 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     
     <script>
+        // --- SECURITY POPUP LOGIC ---
+    document.addEventListener("DOMContentLoaded", function() {
+        
+        // 1. Check if user has already seen it recently (Session Storage)
+        // If we don't check this, it will annoy them on every page load!
+        if (!sessionStorage.getItem('seenSecurityAlert')) {
+            
+            // 2. Set the 20-second Timer (20000 milliseconds)
+            setTimeout(() => {
+                var securityModal = new bootstrap.Modal(document.getElementById('securityModal'));
+                securityModal.show();
+                
+                // 3. Mark as seen so it doesn't show again in this session
+                sessionStorage.setItem('seenSecurityAlert', 'true');
+            }, 20000); 
+        }
+    });
+
+    // Helper function to help them bookmark (Works on some browsers)
+    function bookmarkSite() {
+        alert("Press Ctrl+D (Windows) or Cmd+D (Mac) to bookmark this page!");
+    }
         // SMART HIDING SCRIPT
         document.addEventListener("DOMContentLoaded", function() {
             const footer = document.getElementById('mainFooter');
@@ -205,6 +227,41 @@
             }
         });
     </script>
+
+    <!-- ================= SECURITY ALERT POPUP ================= -->
+<div class="modal fade" id="securityModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-4 border-0 shadow-lg" style="border-left: 5px solid #dc3545;">
+            
+            <div class="modal-header border-0">
+                <h5 class="modal-title fw-bold text-danger">
+                    <i class="bi bi-shield-lock-fill me-2"></i> Security Alert
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body py-4">
+                <p class="mb-3">
+                    <strong>Please Be Careful!</strong> There are many fake websites claiming to be us.
+                </p>
+                <p class="text-muted small mb-4">
+                    Always verify you are on <strong>dataexpress.store</strong>. 
+                    Please bookmark this site now for your safe return.
+                </p>
+                
+                <div class="d-grid gap-2">
+                    <button class="btn btn-outline-dark btn-sm rounded-pill" onclick="bookmarkSite()">
+                        <i class="bi bi-bookmark-star-fill me-2"></i> Bookmark This Site
+                    </button>
+                    <button type="button" class="btn btn-primary btn-sm rounded-pill" data-bs-dismiss="modal">
+                        I Understand, Continue
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
 
 </body>
 </html>
