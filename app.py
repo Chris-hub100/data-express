@@ -154,6 +154,12 @@ def voucher_page():
             "desc": "Subscription"
         },
         {
+            "name": "Tinder",
+            "image": "https://d13ms5efar3wc5.cloudfront.net/eyJidWNrZXQiOiJpbWFnZXMtY2Fycnkxc3QtcHJvZHVjdHMiLCJrZXkiOiI5ZGQxOGRhYy0wN2E4LTQ3NTctYTQ5NC04YzU5MmNjYjE5M2UucG5nLndlYnAiLCJlZGl0cyI6eyJyZXNpemUiOnsid2lkdGgiOjM4NH19LCJ3ZWJwIjp7InF1YWxpdHkiOjc1fX0=",
+            "link": "tinder",
+            "desc": "Subscription"
+        },
+        {
             "name": "EA Sports FC™ Mobile",
             "image": "https://d13ms5efar3wc5.cloudfront.net/eyJidWNrZXQiOiJpbWFnZXMtY2Fycnkxc3QtcHJvZHVjdHMiLCJrZXkiOiIyNWNlMjI5Yi00YmQ3LTRjMTktOGE4Yy0zOTY5MzNiMmE5NDMucG5nLndlYnAiLCJlZGl0cyI6eyJyZXNpemUiOnsid2lkdGgiOjc2OH19LCJ3ZWJwIjp7InF1YWxpdHkiOjc1fX0=",
             "link": "fcmobile",
@@ -182,6 +188,30 @@ def voucher_page():
             "image": "https://d13ms5efar3wc5.cloudfront.net/eyJidWNrZXQiOiJpbWFnZXMtY2Fycnkxc3QtcHJvZHVjdHMiLCJrZXkiOiI4NmYyM2EwNi00MjI4LTQyNzctOTQwMS00ZWVlZTBkY2NmMzgucG5nLndlYnAiLCJlZGl0cyI6eyJyZXNpemUiOnsid2lkdGgiOjM4NH19LCJ3ZWJwIjp7InF1YWxpdHkiOjc1fX0=",
             "link": "codm.",
             "desc": "Battle Pass"
+        },
+        {
+            "name": "Marvel Rivals",
+            "image": "https://d13ms5efar3wc5.cloudfront.net/eyJidWNrZXQiOiJpbWFnZXMtY2Fycnkxc3QtcHJvZHVjdHMiLCJrZXkiOiIxMDRlYjFmNi1kMThiLTRjNGItODU4OS1iMWJiYjRiMzc4NzQucG5nLndlYnAiLCJlZGl0cyI6eyJyZXNpemUiOnsid2lkdGgiOjM4NH19LCJ3ZWJwIjp7InF1YWxpdHkiOjc1fX0=",
+            "link": "marvelrivals",
+            "desc": "Lattices"
+        },
+        {
+            "name": "Delta Force",
+            "image": "https://d13ms5efar3wc5.cloudfront.net/eyJidWNrZXQiOiJpbWFnZXMtY2Fycnkxc3QtcHJvZHVjdHMiLCJrZXkiOiIyYTVjYzFiYy00Yjg4LTQ2ZmYtYmFiZi04MTc3M2NkYTA1YTIucG5nLndlYnAiLCJlZGl0cyI6eyJyZXNpemUiOnsid2lkdGgiOjM4NH19LCJ3ZWJwIjp7InF1YWxpdHkiOjc1fX0=",
+            "link": "deltaforce",
+            "desc": "Coins"
+        },
+        {
+            "name": "Honor of Kings",
+            "image": "https://d13ms5efar3wc5.cloudfront.net/eyJidWNrZXQiOiJpbWFnZXMtY2Fycnkxc3QtcHJvZHVjdHMiLCJrZXkiOiIzZmJhZTU0Mi1iZTM0LTRjM2EtYmM1Yy0xYTE4NzYxOGU0NzMucG5nLndlYnAiLCJlZGl0cyI6eyJyZXNpemUiOnsid2lkdGgiOjM4NH19LCJ3ZWJwIjp7InF1YWxpdHkiOjc1fX0=",
+            "link": "honorofkings",
+            "desc": "Tokens"
+        },
+        {
+            "name": "Arena Breakout",
+            "image": "https://d13ms5efar3wc5.cloudfront.net/eyJidWNrZXQiOiJpbWFnZXMtY2Fycnkxc3QtcHJvZHVjdHMiLCJrZXkiOiJmZTY2NTRjYy00YzEyLTQ5NWEtOGMzMi1kNjhiNDMwOTkwYjgucG5nLndlYnAiLCJlZGl0cyI6eyJyZXNpemUiOnsid2lkdGgiOjM4NH19LCJ3ZWJwIjp7InF1YWxpdHkiOjc1fX0=",
+            "link": "arenabreakout",
+            "desc": "Bonds"
         }
     ]
     return render_template('vouchers.html', items=items)
@@ -195,13 +225,18 @@ def product_page(network):
         "mtn": [
             {"name": "1GB Non-Expiry", "price": 5.5, "input_type": "phone", "active": True}, 
             {"name": "2GB Non-Expiry", "price": 10.5, "input_type": "phone", "active": True},
+            {"name": "3GB Non-Expiry", "price": 15, "input_type": "phone", "active": True},
+            {"name": "4GB Non-Expiry", "price": 20, "input_type": "phone", "active": True},
             {"name": "5GB Non-Expiry", "price": 25, "input_type": "phone", "active": True },
+            {"name": "6GB Non-Expiry", "price": 28, "input_type": "phone", "active": True},
+            {"name": "8GB Non-Expiry", "price": 37, "input_type": "phone", "active": True},
             {"name": "10GB Non-Expiry", "price": 46, "input_type": "phone", "active": True},
             {"name": "15GB Non-Expiry", "price": 66, "input_type": "phone", "active": True},
             {"name": "20GB Non-Expiry", "price": 88, "input_type": "phone", "active": True},
             {"name": "30GB Non-Expiry", "price": 132, "input_type": "phone", "active": True},
             {"name": "40GB Non-Expiry", "price": 180, "input_type": "phone", "active": True},
             {"name": "50GB Non-Expiry", "price": 215, "input_type": "phone", "active": True},
+            {"name": "100GB Non-Expiry", "price": 430, "input_type": "phone", "active": True},
         ],
         "telecel": [
             {"name": "10GB Special", "price": 40, "input_type": "phone", "active": False},
@@ -227,6 +262,12 @@ def product_page(network):
         "audiomack": [
             {"name": "Audiomack Day Pass", "price": 3, "input_type": "email"},
             {"name": "Audiomack Monthly Pass", "price": 25, "input_type": "email"}
+        ],
+         "tinder": [
+            {"name": "Standard 1 Week - Plus", "price":25, "input_type": "phone"},
+            {"name": "Standard 1 Week - Gold", "price": 35, "input_type": "phone"},
+            {"name": "Standard 1 Month - Plus", "price": 42, "input_type": "phone"},
+            {"name": "Standard 1 Month - Gold", "price": 55, "input_type": "phone"},
         ],
         "fcmobile": [
             {"name": "40 FC Points", "price": 7, "input_type": "id"},
@@ -267,6 +308,38 @@ def product_page(network):
         "codm.": [
             {"name": "Battle Pass Premium", "price": 40, "input_type": "id"},
             {"name": "Battle Pass Premium Bundle", "price": 93, "input_type": "id"}
+        ],
+         "marvelrivals": [
+            {"name": "100 Lattices", "price": 15, "input_type": "id"},
+            {"name": "500 Lattices", "price": 70, "input_type": "id"},
+            {"name": "1000 Lattices", "price": 142, "input_type": "id"},
+            {"name": "2180 Lattices", "price": 283, "input_type": "id"},
+            {"name": "5680 Lattices", "price": 660, "input_type": "id"},
+            {"name": "11680 Lattices", "price": 1310, "input_type": "id"},
+        ],
+        "deltaforce": [
+            {"name": "18 Delta Coins", "price": 5.5, "input_type": "id"},
+            {"name": "30 Delta Coins", "price": 9, "input_type": "id"},
+            {"name": "60 Delta Coins", "price": 14, "input_type": "id"},
+            {"name": "320 Delta Coins", "price": 60, "input_type": "id"},
+            {"name": "460 Delta Coins", "price": 82, "input_type": "id"},
+            {"name": "750 Delta Coins", "price": 115, "input_type": "id"},
+        ],
+        "honorofkings": [
+            {"name": "16 Tokens", "price": 5, "input_type": "id"},
+            {"name": "80 Tokens", "price": 15, "input_type": "id"},
+            {"name": "240 Tokens", "price": 40, "input_type": "id"},
+            {"name": "400 Tokens", "price": 65, "input_type": "id"},
+            {"name": "560 Tokens", "price": 90, "input_type": "id"},
+            {"name": "830 Tokens", "price": 130, "input_type": "id"},
+        ],
+        "arenabreakout": [
+            {"name": "66 Bonds", "price": 15, "input_type": "id"},
+            {"name": "335 Bonds", "price": 66, "input_type": "id"},
+            {"name": "675 Bonds", "price": 130, "input_type": "id"},
+            {"name": "1690 Bonds", "price": 317, "input_type": "id"},
+            {"name": "3400 Bonds", "price": 630, "input_type": "id"},
+            {"name": "6820 Bonds", "price": 1255, "input_type": "id"},
         ]
     }
     
