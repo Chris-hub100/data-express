@@ -2,6 +2,8 @@ from flask import Flask, render_template, request, jsonify
 import requests
 import os
 import random # <--- Add this line
+import datetime
+from datetime import date, timedelta
 
 app = Flask(__name__)
 
@@ -33,6 +35,30 @@ def home():
 @app.route('/healthz')
 def health_check():
     return "OK", 200
+
+@app.route('/invoice')
+def invoice_page():
+    # Get today's date and a due date (e.g., 7 days from now)
+    today = date.today()
+    due_date = today + timedelta(days=7)
+
+    # Mock Data Dictionary
+    # We include 'items' as a list here.
+    invoice_data = {
+        "id": "INV-2025-080",
+        "client": "Abeiku Quick Data Bundles",
+        "date": today,
+        "due_date": due_date,
+        "items": [
+            {"desc": "Custom Web App Development (Full Stack)", "amount": 2500.00},
+            {"desc": "Domain & Server Setup (1 Year)", "amount": 0.00}
+        ],
+        "total": 2500.00,
+        "deposit_percent": 40,
+        "deposit_amount": 1000.00
+    }
+
+    return render_template('invoice.html', data=invoice_data)
 
 @app.route('/quote')
 def quote_page():
