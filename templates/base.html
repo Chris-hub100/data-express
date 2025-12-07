@@ -3,19 +3,33 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DataExpress | Cheap Data</title>
+    
+    <!-- 1. DYNAMIC SEO TITLES -->
+    <title>{% block title %}DataExpress | Cheap Data & Gift Cards{% endblock %}</title>
+    
+    <!-- 2. SEO META TAGS -->
+    <meta name="description" content="{% block description %}Buy cheap MTN, Telecel, and AT data bundles in Ghana. Instant delivery. Shop Netflix, Showmax, and Gaming vouchers via MoMo.{% endblock %}">
+    <meta name="keywords" content="{% block keywords %}cheap data ghana, mtn data bundle, telecel data, buy data online, netflix voucher ghana, showmax voucher, free fire diamonds ghana{% endblock %}">
+    <meta name="author" content="Canine Dev Team">
+
+    <!-- 3. SOCIAL MEDIA PREVIEW (Open Graph) -->
+    <!-- This makes your link look good on WhatsApp/Twitter -->
+    <meta property="og:title" content="DataExpress | Instant Data & Vouchers">
+    <meta property="og:description" content="Get 5GB MTN Data for GHS 25. Instant delivery via MoMo. Shop Netflix & Gaming cards now.">
+    <meta property="og:image" content="https://dataexpress.store/static/images/social_preview.png">
+    <meta property="og:url" content="https://dataexpress.store{{ request.path }}">
+    <meta property="og:type" content="website">
+
+    <!-- Favicon -->
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/favicon.png') }}">
     
+    <!-- CSS Links -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-
-    <!-- GOOGLE FONTS (Inter - The "Lemon Squeezy" Look) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=4">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=5">
     
     <script src="https://js.paystack.co/v1/inline.js"></script>
 </head>
