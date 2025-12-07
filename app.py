@@ -34,6 +34,10 @@ def home():
 def health_check():
     return "OK", 200
 
+@app.route('/quote')
+def quote_page():
+    return render_template('quote.html')
+
 @app.route('/shop')
 def shop():
     return render_template('shop.html')

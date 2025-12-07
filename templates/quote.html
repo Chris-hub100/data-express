@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+
+{% block title %}Request a Quote | DataExpress{% endblock %}
+
+{% block content %}
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            
+            <div class="text-center mb-4">
+                <h2 class="fw-bold">Let's Build Your Website </h2>
+                <p class="text-muted">Tell us about your project to get a custom quote.</p>
+            </div>
+
+            <div class="card shadow-sm border-0 p-4">
+                <form id="quoteForm" onsubmit="sendQuoteToWhatsApp(event)">
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Business Name</label>
+                        <input type="text" id="bizName" class="form-control" placeholder="e.g. Kofi Electronics" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Website Type</label>
+                        <select id="siteType" class="form-select">
+                            <option value="One Page">Simple One-Page (Landing Page)</option>
+                            <option value="Multi Page">Company Site (Home, About, Services)</option>
+                            <option value="E-Commerce">Online Store (Sell Products)</option>
+                            <option value="Custom App">Custom Web App (Like DataExpress)</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Budget Range (GHS)</label>
+                        <select id="budget" class="form-select">
+                            <option value="1500-2500">GHS 1,500 - 2,500</option>
+                            <option value="2500-5000">GHS 2,500 - 5,000</option>
+                            <option value="5000+">GHS 5,000+</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">Additional Details</label>
+                        <textarea id="details" class="form-control" rows="3" placeholder="Do you need payments? Booking system? etc."></textarea>
+                    </div>
+
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary rounded-pill fw-bold py-2">
+                            Send Request via WhatsApp <i class="bi bi-whatsapp ms-1"></i>
+                        </button>
+                    </div>
+
+                </form>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script>
+    function sendQuoteToWhatsApp(e) {
+        e.preventDefault();
+        
+        let name = document.getElementById("bizName").value;
+        let type = document.getElementById("siteType").value;
+        let budget = document.getElementById("budget").value;
+        let details = document.getElementById("details").value;
+
+        // Your WhatsApp Number
+        let myNumber = "233535333868"; // Replace with yours
+
+        let message = `*New Website Quote Request*%0A` +
+                      `---------------------------%0A` +
+                      `*Business:* ${name}%0A` +
+                      `*Type:* ${type}%0A` +
+                      `*Budget:* ${budget}%0A` +
+                      `*Details:* ${details}`;
+
+        window.open(`https://wa.me/${myNumber}?text=${message}`, '_blank');
+    }
+</script>
+
+{% endblock %}
