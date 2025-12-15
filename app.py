@@ -20,10 +20,10 @@ def home():
     welcome_type = "info"
 
     if source == 'front':
-        welcome_msg = "You just wasted your time and your data scanning this. Anyway, just to cover for your loss check out some of our amazing deals. Also, don't forget to bookmark this site cause I know you'll come back for more"
+        welcome_msg = "You just wasted your time and your data scanning this. Anyway, to help cover for your loss check out some of our amazing deals."
         welcome_type = "success"
     elif source == 'back':
-        welcome_msg = "Nice catch! They say curiousity kills the cat but this time it blesses it. Go explore your rewards. Also, don't forget to bookmark this site cause I know you'll come back for more"
+        welcome_msg = "Nice catch! They say curiousity kills the cat but this time it blesses it. Go explore your rewards."
         welcome_type = "primary"
     elif source == 'tshirt':
         welcome_msg = "Hey Scholar! 👋 Check out our Student Specials below."
@@ -36,29 +36,29 @@ def home():
 def health_check():
     return "OK", 200
 
-@app.route('/invoice')
-def invoice_page():
+#@app.route('/invoice')
+#def invoice_page():
     # Get today's date and a due date (e.g., 7 days from now)
-    today = date.today()
-    due_date = today + timedelta(days=7)
+  #  today = date.today()
+   # due_date = today + timedelta(days=7)
 
     # Mock Data Dictionary
     # We include 'items' as a list here.
-    invoice_data = {
-        "id": "INV-2025-080",
-        "client": "Abeiku Quick Data Bundles",
-        "date": today,
-        "due_date": due_date,
-        "items": [
-            {"desc": "Custom Web App Development (Full Stack)", "amount": 2500.00},
-            {"desc": "Domain & Server Setup (1 Year)", "amount": 0.00}
-        ],
-        "total": 2500.00,
-        "deposit_percent": 40,
-        "deposit_amount": 1000.00
-    }
+    #invoice_data = {
+     #   "id": "INV-2025-080",
+      #  "client": "Abeiku Quick Data Bundles",
+       # "date": today,
+        #"due_date": due_date,
+        #"items": [
+         #   {"desc": "Custom Web App Development (Full Stack)", "amount": 2500.00},
+          #  {"desc": "Domain & Server Setup (1 Year)", "amount": 0.00}
+        #],
+        #"total": 2500.00,
+        #"deposit_percent": 40,
+        #"deposit_amount": 1000.00
+    #}
 
-    return render_template('invoice.html', data=invoice_data)
+    #return render_template('invoice.html', data=invoice_data)
 
 @app.route('/quote')
 def quote_page():

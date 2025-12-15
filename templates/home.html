@@ -87,18 +87,17 @@
                 <!-- Dynamic Icon Based on 'welcome_type' -->
                 <div class="mb-4">
                      {% if welcome_type == 'danger' %}
-                        <!-- Red Warning Icon (For Front Shirt) -->
+                        <!-- Red Warning Icon (For back Shirt) -->
                         <div class="bg-danger bg-opacity-10 rounded-circle d-inline-flex p-3 animate-pulse text-danger">
                             <i class="bi bi-exclamation-triangle-fill display-1"></i>
                         </div>
                         <h2 class="fw-bold text-dark mt-3 mb-2">Busted! 🚨</h2>
                      
                      {% elif welcome_type == 'success' %}
-                        <!-- Green Trophy Icon (For Back Shirt) -->
+                        <!-- Green Trophy Icon (For front Shirt) -->
                         <div class="bg-success bg-opacity-10 rounded-circle d-inline-flex p-3 animate-pulse text-success">
-                            <i class="bi bi-trophy-fill display-1"></i>
+                            <i class="bi bi-emoji-laughing"></i>
                         </div>
-                        <h2 class="fw-bold text-dark mt-3 mb-2">😂</h2>
                      
                      {% else %}
                         <!-- Default Info Icon -->
