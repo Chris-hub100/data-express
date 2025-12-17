@@ -23,7 +23,7 @@ def home():
         welcome_msg = "You just wasted your time and your data scanning this. Anyway, to help cover for your loss check out some of our amazing deals."
         welcome_type = "success"
     elif source == 'back':
-        welcome_msg = "Nice catch! They say curiousity kills the cat but this time it blesses it. Go explore your rewards."
+        welcome_msg = "Nice catch! They say curiousity kills the cat but this time it rewards it. Go explore your rewards."
         welcome_type = "primary"
     elif source == 'tshirt':
         welcome_msg = "Hey Scholar! 👋 Check out our Student Specials below."
@@ -279,13 +279,13 @@ def product_page(network):
             {"name": "100GB Non-Expiry", "price": 380, "input_type": "phone", "active": True},
         ],
         "at": [
-            {"name": "1GB Non-Expiry", "price": 15, "input_type": "phone", "active": True},
-            {"name": "3GB Non-Expiry", "price": 45, "input_type": "phone", "active": True},
-            {"name": "4GB Non-Expiry", "price": 45, "input_type": "phone", "active": True},
-            {"name": "5GB Non-Expiry", "price": 45, "input_type": "phone", "active": True},
-            {"name": "8GB Non-Expiry", "price": 45, "input_type": "phone", "active": True},
+            {"name": "1GB Non-Expiry", "price": 5, "input_type": "phone", "active": True},
+            {"name": "3GB Non-Expiry", "price": 13, "input_type": "phone", "active": True},
+            {"name": "4GB Non-Expiry", "price": 18, "input_type": "phone", "active": True},
+            {"name": "5GB Non-Expiry", "price": 23, "input_type": "phone", "active": True},
+            {"name": "8GB Non-Expiry", "price": 35, "input_type": "phone", "active": True},
             {"name": "10GB Non-Expiry", "price": 45, "input_type": "phone", "active": True},
-            {"name": "12GB Non-Expiry", "price": 45, "input_type": "phone", "active": True},
+            {"name": "12GB Non-Expiry", "price": 53, "input_type": "phone", "active": True},
         ],
 
         # --- VOUCHERS ---
@@ -349,7 +349,7 @@ def product_page(network):
         ],
         "deltaforce": [
             {"name": "18 Delta Coins", "price": 5.5, "input_type": "id", "active": True},
-            {"name": "30 Delta Coins", "price": 9, "input_type": "id", "active": False},
+            {"name": "30 Delta Coins", "price": 9, "input_type": "id", "active": True},
             {"name": "60 Delta Coins", "price": 14, "input_type": "id", "active": True},
             {"name": "320 Delta Coins", "price": 60, "input_type": "id", "active": True},
             {"name": "460 Delta Coins", "price": 82, "input_type": "id", "active": True},
