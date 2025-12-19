@@ -16,6 +16,13 @@ PAYSTACK_SECRET_KEY = "sk_test_205609e95584b8704c90e2c8c72b6f1dbcee60db"
 # Set to FALSE once approved to unlock Movies & Vouchers.
 COMPLIANCE_MODE = True
 
+# --- CONTEXT PROCESSOR (NEW ADDITION FROM SECOND CODE) ---
+# This makes 'compliance_mode' available in ALL templates automatically
+# Now you can use {{ compliance_mode }} in any template without passing it manually
+@app.context_processor
+def inject_compliance_status():
+    return dict(compliance_mode=COMPLIANCE_MODE)
+
 @app.route('/')
 def home():
     # 1. Existing QR Code Logic
@@ -54,13 +61,60 @@ def food_run_page():
     
     if today_idx >= 4:
         state = "open"
-        # The Menu
+        # The Menu is now indented inside the IF block
         menu = [
-            {"item": "KFC Streetwise 2 (Rice)", "price": 45.00, "img": "🍗"},
-            {"item": "Waakye Special (Egg + Fish)", "price": 30.00, "img": "🍛"},
-            {"item": "Coke / Fanta (500ml)", "price": 10.00, "img": "🥤"}
+            {
+                "item": "KFC Streetwise 2 (Rice)", 
+                "price": 45.00, 
+                "img": "https://cdn.tictuk.com/staging/fc9ab8a5-b3d3-4cf6-0e30-555e691086bf/7824c8df-6c6b-d80d-7e44-877899c2ed9b.jpeg?a=d1cb9c76-1f98-19c4-1a27-597c125b2738",
+                "description": "Classic KFC chicken with seasoned rice and signature sauce",
+                "prep_time": "25"
+            },
+            {
+                "item": "Waakye Special (Egg + Fish)", 
+                "price": 30.00, 
+                "img": "https://tse2.mm.bing.net/th/id/OIP.u3ot8N9zmflWBBd4S4Lq-QHaJL?cb=ucfimg2&ucfimg=1&rs=1&pid=ImgDetMain&o=7&rm=3",
+                "description": "Traditional Ghanaian waakye with boiled egg and fried fish",
+                "prep_time": "20"
+            },
+            {
+                "item": "Pizza (Medium Size)", 
+                "price": 120.00, 
+                "img": "https://images.unsplash.com/photo-1513104890138-7c749659a591?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
+                "description": "Mid-sized pizza with suprise toppings",
+                "prep_time": "5"
+            },
+            {
+                "item": "Jollof Rice + Chicken", 
+                "price": 35.00, 
+                "img": "https://th.bing.com/th/id/OIP.n_wJL9qZ16lh_uiRCqNiUgHaHa?w=197&h=197&c=7&r=0&o=7&cb=ucfimg2&dpr=1.5&pid=1.7&rm=3&ucfimg=1",
+                "description": "Spicy Ghanaian jollof rice with grilled chicken",
+                "prep_time": "25"
+            },
+            {
+                "item": "Fried Rice + Chicken", 
+                "price": 35.00, 
+                "img": "https://th.bing.com/th/id/OIP.RfVI9SuTBNY6oWetN8uMXgHaFO?w=252&h=180&c=7&r=0&o=7&cb=ucfimg2&dpr=1.5&pid=1.7&rm=3&ucfimg=1",
+                "description": "Fried rice with vegetables and grilled chicken",
+                "prep_time": "25"
+            },
+            {
+                "item": "Banku + Tilapia", 
+                "price": 40.00, 
+                "img": "https://th.bing.com/th/id/OIP.6rFklsZZtFe5ylXkNsz1hgHaHa?w=173&h=180&c=7&r=0&o=7&cb=ucfimg2&dpr=1.5&pid=1.7&rm=3&ucfimg=1",
+                "description": "Fresh tilapia with banku and pepper sauce",
+                "prep_time": "30"
+            },
+            {
+                "item": "Plain Rice + Chicken Stew", 
+                "price": 25.00, 
+                "img": "https://th.bing.com/th/id/OIP.kBNJKGnK8BFTISvoUVRlIwHaFI?w=251&h=180&c=7&r=0&o=7&cb=ucfimg2&dpr=1.5&pid=1.7&rm=3&ucfimg=1",
+                "description": "Steamed rice with rich chicken stew",
+                "prep_time": "20"
+            }
         ]
     else:
+        # The ELSE is now aligned correctly with the IF
         state = "closed"
         menu = []
 
@@ -226,7 +280,7 @@ def voucher_page():
         },
         {
             "name": "Marvel Rivals",
-            "image": "https://d13ms5efar3wc5.cloudfront.net/eyJidWNrZXQiOiJpbWFnZXMtY2Fycnkxc3QtcHJvZHVjdHMiLCJrZXkiOiIxMDRlYjFmNi1kMThiLTRjNGItODU4OS1iMWJiYjRiMzc4NzQucG5nLndlYnAiLCJlZGl0cyI6eyJyZXNpemUiOnsid2lkdGgiOjM4NH19LCJ3ZWJwIjp7InF1YWxpdHkiOjc1fX0=",
+            "image": "https://d13ms5efar3wc5.cloudfront.net/eyJidWNrZXQiOiJpbWFnZXMtY2Fycnkxc3QtcHJvZHVjdHMiLCJrZXkiOiIxMDRlYjFmNi1kMThiLTRjNGItODU4OS1iMWJiYjRiMzc4NzQucG5nLndlYnAiLCJlZGl0cyI6eyJyZXNpZml4Ing=",
             "link": "marvelrivals",
             "desc": "Lattices"
         },
