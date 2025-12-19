@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DataExpress Logistics | Food Run</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        /* All the CSS styles remain exactly the same */
+        :root {
+            --primary-blue: #0d6efd;
+            --primary-dark: #0043a8;
+            --electric-blue-start: #0d6efd;
+            --electric-blue-end: #0043a8;
+            --food-red: #dc3545;
+            --food-red-dark: #b02a37;
+            --success-green: #198754;
+            --premium-gold: #ffc107;
+            --light-grey: #f0f2f5;
+            --crisp-white: #ffffff;
+            --text-primary: #1a1a1a;
+            --text-secondary: #666666;
+            --text-muted: #999999;
+            --radius-sm: 8px;
+            --radius-md: 12px;
+            --radius-lg: 16px;
+            --radius-xl: 24px;
+            --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.08);
+            --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.12);
+            --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.16);
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            min-height: 100vh;
+            background-color: #fefefe;
+        }
+
+        /* CLOSED STATE - Dark theme with food imagery */
+        .closed-screen {
+            min-height: 100vh;
+            background: linear-gradient(rgba(0, 0, 0, 0.85), rgba(0, 0, 0, 0.9)),
+                        url('https://images.unsplash.com/photo-1513104890138-7c749659a591?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 2rem 1rem;
+            position: relative;
+        }
+
+        .closed-screen::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 6px;
+            background: linear-gradient(90deg, var(--food-red), var(--premium-gold), var(--primary-blue));
+            opacity: 0.8;
+        }
+
+        .closed-icon {
+            font-size: 5rem;
+            color: var(--food-red);
+            margin-bottom: 1.5rem;
+            text-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        .countdown-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: var(--radius-xl);
+            padding: 2rem;
+            margin: 2rem 0;
+            max-width: 400px;
+            width: 100%;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .countdown-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: linear-gradient(135deg, var(--premium-gold), #ffd700);
+            color: #000;
+            padding: 0.75rem 1.5rem;
+            border-radius: var(--radius-lg);
+            font-weight: 700;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            font-size: 0.9rem;
+        }
+
+        .day-counter {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: rgba(255, 255, 255, 0.15);
+            padding: 0.5rem 1rem;
+            border-radius: var(--radius-md);
+            font-size: 0.9rem;
+            margin-top: 1rem;
+        }
+
+        .btn-outline-light {
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            padding: 0.75rem 2rem;
+            border-radius: var(--radius-lg);
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .btn-outline-light:hover {
+            background: white;
+            color: var(--food-red);
+            border-color: white;
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        /* OPEN STATE - Vibrant food theme */
+        .open-screen {
+            min-height: 100vh;
+            background: linear-gradient(rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.98)),
+                        url('https://images.unsplash.com/photo-1504674900247-0877df9cc836?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+        }
+
+        .open-header {
+            background: linear-gradient(135deg, var(--food-red) 0%, var(--food-red-dark) 100%);
+            color: white;
+            padding: 3rem 1rem;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .open-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 6px;
+            background: linear-gradient(90deg, var(--premium-gold), #fff, var(--food-red));
+            opacity: 0.7;
+        }
+
+        .open-header::after {
+            content: '🍔 🍟 🍗 🍕 🥤';
+            position: absolute;
+            bottom: 10px;
+            left: 0;
+            right: 0;
+            font-size: 1.5rem;
+            opacity: 0.3;
+            animation: float 20s linear infinite;
+        }
+
+        @keyframes float {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        .live-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: linear-gradient(135deg, #ff6b6b, var(--food-red));
+            color: white;
+            padding: 0.5rem 1.5rem;
+            border-radius: var(--radius-xl);
+            font-weight: 700;
+            text-transform: uppercase;
+            font-size: 0.9rem;
+            box-shadow: 0 4px 15px rgba(220, 53, 69, 0.4);
+            animation: heartbeat 1.5s ease-in-out infinite;
+            margin-top: 1rem;
+        }
+
+        @keyframes heartbeat {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .section-title {
+            position: relative;
+            padding-bottom: 0.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .section-title::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60px;
+            height: 3px;
+            background: linear-gradient(90deg, var(--food-red), var(--premium-gold));
+            border-radius: 2px;
+        }
+
+        /* Menu Items Styling */
+        .menu-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 0 1rem;
+        }
+
+        .menu-item {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: var(--radius-xl);
+            border: 1px solid rgba(220, 53, 69, 0.1);
+            transition: all 0.3s ease;
+            box-shadow: var(--shadow-sm);
+            overflow: hidden;
+            position: relative;
+        }
+
+        .menu-item:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-lg);
+            border-color: rgba(220, 53, 69, 0.3);
+        }
+
+        .menu-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: linear-gradient(to bottom, var(--food-red), var(--premium-gold));
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .menu-item:hover::before {
+            opacity: 1;
+        }
+
+        .food-emoji {
+            font-size: 2.5rem;
+            width: 70px;
+            height: 70px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #fff5f5, #ffe5e5);
+            border-radius: var(--radius-lg);
+            margin-right: 1rem;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .price-tag {
+            background: linear-gradient(135deg, var(--success-green), #20c997);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: var(--radius-lg);
+            font-weight: 700;
+            font-size: 1.2rem;
+            box-shadow: var(--shadow-sm);
+            min-width: 90px;
+            text-align: center;
+        }
+
+        .btn-order {
+            background: linear-gradient(135deg, var(--food-red), var(--food-red-dark));
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: var(--radius-lg);
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            text-decoration: none;
+            box-shadow: var(--shadow-md);
+        }
+
+        .btn-order:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+            color: white;
+        }
+
+        .delivery-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            background: linear-gradient(135deg, var(--primary-blue), var(--primary-dark));
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: var(--radius-sm);
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .hours-info {
+            background: linear-gradient(135deg, #fff3cd, #ffeaa7);
+            border: 2px solid var(--premium-gold);
+            border-radius: var(--radius-lg);
+            padding: 1rem;
+            margin: 2rem auto;
+            max-width: 400px;
+            text-align: center;
+        }
+
+        .back-home {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s ease;
+            padding: 1rem 0;
+        }
+
+        .back-home:hover {
+            color: var(--food-red);
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .closed-icon {
+                font-size: 4rem;
+            }
+            
+            .countdown-card {
+                padding: 1.5rem;
+            }
+            
+            .open-header {
+                padding: 2rem 1rem;
+            }
+            
+            .menu-item {
+                padding: 1.5rem !important;
+            }
+            
+            .food-emoji {
+                font-size: 2rem;
+                width: 60px;
+                height: 60px;
+                margin-right: 0.75rem;
+            }
+            
+            .price-tag {
+                min-width: 80px;
+                font-size: 1.1rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .closed-screen h2 {
+                font-size: 1.5rem;
+            }
+            
+            .open-header h1 {
+                font-size: 1.75rem;
+            }
+            
+            .menu-item {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .food-emoji {
+                margin-right: 0;
+                margin-bottom: 1rem;
+            }
+            
+            .btn-order {
+                width: 100%;
+                margin-top: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    {% if state == 'closed' %}
+    <!-- CLOSED STATE (Mon-Thu) with food imagery -->
+    <div class="closed-screen">
+        <div class="closed-icon">
+            <i class="fas fa-utensils"></i>
+        </div>
+        
+        <h1 class="fw-bold mb-2" style="font-size: 2.5rem;">Food Run™</h1>
+        <p class="lead mb-4 opacity-90">Our premium campus food service runs exclusively on weekends</p>
+        
+        <div class="countdown-card">
+            <span class="countdown-badge">
+                <i class="fas fa-clock"></i>
+                <span>NEXT DISPATCH</span>
+            </span>
+            <h2 class="fw-bold my-3" style="font-size: 2.2rem; color: var(--premium-gold);">
+                FRIDAY @ 4:00 PM
+            </h2>
+            <p class="opacity-90 mb-3">Get ready for delicious campus deliveries</p>
+            
+            <div class="day-counter">
+                <i class="fas fa-calendar-day"></i>
+                <!-- FIX: Use today_name variable from Flask route instead of datetime in template -->
+                <span>Today is {{ today_name }}</span>
+            </div>
+        </div>
+        
+        <div class="mt-4">
+            <a href="/" class="btn btn-outline-light">
+                <i class="fas fa-home me-2"></i>
+                Back to Portal
+            </a>
+        </div>
+        
+        <div class="mt-5 pt-4 border-top border-secondary opacity-50" style="max-width: 400px;">
+            <small class="d-flex align-items-center justify-content-center gap-2">
+                <i class="fas fa-info-circle"></i>
+                <span>Operation Hours: Friday 4PM - Sunday 10PM</span>
+            </small>
+        </div>
+    </div>
+
+    {% else %}
+    <!-- OPEN STATE (Fri-Sun) with vibrant food theme -->
+    <div class="open-screen">
+        <!-- Header -->
+        <div class="open-header">
+            <div class="container">
+                <h1 class="fw-bold mb-2" style="font-size: 2.8rem;">WEEKEND FOOD RUN</h1>
+                <p class="opacity-90 mb-3">Premium Campus Food Delivery Service</p>
+                <div class="live-badge">
+                    <i class="fas fa-bolt"></i>
+                    <span>LIVE & ACCEPTING ORDERS</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="menu-container py-5">
+            <!-- Operation Hours -->
+            <div class="hours-info">
+                <h6 class="fw-bold mb-2 text-dark">
+                    <i class="fas fa-clock me-2"></i>
+                    Service Hours
+                </h6>
+                <p class="mb-0 fw-bold" style="color: var(--food-red-dark);">
+                    Friday 4PM - Sunday 10PM • Delivery Included
+                </p>
+            </div>
+
+            <!-- Menu Title -->
+            <h3 class="section-title fw-bold text-center text-dark mb-4">
+                WEEKEND SPECIALS MENU
+            </h3>
+
+            <!-- Menu Items -->
+            <div class="row g-4">
+                {% for item in menu %}
+                <div class="col-12">
+                    <div class="menu-item p-4 d-flex flex-column flex-md-row justify-content-between align-items-md-center">
+                        <div class="d-flex align-items-center mb-3 mb-md-0">
+                            <div class="food-emoji">
+                                {{ item.img }}
+                            </div>
+                            <div>
+                                <h5 class="fw-bold mb-1 text-dark">{{ item.item }}</h5>
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="delivery-badge">
+                                        <i class="fas fa-shipping-fast"></i>
+                                        <span>Delivery Included</span>
+                                    </span>
+                                    <small class="text-muted">• Campus-wide coverage</small>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex flex-column flex-md-row align-items-center gap-3">
+                            <div class="price-tag mb-2 mb-md-0">
+                                GHS {{ item.price }}
+                            </div>
+                            <a href="https://wa.me/233535333868?text=Hi%20DataExpress%20Food%20Run!%20I%20would%20like%20to%20order:%20{{ item.item|urlencode }}%20(GHS{{ item.price }})%20.%20My%20location%20is:%20[YOUR%20LOCATION]"
+                               target="_blank"
+                               class="btn-order">
+                                <i class="fab fa-whatsapp"></i>
+                                <span>Order on WhatsApp</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Additional Info -->
+            <div class="mt-5 pt-4 border-top border-light">
+                <div class="row g-3 text-center">
+                    <div class="col-md-4">
+                        <div class="p-3">
+                            <i class="fas fa-truck text-primary fs-4 mb-2"></i>
+                            <h6 class="fw-bold mb-1">Fast Delivery</h6>
+                            <small class="text-muted">30-45 mins within campus</small>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="p-3">
+                            <i class="fas fa-shield-alt text-success fs-4 mb-2"></i>
+                            <h6 class="fw-bold mb-1">Secure Payment</h6>
+                            <small class="text-muted">Pay on delivery or via Mobile Money</small>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="p-3">
+                            <i class="fas fa-headset text-warning fs-4 mb-2"></i>
+                            <h6 class="fw-bold mb-1">Live Support</h6>
+                            <small class="text-muted">Available throughout service hours</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer Navigation -->
+            <div class="text-center mt-5 pt-3">
+                <a href="/" class="back-home">
+                    <i class="fas fa-arrow-left"></i>
+                    <span>Back to DataExpress Portal</span>
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <script>
+        // Add subtle interactive effects
+        document.addEventListener('DOMContentLoaded', function() {
+            // Add hover sound effect simulation (you can add actual sounds if needed)
+            const orderButtons = document.querySelectorAll('.btn-order');
+            orderButtons.forEach(button => {
+                button.addEventListener('mouseenter', function() {
+                    this.style.transform = 'translateY(-3px) scale(1.02)';
+                });
+                button.addEventListener('mouseleave', function() {
+                    this.style.transform = 'translateY(0) scale(1)';
+                });
+            });
+
+            // Update WhatsApp message with current time
+            const whatsappLinks = document.querySelectorAll('a[href*="wa.me"]');
+            const currentHour = new Date().getHours();
+            let greeting = "Good day";
+            
+            if (currentHour < 12) greeting = "Good morning";
+            else if (currentHour < 18) greeting = "Good afternoon";
+            else greeting = "Good evening";
+
+            whatsappLinks.forEach(link => {
+                const originalHref = link.getAttribute('href');
+                const updatedHref = originalHref.replace('Hi%20DataExpress', greeting + '%20DataExpress');
+                link.setAttribute('href', updatedHref);
+            });
+        });
+    </script>
+</body>
+</html>

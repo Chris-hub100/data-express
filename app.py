@@ -1,20 +1,24 @@
 from flask import Flask, render_template, request, jsonify
 import requests
 import os
-import random # <--- Add this line
+import random
 import datetime
 from datetime import date, timedelta
 
 app = Flask(__name__)
 
 # --- CONFIGURATION ---
-# Use 'os.environ.get' so you can use Render's safe environment variables later
-# For now, you can paste your LIVE secret key here if you want.
+# Use 'os.environ.get' for safety in production
 PAYSTACK_SECRET_KEY = "sk_test_205609e95584b8704c90e2c8c72b6f1dbcee60db"
+
+# --- HUBTEL COMPLIANCE SWITCH ---
+# Set to TRUE while applying for Hubtel. 
+# Set to FALSE once approved to unlock Movies & Vouchers.
+COMPLIANCE_MODE = True
 
 @app.route('/')
 def home():
-    # Check for QR Code scans
+    # 1. Existing QR Code Logic
     source = request.args.get('ref')
     welcome_msg = None
     welcome_type = "info"
@@ -23,42 +27,44 @@ def home():
         welcome_msg = "You just wasted your time and your data scanning this. Anyway, to help cover for your loss check out some of our amazing deals."
         welcome_type = "success"
     elif source == 'back':
-        welcome_msg = "Nice catch! They say curiousity kills the cat but this time it rewards it. Go explore your rewards."
+        welcome_msg = "Nice catch! They say curiosity kills the cat but this time it rewards it. Go explore your rewards."
         welcome_type = "primary"
     elif source == 'tshirt':
         welcome_msg = "Hey Scholar! 👋 Check out our Student Specials below."
         welcome_type = "primary"
 
-    return render_template('home.html', welcome_msg=welcome_msg, welcome_type=welcome_type)
+    # 2. Food Run Logic (Pass this to home.html if you want a 'Live' badge)
+    today_idx = datetime.datetime.now().weekday() # 0=Mon, 4=Fri, 6=Sun
+    food_is_active = today_idx >= 4
 
+    return render_template('home.html', 
+                         welcome_msg=welcome_msg, 
+                         welcome_type=welcome_type,
+                         food_active=food_is_active) # You can use {{ food_active }} in home.html now
 
 @app.route('/healthz')
 def health_check():
     return "OK", 200
 
-#@app.route('/invoice')
-#def invoice_page():
-    # Get today's date and a due date (e.g., 7 days from now)
-  #  today = date.today()
-   # due_date = today + timedelta(days=7)
+@app.route('/foodrun')
+def food_run_page():
+    # Logic: Open Friday (4), Saturday (5), Sunday (6)
+    today_idx = datetime.datetime.now().weekday()
+    today_name = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"][today_idx]
+    
+    if today_idx >= 4:
+        state = "open"
+        # The Menu
+        menu = [
+            {"item": "KFC Streetwise 2 (Rice)", "price": 45.00, "img": "🍗"},
+            {"item": "Waakye Special (Egg + Fish)", "price": 30.00, "img": "🍛"},
+            {"item": "Coke / Fanta (500ml)", "price": 10.00, "img": "🥤"}
+        ]
+    else:
+        state = "closed"
+        menu = []
 
-    # Mock Data Dictionary
-    # We include 'items' as a list here.
-    #invoice_data = {
-     #   "id": "INV-2025-080",
-      #  "client": "Abeiku Quick Data Bundles",
-       # "date": today,
-        #"due_date": due_date,
-        #"items": [
-         #   {"desc": "Custom Web App Development (Full Stack)", "amount": 2500.00},
-          #  {"desc": "Domain & Server Setup (1 Year)", "amount": 0.00}
-        #],
-        #"total": 2500.00,
-        #"deposit_percent": 40,
-        #"deposit_amount": 1000.00
-    #}
-
-    #return render_template('invoice.html', data=invoice_data)
+    return render_template('foodrun.html', state=state, menu=menu, today_name=today_name, today_idx=today_idx)
 
 @app.route('/quote')
 def quote_page():
@@ -76,10 +82,13 @@ def success_page():
 def terms_page():
     return render_template('terms.html')
 
-# --- 1. THE CINEMA PAGE (YouTube Movie Trailers) ---
+# --- TV / ENTERTAINMENT (HIDDEN IN COMPLIANCE MODE) ---
 @app.route('/tv')
 def tv_page():
-    # A. THE MOVIE POOL (These will be shuffled)
+    if COMPLIANCE_MODE:
+        return render_template('maintenance.html', page_name="Entertainment Hub")
+
+    # A. THE MOVIE POOL (From second code - complete list)
     movies = [
         {"id": "43R9l7EkJwE", "title": "Predator: Badlands", "creator": "20th Century", "type": "video"},
         {"id": "ZdC5mFHPldg", "title": "Mortal Kombat II", "creator": "Warner Bros", "type": "video"},
@@ -126,56 +135,52 @@ def tv_page():
         {"id": "R6W6YzhRuTA", "title": "SHELL", "creator": "Paramount Movies", "type": "video"}
     ]
 
-    # B. SHUFFLE THE MOVIES
     random.shuffle(movies)
 
-    # C. DEFINE THE ADS
-    ad_1 = {
-        "type": "ad",
-        "title": "Win like Drake with Stake",
-        "desc": "Instant Withdrawals via MoMo or Crypto. 200% Bonus.",
-        "link": "https://stake.com/?c=TqdL9FFw",
-        "image": "/static/images/stake-logo-navy.png"
-    }
+    # ADS - Only add Stake ads when NOT in compliance mode
+    if not COMPLIANCE_MODE:
+        ad_1 = {
+            "type": "ad",
+            "title": "Win like Drake with Stake",
+            "desc": "Instant Withdrawals via MoMo or Crypto. 200% Bonus.",
+            "link": "https://stake.com/?c=TqdL9FFw",
+            "image": "/static/images/stake-logo-navy.png"
+        }
+        
+        ad_2 = {
+            "type": "ad",
+            "title": "Sign up today, it may be your lucky day",
+            "desc": "The world's biggest crypto casino. Play now.",
+            "link": "https://stake.com/?c=TqdL9FFw",
+            "image": "/static/images/stake com-logo-navy.png"
+        }
+
+        ad_3 = {
+            "type": "ad",
+            "title": "Stake and Win",
+            "desc": "Join the winning team. 200% Deposit Match.",
+            "link": "https://stake.com/?c=TqdL9FFw",
+            "image": "/static/images/stake-logo-navy.png"
+        }
+
+        # INJECT ADS AT FIXED POSITIONS (From second code)
+        # Insert from last to first to avoid messing up the index order
+        if len(movies) > 41: movies.insert(41, ad_3)
+        if len(movies) > 32: movies.insert(32, ad_2)
+        if len(movies) > 25: movies.insert(25, ad_1)
+        if len(movies) > 16: movies.insert(16, ad_3)
+        if len(movies) > 8: movies.insert(8, ad_2)
+        if len(movies) > 3: movies.insert(3, ad_1)
     
-    ad_2 = {
-        "type": "ad",
-        "title": "Sign up today, it may be your lucky day",
-        "desc": "The world's biggest crypto casino. Play now.",
-        "link": "https://stake.com/?c=TqdL9FFw",
-        "image": "/static/images/stake com-logo-navy.png"
-    }
-
-    ad_3 = {
-        "type": "ad",
-        "title": "Stake and Win",
-        "desc": "Join the winning team. 200% Deposit Match.",
-        "link": "https://stake.com/?c=TqdL9FFw",
-        "image": "/static/images/stake-logo-navy.png"
-    }
-
-    # D. INJECT ADS AT FIXED POSITIONS
-    # We insert from last to first to avoid messing up the index order#
-    # Insert Ad 3 near the bottom (Index 41 - The 42nd slot)
-    if len(movies) > 41: movies.insert(41, ad_3)
-    # Insert Ad 2 near the bottom (Index 32 - The 33rd slot)
-    if len(movies) > 32: movies.insert(32, ad_2)
-    # Insert Ad 1 near the bottom (Index 25 - The 26th slot)
-    if len(movies) > 25: movies.insert(25, ad_1)
-    # Insert Ad 3 near the bottom (Index 16)
-    if len(movies) > 16: movies.insert(16, ad_3)
-    # Insert Ad 2 in the middle (Index 8)
-    if len(movies) > 8: movies.insert(8, ad_2)
-    # Insert Ad 1 near the top (Index 3 - The 4th slot)
-    if len(movies) > 3: movies.insert(3, ad_1)
-     
-
-
     return render_template('tv.html', videos=movies)
 
-# --- 2. THE VOUCHER MALL (Gift Cards Page) ---
+# --- VOUCHERS (HIDDEN IN COMPLIANCE MODE) ---
 @app.route('/vouchers')
 def voucher_page():
+    if COMPLIANCE_MODE:
+        return render_template('maintenance.html', page_name="Voucher Mall")
+
+    # From second code - complete voucher list
     items = [
         {
             "name": "Audiomack",
@@ -246,12 +251,18 @@ def voucher_page():
     ]
     return render_template('vouchers.html', items=items)
 
-# --- 3. THE UNIVERSAL BUY PAGE (Handles Data + Vouchers) ---
+# --- UNIVERSAL BUY PAGE ---
 @app.route('/buy/<network>')
 def product_page(network):
-    # MASTER PRICE LIST
+    # If in Compliance Mode, BLOCK voucher networks
+    risky_networks = ['audiomack', 'tinder', 'fcmobile', 'freefire', 'codm', 'marvelrivals', 'deltaforce', 'honorofkings', 'arenabreakout', 'fcmobile.', 'codm.']
+    
+    if COMPLIANCE_MODE and network in risky_networks:
+        return render_template('maintenance.html', page_name="Digital Vouchers")
+
+    # MASTER PRICE LIST (From second code - complete pricing)
     pricing = {
-        # --- DATA BUNDLES ---
+        # --- DATA BUNDLES (Keep these active for 'Campus Connectivity') ---
         "mtn": [
             {"name": "1GB Non-Expiry", "price": 5.5, "input_type": "phone", "active": True}, 
             {"name": "2GB Non-Expiry", "price": 10.5, "input_type": "phone", "active": True},
@@ -288,7 +299,7 @@ def product_page(network):
             {"name": "12GB Non-Expiry", "price": 53, "input_type": "phone", "active": True},
         ],
 
-        # --- VOUCHERS ---
+        # --- VOUCHERS (These are blocked in COMPLIANCE_MODE) ---
         "audiomack": [
             {"name": "Audiomack Day Pass", "price": 3, "input_type": "email", "active": True},
             {"name": "Audiomack Monthly Pass", "price": 25, "input_type": "email", "active": True}
@@ -373,14 +384,11 @@ def product_page(network):
         ]
     }
     
-    selected_bundles = pricing.get(network, [])#
-
+    selected_bundles = pricing.get(network, [])
     data_networks = ['mtn', 'telecel', 'at']
-    
-    # Check if this is a voucher (to change "MoMo Number" to "WhatsApp Number" in HTML)
-    #voucher_list = ['showmax', 'netflix', 'freefire', 'pubg', 'playstation', 'kaspersky']
     is_voucher = network not in data_networks
     
+    # Fallback to 'phone' if empty
     input_type = selected_bundles[0]['input_type'] if selected_bundles else 'phone'
     
     return render_template('product.html', 
@@ -389,13 +397,12 @@ def product_page(network):
                            input_type=input_type,
                            is_voucher=is_voucher)
 
-# --- 4. PAYMENT VERIFICATION ---
+# --- PAYMENT VERIFICATION ---
 @app.route('/verify_payment', methods=['POST'])
 def verify_payment():
     data = request.json
     reference = data.get('reference')
     
-    # 1. Ask Paystack: "Is this transaction real?"
     headers = {"Authorization": f"Bearer {PAYSTACK_SECRET_KEY}"}
     url = f"https://api.paystack.co/transaction/verify/{reference}"
     
@@ -403,10 +410,7 @@ def verify_payment():
         response = requests.get(url, headers=headers)
         json_resp = response.json()
         
-        # 2. Check if Paystack says "success"
         if json_resp['status'] is True and json_resp['data']['status'] == "success":
-            # SUCCESS! Return immediately so the user sees the Thank You page.
-            # We rely on Paystack to email YOU the receipt.
             return jsonify({"status": "success"})
         else:
             return jsonify({"status": "failed"})
@@ -416,5 +420,4 @@ def verify_payment():
         return jsonify({"status": "error"})
 
 if __name__ == '__main__':
-    # host='0.0.0.0' allows you to test on your phone via Wi-Fi
     app.run(host='0.0.0.0', port=5000, debug=True)

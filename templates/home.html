@@ -2,21 +2,7 @@
 
 {% block content %}
 
-<!-- 2. GLOBAL MAINTENANCE BANNER -->
-<!--div class="alert alert-warning text-center shadow-sm rounded-4 border-0 mb-4 animate__fadeIn">
-    <div class="d-flex flex-column align-items-center p-3">
-        <i class="bi bi-cone-striped display-4 mb-3 text-warning"></i>
-        <h4 class="fw-bold text-dark">System Upgrade in Progress</h4>
-        <p class="mb-0 text-muted" style="max-width: 500px;">
-            We are currently upgrading our payment systems to serve you better. 
-            Sales are temporarily paused. Please check back soon!
-        </p>
-    </div>
-</div-->
-
-
-<!-- 1. HERO SECTION ... -->
-
+<!-- 1. HERO SECTION -->
 <div class="text-center text-white rounded-4 mb-5 shadow d-flex flex-column justify-content-center align-items-center position-relative overflow-hidden" 
      style="background: linear-gradient(135deg, #003366 0%, #0056b3 100%); min-height: 400px; padding: 30px;">
     
@@ -26,7 +12,7 @@
     <h1 class="display-4 fw-bold mb-3">DataExpress</h1>
     
     <p class="mb-4 opacity-75 fs-5" style="max-width: 500px; line-height: 1.6;">
-        The safest hub for instant Data Bundles, Entertainment, and Digital Gift Cards.
+        Your trusted campus partner for instant Data Bundles, Food Runs, Entertainment, and Digital Gift Cards.
     </p>
     
     <a href="/shop" class="btn btn-warning rounded-pill px-5 py-3 fw-bold shadow hover-scale fs-6">
@@ -35,13 +21,10 @@
 
 </div>
 
+<!-- 2. ADVERTISEMENT BANNER -->
 <div class="container mb-5">
-    <div class="ad-billboard p-4 text-center" onclick="window.location.href='https://wa.me/233535333868?text=I+want+to+advertise+on+DataExpress'">
+    <div class="ad-billboard p-4 text-center" onclick="window.location.href='https://wa.me/23354XXXXXXX?text=I+want+to+advertise+on+DataExpress'">
         
-        <span class="badge-traffic">
-            <i class="bi bi-people"></i> 70+ Daily Users
-        </span>
-
         <div class="my-3">
             <i class="bi bi-megaphone-fill fs-1 text-muted opacity-50"></i>
         </div>
@@ -58,6 +41,32 @@
     </div>
 </div>
 
+<!-- 3. NEW FOOD RUN BANNER (Added Here) -->
+<div class="mb-5">
+    <h6 class="fw-bold text-muted ms-1 mb-3">Campus Logistics</h6>
+    
+    <a href="/foodrun" class="text-decoration-none">
+        <div class="card border-0 text-white overflow-hidden shadow-sm hover-lift position-relative" 
+             style="background: linear-gradient(to bottom, rgba(0,0,0,0.3), rgba(0,0,0,0.8)), url('https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80'); background-size: cover; background-position: center; border-radius: 15px; min-height: 200px;">
+            
+            <div class="card-body d-flex flex-column justify-content-end p-4">
+                <div class="mb-auto">
+                    <!-- Dynamic Badge based on Python Logic -->
+                    {% if food_active %}
+                    <span class="badge bg-danger animate-pulse border border-white">🔴 LIVE NOW</span>
+                    {% else %}
+                    <span class="badge bg-dark bg-opacity-75 backdrop-blur">OPENS FRIDAY</span>
+                    {% endif %}
+                </div>
+                
+                <h3 class="fw-bold mb-1">Food Run™ </h3>
+                <p class="mb-0 opacity-90 small">KFC, Waakye and many more delivered directly to your Hostel. No delivery stress.</p>
+            </div>
+        </div>
+    </a>
+</div>
+
+<!-- 4. PARTNER DEALS -->
 <div class="mb-5">
     <h6 class="fw-bold text-muted ms-1 mb-3">Partner Deals</h6>
     
@@ -66,11 +75,14 @@
         <div class="card-body d-flex align-items-center justify-content-between p-4">
             <div>
                 <span class="badge bg-warning text-dark mb-2">SPONSORED</span>
-                <h4 class="fw-bold mb-1">Stake.com</h4>
-                <p class="small mb-0 opacity-75">200% Bonus on First Deposit</p>
+                <h4 class="fw-bold mb-1">Amazon Prime Video</h4>
+                <p class="small mb-0 opacity-75">30 Days Free Trial. Cancel Anytime</p>
             </div>
-            <a href="https://stake.com/?c=TqdL9FFw" target="_blank" class="btn btn-light rounded-circle shadow" style="width: 50px; height: 50px; display: flex; align-items: center; justify-content: center;">
-                <i class="bi bi-chevron-right"></i>
+            <a href="https://www.primevideo.com/?tag=dataexpressgh-20" 
+               target="_blank" 
+               class="btn btn-light rounded-circle shadow" 
+               style="width: 50px; height: 50px; display: flex; align-items: center; justify-content: center;">
+                <i class="bi bi-chevron-right text-dark"></i>
             </a>
         </div>
     </div>
@@ -78,6 +90,7 @@
 
 <div style="height: 80px;"></div>
 
+<!-- QR CODE MODAL LOGIC -->
 {% if welcome_msg %}
 <div class="modal fade" id="qrMessageModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
@@ -86,26 +99,25 @@
             <div class="modal-body text-center p-5">
                 <!-- Dynamic Icon Based on 'welcome_type' -->
                 <div class="mb-4">
-                     {% if welcome_type == 'danger' %}
+                      {% if welcome_type == 'danger' %}
                         <!-- Red Warning Icon (For back Shirt) -->
                         <div class="bg-danger bg-opacity-10 rounded-circle d-inline-flex p-3 animate-pulse text-danger">
                             <i class="bi bi-exclamation-triangle-fill display-1"></i>
                         </div>
                         <h2 class="fw-bold text-dark mt-3 mb-2">Busted! 🚨</h2>
-                     
-                     {% elif welcome_type == 'success' %}
+                      
+                      {% elif welcome_type == 'success' %}
                         <!-- Green Trophy Icon (For front Shirt) -->
                         <div class="bg-success bg-opacity-10 rounded-circle d-inline-flex p-3 animate-pulse text-success">
                             <i class="bi bi-emoji-laughing"></i>
                         </div>
-                     
-                     {% else %}
+                      
+                      {% else %}
                         <!-- Default Info Icon -->
                         <div class="bg-primary bg-opacity-10 rounded-circle d-inline-flex p-3 animate-pulse text-primary">
                             <i class="bi bi-emoji-sunglasses-fill display-1"></i>
                         </div>
-                        <h2 class="fw-bold text-dark mt-3 mb-2"></h2>
-                     {% endif %}
+                      {% endif %}
                 </div>
 
                 <!-- The Message from Python -->
@@ -120,7 +132,6 @@
     </div>
 </div>
 
-<!-- Script to Auto-Open the Modal -->
 <script>
     document.addEventListener("DOMContentLoaded", function() {
         var myModal = new bootstrap.Modal(document.getElementById('qrMessageModal'));
@@ -138,10 +149,13 @@
     
     .animate-pulse { animation: pulse 2s infinite; }
     @keyframes pulse {
-        0% { transform: scale(1); }
-        50% { transform: scale(1.1); }
-        100% { transform: scale(1); }
+        0% { transform: scale(1); opacity: 1; }
+        50% { transform: scale(1.05); opacity: 0.8; }
+        100% { transform: scale(1); opacity: 1; }
     }
+    
+    /* Extra blur for badges on images */
+    .backdrop-blur { backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px); }
 </style>
 
 {% endblock %}
