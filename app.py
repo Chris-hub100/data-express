@@ -14,7 +14,7 @@ PAYSTACK_SECRET_KEY = "sk_test_205609e95584b8704c90e2c8c72b6f1dbcee60db"
 # --- HUBTEL COMPLIANCE SWITCH ---
 # Set to TRUE while applying for Hubtel. 
 # Set to FALSE once approved to unlock Movies & Vouchers.
-COMPLIANCE_MODE = True
+COMPLIANCE_MODE = False
 
 # --- CONTEXT PROCESSOR (NEW ADDITION FROM SECOND CODE) ---
 # This makes 'compliance_mode' available in ALL templates automatically
@@ -192,39 +192,39 @@ def tv_page():
     random.shuffle(movies)
 
     # ADS - Only add Stake ads when NOT in compliance mode
-    if not COMPLIANCE_MODE:
-        ad_1 = {
-            "type": "ad",
-            "title": "Win like Drake with Stake",
-            "desc": "Instant Withdrawals via MoMo or Crypto. 200% Bonus.",
-            "link": "https://stake.com/?c=TqdL9FFw",
-            "image": "/static/images/stake-logo-navy.png"
-        }
+    #if not COMPLIANCE_MODE:
+        #ad_1 = {
+            #"type": "ad",
+            #"title": "Win like Drake with Stake",
+            #"desc": "Instant Withdrawals via MoMo or Crypto. 200% Bonus.",
+            #"link": "https://stake.com/?c=TqdL9FFw",
+            #"image": "/static/images/stake-logo-navy.png"
+        #}
         
-        ad_2 = {
-            "type": "ad",
-            "title": "Sign up today, it may be your lucky day",
-            "desc": "The world's biggest crypto casino. Play now.",
-            "link": "https://stake.com/?c=TqdL9FFw",
-            "image": "/static/images/stake com-logo-navy.png"
-        }
+        #ad_2 = {
+            #"type": "ad",
+            #"title": "Sign up today, it may be your lucky day",
+            #"desc": "The world's biggest crypto casino. Play now.",
+            #"link": "https://stake.com/?c=TqdL9FFw",
+            #"image": "/static/images/stake com-logo-navy.png"
+        #}
 
-        ad_3 = {
-            "type": "ad",
-            "title": "Stake and Win",
-            "desc": "Join the winning team. 200% Deposit Match.",
-            "link": "https://stake.com/?c=TqdL9FFw",
-            "image": "/static/images/stake-logo-navy.png"
-        }
+        #ad_3 = {
+            #"type": "ad",
+            #"title": "Stake and Win",
+            #"desc": "Join the winning team. 200% Deposit Match.",
+            #"link": "https://stake.com/?c=TqdL9FFw",
+            #"image": "/static/images/stake-logo-navy.png"
+        #}
 
         # INJECT ADS AT FIXED POSITIONS (From second code)
         # Insert from last to first to avoid messing up the index order
-        if len(movies) > 41: movies.insert(41, ad_3)
-        if len(movies) > 32: movies.insert(32, ad_2)
-        if len(movies) > 25: movies.insert(25, ad_1)
-        if len(movies) > 16: movies.insert(16, ad_3)
-        if len(movies) > 8: movies.insert(8, ad_2)
-        if len(movies) > 3: movies.insert(3, ad_1)
+        #if len(movies) > 41: movies.insert(41, ad_3)
+        #if len(movies) > 32: movies.insert(32, ad_2)
+        #if len(movies) > 25: movies.insert(25, ad_1)
+        #if len(movies) > 16: movies.insert(16, ad_3)
+        #if len(movies) > 8: movies.insert(8, ad_2)
+        #if len(movies) > 3: movies.insert(3, ad_1)
     
     return render_template('tv.html', videos=movies)
 
@@ -318,39 +318,38 @@ def product_page(network):
     pricing = {
         # --- DATA BUNDLES (Keep these active for 'Campus Connectivity') ---
         "mtn": [
-            {"name": "1GB Non-Expiry", "price": 5.5, "input_type": "phone", "active": True}, 
-            {"name": "2GB Non-Expiry", "price": 10.5, "input_type": "phone", "active": True},
-            {"name": "3GB Non-Expiry", "price": 15, "input_type": "phone", "active": True},
-            {"name": "4GB Non-Expiry", "price": 20, "input_type": "phone", "active": True},
-            {"name": "5GB Non-Expiry", "price": 25, "input_type": "phone", "active": True },
-            {"name": "6GB Non-Expiry", "price": 28, "input_type": "phone", "active": True},
-            {"name": "8GB Non-Expiry", "price": 37, "input_type": "phone", "active": True},
-            {"name": "10GB Non-Expiry", "price": 46, "input_type": "phone", "active": True},
-            {"name": "15GB Non-Expiry", "price": 66, "input_type": "phone", "active": True},
-            {"name": "20GB Non-Expiry", "price": 88, "input_type": "phone", "active": True},
-            {"name": "30GB Non-Expiry", "price": 132, "input_type": "phone", "active": True},
-            {"name": "40GB Non-Expiry", "price": 180, "input_type": "phone", "active": True},
-            {"name": "50GB Non-Expiry", "price": 215, "input_type": "phone", "active": True},
-            {"name": "100GB Non-Expiry", "price": 430, "input_type": "phone", "active": True},
+            {"name": "1GB Non-Expiry", "price": 14, "input_type": "phone", "active": True}, 
+            {"name": "2GB Non-Expiry", "price": 29, "input_type": "phone", "active": True},
+            {"name": "3GB Non-Expiry", "price": 43, "input_type": "phone", "active": True},
+            {"name": "4GB Non-Expiry", "price": 58, "input_type": "phone", "active": True},
+            {"name": "5GB Non-Expiry", "price": 73, "input_type": "phone", "active": True },
+            {"name": "6GB Non-Expiry", "price": 88, "input_type": "phone", "active": True},
+            {"name": "9GB Non-Expiry", "price": 100, "input_type": "phone", "active": True},
+            {"name": "10GB Non-Expiry", "price": 110, "input_type": "phone", "active": True},
+            {"name": "15GB Non-Expiry", "price": 166, "input_type": "phone", "active": True},
+            {"name": "30GB Non-Expiry", "price": 200, "input_type": "phone", "active": True},
+            {"name": "40GB Non-Expiry", "price": 260, "input_type": "phone", "active": True},
+            {"name": "45GB Non-Expiry", "price": 295, "input_type": "phone", "active": True},
+            {"name": "100GB Non-Expiry", "price": 328, "input_type": "phone", "active": True},
         ],
         "telecel": [
-            {"name": "10GB Special", "price": 40, "input_type": "phone", "active": True},
-            {"name": "15GB Special", "price": 60, "input_type": "phone", "active": True},
-            {"name": "20GB Non-Expiry", "price": 90, "input_type": "phone", "active": True},
-            {"name": "25GB Non-Expiry", "price": 120, "input_type": "phone", "active": True},
-            {"name": "30GB Non-Expiry", "price": 130, "input_type": "phone", "active": True},
-            {"name": "40GB Non-Expiry", "price": 160, "input_type": "phone", "active": True},
-            {"name": "50GB Non-Expiry", "price": 200, "input_type": "phone", "active": True},
-            {"name": "100GB Non-Expiry", "price": 380, "input_type": "phone", "active": True},
+            {"name": "10GB Special", "price": 100, "input_type": "phone", "active": True},
+            {"name": "15GB Special", "price": 140, "input_type": "phone", "active": True},
+            {"name": "20GB Non-Expiry", "price": 150, "input_type": "phone", "active": True},
+            {"name": "25GB Non-Expiry", "price": 162, "input_type": "phone", "active": True},
+            {"name": "30GB Non-Expiry", "price": 180, "input_type": "phone", "active": True},
+            {"name": "40GB Non-Expiry", "price": 240, "input_type": "phone", "active": True},
+            {"name": "50GB Non-Expiry", "price": 270, "input_type": "phone", "active": True},
+            {"name": "100GB Non-Expiry", "price": 300, "input_type": "phone", "active": True},
         ],
         "at": [
-            {"name": "1GB Non-Expiry", "price": 5, "input_type": "phone", "active": True},
-            {"name": "3GB Non-Expiry", "price": 13, "input_type": "phone", "active": True},
-            {"name": "4GB Non-Expiry", "price": 18, "input_type": "phone", "active": True},
-            {"name": "5GB Non-Expiry", "price": 23, "input_type": "phone", "active": True},
-            {"name": "8GB Non-Expiry", "price": 35, "input_type": "phone", "active": True},
-            {"name": "10GB Non-Expiry", "price": 45, "input_type": "phone", "active": True},
-            {"name": "12GB Non-Expiry", "price": 53, "input_type": "phone", "active": True},
+            {"name": "1GB Non-Expiry", "price": 10, "input_type": "phone", "active": True},
+            {"name": "3GB Non-Expiry", "price": 34, "input_type": "phone", "active": True},
+            {"name": "4GB Non-Expiry", "price": 48, "input_type": "phone", "active": True},
+            {"name": "5GB Non-Expiry", "price": 53, "input_type": "phone", "active": True},
+            {"name": "8GB Non-Expiry", "price": 75, "input_type": "phone", "active": True},
+            {"name": "10GB Non-Expiry", "price": 95, "input_type": "phone", "active": True},
+            {"name": "12GB Non-Expiry", "price": 113, "input_type": "phone", "active": True},
         ],
 
         # --- VOUCHERS (These are blocked in COMPLIANCE_MODE) ---
