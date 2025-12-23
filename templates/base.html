@@ -4,18 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     
-    <!-- 1. DYNAMIC SEO TITLES -->
-    <title>{% block title %}DataExpress | Cheap Data & Gift Cards{% endblock %}</title>
+    <!-- 1. DYNAMIC SEO TITLES - Updated for Hubtel Compliance -->
+    <title>{% block title %}DataExpress | Campus Logistics & Utility Hub{% endblock %}</title>
     
-    <!-- 2. SEO META TAGS -->
-    <meta name="description" content="{% block description %}Buy cheap MTN, Telecel, and AT data bundles in Ghana. Instant delivery. Shop Netflix, Showmax, and Gaming vouchers via MoMo.{% endblock %}">
-    <meta name="keywords" content="{% block keywords %}cheap data ghana, mtn data bundle, telecel data, buy data online, netflix voucher ghana, showmax voucher, free fire diamonds ghana{% endblock %}">
+    <!-- 2. SEO META TAGS - Updated for Hubtel Compliance -->
+    <meta name="description" content="{% block description %}DataExpress is a premier campus logistics and utility platform. Providing secure student delivery services, instant data utilities, and verified bill payments for DStv, GOtv, and ECG. Operated by Gatekeep Ghana LTD.{% endblock %}">
+    <meta name="keywords" content="{% block keywords %}campus logistics ghana, student delivery service, mtn data bundles ghana, telecel data, bill payments ghana, gatekeep ghana, ledgehold ghana, campus utility app{% endblock %}">
     <meta name="author" content="DataExpress Digital">
 
-    <!-- 3. SOCIAL MEDIA PREVIEW (Open Graph) -->
-    <!-- This makes your link look good on WhatsApp/Twitter -->
-    <meta property="og:title" content="DataExpress | Instant Data & Vouchers">
-    <meta property="og:description" content="Get 5GB MTN Data for GHS 25. Instant delivery via MoMo. Shop Netflix & Gaming cards now.">
+    <!-- 3. SOCIAL MEDIA PREVIEW (Open Graph) - Updated for Hubtel Compliance -->
+    <meta property="og:title" content="DataExpress | Campus Logistics & Utility Hub">
+    <meta property="og:description" content="Streamline your campus life. Secure logistics, instant data utilities, and verified bill payments for students.">
     <meta property="og:image" content="https://dataexpress.store/static/images/social_preview.png">
     <meta property="og:url" content="https://dataexpress.store{{ request.path }}">
     <meta property="og:type" content="website">
@@ -48,13 +47,10 @@
                 <ul class="navbar-nav ms-auto align-items-center gap-3">
                     <li class="nav-item"><a class="nav-link" href="/">Home</a></li>
                     
-                    <!-- Always Visible -->
                     <li class="nav-item"><a class="nav-link" href="/shop">Buy Data</a></li>
                     <li class="nav-item"><a class="nav-link" href="/foodrun">Food Run</a></li>
 
-                    <!-- COMPLIANCE HIDING: Hides Risky Links if Mode is True -->
                     {% if not compliance_mode %}
-                    <!--li class="nav-item"><a class="nav-link" href="/vouchers">Gift Cards</a></li-->
                     <li class="nav-item"><a class="nav-link" href="/tv">TV</a></li>
                     {% endif %}
 
@@ -106,23 +102,7 @@
                 </a>
             {% endif %}
 
-            <!-- COMPLIANCE HIDING FOR MOBILE NAV -->
             {% if not compliance_mode %}
-                {% if request.path == '/vouchers' or '/buy/netflix' in request.path or '/buy/showmax' in request.path or '/buy/cod' in request.path %}
-                    <a href="/vouchers" class="nav-link text-primary">
-                        <div class="bg-primary rounded-circle text-white d-flex align-items-center justify-content-center shadow" 
-                             style="width: 50px; height: 50px; margin-top: -30px; border: 4px solid white;">
-                            <i class="bi bi-gift-fill fs-4"></i>
-                        </div>
-                        <div style="font-size: 10px; margin-top: 5px;" class="fw-bold">Cards</div>
-                    </a>
-                {% else %}
-                    <!--a href="/vouchers" class="nav-link text-muted">
-                        <i class="bi bi-gift-fill fs-4"></i>
-                        <div style="font-size: 10px;">Cards</div>
-                    </a-->
-                {% endif %}
-
                 {% if request.path == '/tv' %}
                     <a href="/tv" class="nav-link text-primary">
                         <div class="bg-primary rounded-circle text-white d-flex align-items-center justify-content-center shadow" 
@@ -138,7 +118,6 @@
                     </a>
                 {% endif %}
             {% else %}
-                <!-- OPTIONAL: Show Food Run icon on Mobile ONLY when Compliance Mode is active (to fill space) -->
                 {% if request.path == '/foodrun' %}
                     <a href="/foodrun" class="nav-link text-primary">
                         <div class="bg-primary rounded-circle text-white d-flex align-items-center justify-content-center shadow" 
@@ -169,23 +148,23 @@
                 <div class="col-md-4 mb-4">
                     <h4 class="fw-bold text-warning mb-3">DataExpress</h4>
                     <p class="text-secondary small">
-                        Connecting you to your needs. 
+                        Connecting students to their daily needs.
                     </p>
                 </div>
                 <div class="col-6 col-md-4 mb-4">
                     <h5 class="fw-bold mb-3">Discover</h5>
-                    <a href="/shop" class="footer-link">Buy Data Bundles</a>
+                    <a href="/shop" class="text-secondary text-decoration-none d-block mb-1 small">Buy Data Bundles</a>
                     
                     {% if not compliance_mode %}
-                    <a href="/vouchers" class="footer-link">Gift Cards Mall</a>
-                    <a href="/tv" class="footer-link">Entertainment Hub</a>
+                    <a href="/vouchers" class="text-secondary text-decoration-none d-block mb-1 small">Gift Cards Mall</a>
+                    <a href="/tv" class="text-secondary text-decoration-none d-block mb-1 small">Entertainment Hub</a>
                     {% endif %}
                     
-                    <a href="/terms" class="footer-link">Terms of Service</a>
+                    <a href="/terms" class="text-secondary text-decoration-none d-block mb-1 small">Terms of Service</a>
                     <div class="mt-4 pt-3 border-top border-secondary">
                         <a href="https://wa.me/233535333868?text=I+love+your+site.+I+want+you+to+build+one+for+my+business." 
                            class="text-warning text-decoration-none small fw-bold hover-glow">
-                           <i class="bi bi-code-slash"></i> Want a website like this for your business?
+                           <i class="bi bi-code-slash"></i> Want a website like this?
                         </a>
                     </div>
                 </div>
@@ -193,18 +172,19 @@
                 {% if not compliance_mode %}
                 <!--div class="col-6 col-md-4 mb-4">
                     <h5 class="fw-bold mb-3">Partners</h5>
-                    <a href="https://www.primevideo.com/?tag=dataexpressgh-20" class="footer-link">Amazon Prime Video</a>
+                    <a href="https://www.primevideo.com/?tag=dataexpressgh-20" class="text-secondary text-decoration-none d-block mb-1 small">Amazon Prime Video</a>
                 </div-->
                 {% endif %}
             </div>
             <hr class="border-secondary opacity-50 my-4">
             <div class="text-center text-secondary small">
-                &copy; 2025 DataExpress Digital. All rights reserved.
+                &copy; 2025 DataExpress Digital.
             </div>
         </div>
         <div class="d-md-none" style="height: 60px;"></div> 
     </footer>
 
+    <!-- Modal Support -->
     <div class="modal fade" id="contactModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content rounded-4 border-0">
@@ -231,86 +211,47 @@
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    
-    <script>
-        // --- SECURITY POPUP LOGIC ---
-    document.addEventListener("DOMContentLoaded", function() {
-        
-        // 1. Check if user has already seen it recently (Session Storage)
-        // If we don't check this, it will annoy them on every page load!
-        if (!sessionStorage.getItem('seenSecurityAlert')) {
-            
-            // 2. Set the 20-second Timer (20000 milliseconds)
-            setTimeout(() => {
-                var securityModal = new bootstrap.Modal(document.getElementById('securityModal'));
-                securityModal.show();
-                
-                // 3. Mark as seen so it doesn't show again in this session
-                sessionStorage.setItem('seenSecurityAlert', 'true');
-            }, 20000); 
-        }
-    });
-
-    // Helper function to help them bookmark (Works on some browsers)
-    function bookmarkSite() {
-        alert("Tap the bookmark icon at the top right of your screen (Android) or the book icon at the bottom of your screen (ios) or Ctrl+D (Windows) or Cmd+D (Mac) to bookmark this page!");
-    }
-        // SMART HIDING SCRIPT
-        document.addEventListener("DOMContentLoaded", function() {
-            const footer = document.getElementById('mainFooter');
-            const bottomNav = document.getElementById('mobileBottomNav');
-
-            const observer = new IntersectionObserver((entries) => {
-                entries.forEach(entry => {
-                    if (entry.isIntersecting) {
-                        bottomNav.classList.add('nav-hidden');
-                    } else {
-                        bottomNav.classList.remove('nav-hidden');
-                    }
-                });
-            }, { threshold: 0.1 });
-
-            if(footer && bottomNav) {
-                observer.observe(footer);
-            }
-        });
-    </script>
-
-    <!-- ================= SECURITY ALERT POPUP ================= -->
-<div class="modal fade" id="securityModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content rounded-4 border-0 shadow-lg" style="border-left: 5px solid #dc3545;">
-            
-            <div class="modal-header border-0">
-                <h5 class="modal-title fw-bold text-danger">
-                    <i class="bi bi-shield-lock-fill me-2"></i> Security Alert
-                </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-
-            <div class="modal-body py-4">
-                <p class="mb-3">
-                    <strong>Please Be Careful!</strong> There are many fake websites claiming to be us.
-                </p>
-                <p class="text-muted small mb-4">
-                    Always verify you are on <strong>dataexpress.store</strong>. 
-                    Please bookmark this site now for your safe return.
-                </p>
-                
-                <div class="d-grid gap-2">
-                    <button class="btn btn-outline-dark btn-sm rounded-pill" onclick="bookmarkSite()">
-                        <i class="bi bi-bookmark-star-fill me-2"></i> Bookmark This Site
-                    </button>
-                    <button type="button" class="btn btn-primary btn-sm rounded-pill" data-bs-dismiss="modal">
-                        I Understand, Continue
-                    </button>
+    <!-- Security Modal -->
+    <div class="modal fade" id="securityModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content rounded-4 border-0 shadow-lg" style="border-left: 5px solid #dc3545;">
+                <div class="modal-header border-0">
+                    <h5 class="modal-title fw-bold text-danger">
+                        <i class="bi bi-shield-lock-fill me-2"></i> Security Alert
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body py-4">
+                    <p class="mb-3"><strong>Please Be Careful!</strong> There are fake websites claiming to be us.</p>
+                    <p class="text-muted small mb-4">Always verify you are on <strong>dataexpress.store</strong>.</p>
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-outline-dark btn-sm rounded-pill" onclick="bookmarkSite()">
+                            <i class="bi bi-bookmark-star-fill me-2"></i> Bookmark This Site
+                        </button>
+                        <button type="button" class="btn btn-primary btn-sm rounded-pill" data-bs-dismiss="modal">
+                            I Understand, Continue
+                        </button>
+                    </div>
                 </div>
             </div>
-
         </div>
     </div>
-</div>
 
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            if (!sessionStorage.getItem('seenSecurityAlert')) {
+                setTimeout(() => {
+                    var securityModal = new bootstrap.Modal(document.getElementById('securityModal'));
+                    securityModal.show();
+                    sessionStorage.setItem('seenSecurityAlert', 'true');
+                }, 20000); 
+            }
+        });
+
+        function bookmarkSite() {
+            alert("Bookmark this page manually in your browser for secure access!");
+        }
+    </script>
 </body>
 </html>
