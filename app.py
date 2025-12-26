@@ -124,9 +124,31 @@ def food_run_page():
 def quote_page():
     return render_template('quote.html')
 
+@app.route('/seller_onboarding')
+@app.route('/onboarding') # Both URLs now lead here and pass the key
+def onboarding():
+    # Fetch the key from the server environment
+    # Note: Make sure you have set this in your terminal or .env file!
+    actual_key = os.getenv('IMGBB_API_KEY') 
+    
+    # Pass it to the template
+    return render_template('seller_onboarding.html', IMGBB_API_KEY=actual_key)
+
+@app.route('/marketplace')
+def marketplace():
+    return render_template('marketplace.html')
+
+@app.route('/directory')
+def directory():
+    return render_template('directory.html')
+
 @app.route('/shop')
 def shop():
     return render_template('shop.html')
+
+@app.route('/privacy')
+def privacy():
+    return render_template('privacy.html')
 
 @app.route('/success')
 def success_page():

@@ -1,90 +1,115 @@
 {% extends "base.html" %}
 
-{% block content %}
+{% block title %}Terms of Service | DataExpress{% endblock %}
 
-<div class="mb-4">
-    <a href="/" class="text-decoration-none text-muted fw-bold">
-        <i class="bi bi-arrow-left"></i> Home
-    </a>
+{% block content %}
+<!-- BACK BUTTON -->
+<div class="mb-6">
+  <a href="javascript:history.back()" class="hover:text-slate-900" style="display: inline-flex; align-items: center; gap: 12px; padding: 8px 4px; font-size: 0.875rem; font-weight: bold; color: #64748b; text-decoration: none;">
+    <div style="display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 50%; background-color: #f1f5f9;">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+        <path d="m15 18-6-6 6-6"/>
+      </svg>
+    </div>
+    <span>Back</span>
+  </a>
 </div>
 
-<div class="container my-5">
-    <div class="row justify-content-center">
-        <div class="col-lg-10">
-            
-            <h2 class="fw-bold mb-4">Terms of Service</h2>
-            <p class="text-muted">Last Updated: February 2025</p>
-            
-            <div class="card shadow-sm border-0 p-4 p-md-5" style="border-radius: 20px;">
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+            <div class="bg-slate-900 p-5 text-white text-center">
+                <i class="bi bi-file-earmark-text-fill display-4 text-primary mb-3"></i>
+                <h2 class="fw-bold">Terms of Service</h2>
+                <p class="opacity-75 mb-0">Universal Legal Framework for Ledgehold Ghana's DataExpress Services</p>
+            </div>
+            <div class="card-body p-4 p-md-5">
                 
-                <h5 class="fw-bold text-primary mt-3">1. Hello & Welcome</h5>
-                <p>Welcome to <strong>DataExpress</strong>. We built this platform to make campus life easier by connecting you to data, food, and entertainment. By using our site, you're agreeing to these simple rules designed to keep the service running smoothly for everyone.</p>
+                <!-- 1. UNIVERSAL SCOPE -->
+                <section class="mb-5">
+                    <h5 class="fw-bold text-dark border-start border-primary border-4 ps-3 mb-3">1. Scope of Services</h5>
+                    <p class="text-muted small">
+                        These Terms of Service govern all platforms, products, and services operated by <strong>Ledgehold Ghana</strong> (trading as <strong>DataExpress</strong>), including but not limited to:
+                    </p>
+                    <ul class="text-muted small">
+                        <li><strong>Campus Marketplace:</strong> Peer-to-peer student sales and escrow.</li>
+                        <li><strong>Utility Hub:</strong> Digital top-ups for Airtime, Data, ECG, DStv, and GOtv.</li>
+                        <li><strong>Logistics (Food Run):</strong> Student-led delivery and fulfillment services.</li>
+                        <li><strong>Compliance Tools:</strong> Digital logging and delivery verification systems.</li>
+                    </ul>
+                </section>
 
-                <hr>
 
-                <!-- SECTION 2: THE FOOD RUN -->
-                <h5 class="fw-bold text-primary mt-3">2. The Food Run (Logistics)</h5>
-                <p>Our weekend food delivery is a batch-based service. Here’s the deal:</p>
-                <ul>
-                    <li><strong>Service Hours:</strong> We operate from <strong>Friday 4:00 PM to Sunday 10:00 PM</strong>.</li>
-                    <li><strong>The 10-Minute Rule:</strong> Our dispatchers have a lot of rooms to cover. They will wait for a maximum of 10 minutes at your hostel/hall. If you don't show up, the order is forfeited to keep the run moving.</li>
-                    <li><strong>No Returns:</strong> Since it's food, we can't take it back once it's been picked up from the vendor. Please check your package immediately.</li>
-                </ul>
+                <!-- 2. UTILITY PAYMENTS -->
+                <section class="mb-5">
+                    <h5 class="fw-bold text-dark mb-3">2. Utility & Digital Services</h5>
+                    <p class="text-muted small">
+                        Utility payments (ECG, Water, TV) and Data/Airtime purchases are processed through our licensed partner, <strong>Hubtel</strong>. 
+                    </p>
+                    <ul class="text-muted small">
+                        <li><strong>Finality:</strong> Digital top-ups are non-refundable once the third-party provider confirms successful delivery to the recipient number/meter.</li>
+                        <li><strong>Errors:</strong> Users are responsible for providing correct Meter Numbers and Account IDs. DataExpress is not liable for funds sent to incorrectly provided IDs.</li>
+                    </ul>
+                </section>
 
-                <hr>
+                <!-- 3. LOGISTICS & FOOD RUN -->
+                <section class="mb-5">
+                    <h5 class="fw-bold text-dark mb-3">3. Logistics & Campus Fulfillment</h5>
+                    <p class="text-muted small">
+                        Our "Food Run" and student delivery services act as a logistics facilitator. 
+                    </p>
+                    <ul class="text-muted small">
+                        <li><strong>Location:</strong> Logistics handovers are campus-specific. We only facilitate handovers within designated university grounds for security.</li>
+                        <li><strong>Agent Conduct:</strong> Delivery agents are independent student contractors. We maintain a zero-tolerance policy for unprofessional conduct.</li>
+                    </ul>
+                </section>
 
-                <!-- SECTION 3: DATA & UTILITIES -->
-                <h5 class="fw-bold text-primary mt-3">3. Data Bundles & Digital Tools</h5>
-                <p>We provide instant top-ups, but accuracy is on you:</p>
-                <ul>
-                    <li><strong>Check Your Number:</strong> Double-check the recipient number. <span class="text-danger">Data sent to the wrong number cannot be reversed or refunded.</span></li>
-                    <li><strong>Processing Time:</strong> Most bundles land in seconds. If there's a network delay, please wait up to 30 minutes before contacting support.</li>
-                    <li><strong>DStv/ECG:</strong> Make sure your Smartcard or Meter ID is correct. Once the payment hits the utility provider, we can't pull it back.</li>
-                </ul>
+                <!-- 4. MARKETPLACE ESCROW -->
+                <section class="mb-5">
+                    <h5 class="fw-bold text-dark mb-3">4. Marketplace & Escrow</h5>
+                    <p class="text-muted small">
+                        For P2P Marketplace sales, we act as an escrow agent. 
+                    </p>
+                    <ul class="text-muted small">
+                        <li><strong>Fees:</strong> A 5% service fee (2.5% Hubtel Processing + 2.5% Platform Fee) is deducted from all Marketplace payouts.</li>
+                        <li><strong>Identity:</strong> Sellers must submit a valid Student ID for verification. Data is purged within 48 hours per our Privacy Policy.</li>
+                    </ul>
+                </section>
 
-                <hr>
+                <!-- 5. LIMITATION OF LIABILITY -->
+                <section class="mb-5">
+                    <h5 class="fw-bold text-dark mb-3">5. Limitation of Liability</h5>
+                    <p class="text-muted small">
+                        Ledgehold Ghana provides a platform for economic efficiency. While we facilitate security via the Gatekeeper Policy, we are not liable for the underlying quality of third-party goods or utility uptime provided by national telcos or utility companies.
+                    </p>
+                </section>
 
-                <!-- SECTION 4: PAYMENTS -->
-                <h5 class="fw-bold text-primary mt-3">4. Payments & Your Security</h5>
-                <p>We take your money's safety seriously:</p>
-                <ul>
-                    <li><strong>Secure Processing:</strong> All payments are handled by regulated partner gateways (like Hubtel). We never see or store your MoMo PIN or card details.</li>
-                    <li><strong>Failed Payments:</strong> If your money is deducted but the service doesn't deliver, our system logs these errors and we usually resolve them within 24 hours.</li>
-                </ul>
+                <section class="mb-5">
+                    <h5 class="fw-bold text-dark mb-3">6. Governing Law</h5>
+                    <p class="text-muted small">
+                        These terms are governed by the laws of the <strong>Republic of Ghana</strong>. Dispute resolution shall occur through arbitration in Accra.
+                    </p>
+                </section>
 
-                <hr>
-
-                <!-- SECTION 5: ENTERTAINMENT & THIRD-PARTY CONTENT -->
-                <h5 class="fw-bold text-primary mt-3">5. DataExpress tv+ (Third-Party Content)</h5>
-                <p>Our entertainment hub is a curation service designed for your convenience:</p>
-                <ul>
-                    <li><strong>Content Hosting:</strong> DataExpress does **not** host, upload, or own any of the video files shown. All movie trailers are embedded directly from YouTube using their official API/Player.</li>
-                    <li><strong>Intellectual Property:</strong> All movie trailers, posters, and trademarks belong to their respective creators and film studios. We simply index this public content to help you decide what to watch.</li>
-                    <li><strong>External Links:</strong> If you click a "Play Now" link that takes you off our site, the terms of that third-party site apply.</li>
-                </ul>
-
-                <hr>
-
-                <!-- SECTION 6: FAIR USE -->
-                <h5 class="fw-bold text-primary mt-3">6. Student Conduct</h5>
-                <p>DataExpress is a community tool. Any attempt to use the platform for fraudulent activities, MoMo scams, or harassing our dispatchers will result in an immediate permanent ban from all our services.</p>
-
-                <div class="mt-5 p-3 bg-light rounded border-start border-4 border-primary">
-                    <p class="mb-0 fw-bold">Need Help?</p>
-                    <p class="small text-muted mb-0">Hit us up on WhatsApp if you have an issue with an order:</p>
-                    <p class="fw-bold text-dark mb-0">support@dataexpress.store | 053-533-3868</p>
+                <div class="alert bg-primary-subtle border-0 rounded-4 p-4 text-center">
+                    <h6 class="fw-bold text-primary mb-1">Regulatory and Legal Support</h6>
+                    <p class="small text-primary opacity-75 mb-3">For institutional inquiries and legal clarification, contact our Compliance Team.</p>
+                    <a href="https://wa.me/233535333868" class="btn btn-primary rounded-pill px-4 fw-bold">Contact Compliance</a>
                 </div>
 
+            </div>
+            <div class="bg-light p-3 text-center">
+                <small class="text-muted">Last Updated: December 26, 2025</small>
             </div>
         </div>
     </div>
 </div>
 
 <style>
-    body { background-color: #f8f9fa; }
-    .card { border-radius: 20px; }
-    h5 { letter-spacing: -0.5px; }
-    li { margin-bottom: 10px; font-size: 0.95rem; color: #495057; }
+    .bg-slate-900 { background-color: #0f172a !important; }
+    .bg-warning-subtle { background-color: #fffbeb !important; }
+    section h5 { letter-spacing: -0.5px; font-size: 1.1rem; }
+    ul li { margin-bottom: 8px; }
+    .card { border: 1px solid rgba(0,0,0,0.05) !important; }
 </style>
-
 {% endblock %}
