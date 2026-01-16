@@ -5,7 +5,7 @@ import random
 import json
 import datetime
 import firebase_admin
-from firebase_admin import credentials, firestore
+from firebase_admin import credentials, firestore, initialize_app
 from datetime import date, timedelta
 from dotenv import load_dotenv
 
@@ -41,6 +41,25 @@ def get_firebase_context():
         "__firebase_config": os.environ.get("__firebase_config", "{}"),
         "IMGBB_API_KEY": os.environ.get("IMGBB_API_KEY", "")
     }
+
+# LEDGEHOLD SECURITY PATHS
+# 1. Production Path (Render Secret File)
+prod_cred_path = "/etc/secrets/service-account.json"
+# 2. Local Path (Your computer)
+local_cred_path = "service-account.json"
+
+if os.path.exists(prod_cred_path):
+    # We are on the Render Server
+    cred = credentials.Certificate(prod_cred_path)
+    print("Security Protocol: Loaded Production Credentials")
+elif os.path.exists(local_cred_path):
+    # We are on Localhost
+    cred = credentials.Certificate(local_cred_path)
+    print("Security Protocol: Loaded Local Credentials")
+else:
+    raise FileNotFoundError("Critical Security Error: Firebase Credentials not found.")
+
+initialize_app(cred)
 
 if not firebase_admin._apps:
     try:
