@@ -11,8 +11,9 @@
     var __app_id = '{{ __app_id if __app_id else "ledgehold-ghana" }}';
     var __firebase_config = '{{ __firebase_config | safe if __firebase_config else "{}" }}';
     
-    // CLOUDINARY CONFIGURATION
-    var CLOUD_NAME = '{{ CLOUDINARY_CLOUD_NAME }}'; 
+    // STATIC ASSET CONFIGURATION (Reliable)
+    // This is the verified image residing on your server
+    var STATIC_ASSET_URL = "{{ url_for('static', filename='images/brand_preview_card.png', _external=True) }}";
 
     // Initialize Firebase Globally
     var config = JSON.parse(__firebase_config);
@@ -89,10 +90,10 @@
             <div class="d-flex justify-content-between align-items-end mt-3">
                 <div>
                     <h4 class="fw-bold text-dark mb-1">Marketing Toolkit</h4>
-                    <p class="text-muted small mb-0">Event-driven assets for verified merchants.</p>
+                    <p class="text-muted small mb-0">Institutional visual engine for verified merchants.</p>
                 </div>
                 <div class="premium-badge bg-dark text-white px-3 py-1 rounded-pill small fw-bold" style="font-size: 0.65rem; letter-spacing: 1px;">
-                    <i class="bi bi-megaphone-fill me-1"></i> SMART GROWTH
+                    <i class="bi bi-megaphone-fill me-1"></i> SMART GROWTH ENABLED
                 </div>
             </div>
         </div>
@@ -114,7 +115,7 @@
                     <div class="smart-preview-badge d-flex align-items-center gap-3">
                         <i class="bi bi-magic fs-4"></i>
                         <div>
-                            <strong>One Tap Marketing:</strong> All templates above automatically include the image link at the top. Simply click the green button, paste into WhatsApp, and send.
+                            <strong>One-Tap Marketing:</strong> All templates below automatically include the official brand card at the top. Simply click the green button, paste into WhatsApp, and send.
                         </div>
                     </div>
                     
@@ -165,7 +166,7 @@
                         </div>
                         <h6 class="fw-bold mb-2">General Awareness</h6>
                         <div class="bg-light p-3 rounded-4 small text-muted italic mb-3" id="text-3" style="line-height: 1.5;">
-                            "Looking for verified campus deals?  Shop my campus store via Ledgehold. Just verified trade backed by The Gatekeeper Policy. Browse here: "
+                            "Looking for verified campus deals? Shop my campus store via Ledgehold. Just verified trade backed by The Gatekeeper Policy. Browse here: "
                         </div>
                         <button class="btn wa-green w-100 rounded-pill fw-bold py-2 shadow-sm">
                             <i class="bi bi-whatsapp me-2"></i> Copy Promo Bundle
@@ -179,29 +180,26 @@
             <div class="col-lg-5">
                 <div class="card border-0 shadow-sm rounded-4 overflow-hidden h-100 bg-light sticky-top" style="top: 100px; z-index: 1;">
                     <div class="card-header bg-dark text-white py-3 px-4 border-0 d-flex justify-content-between">
-                        <span class="x-small fw-bold uppercase">Visual Asset Preview</span>
-                        <span class="badge bg-primary x-small">LIVE</span>
+                        <span class="x-small fw-bold uppercase">Customer View Mockup</span>
+                        <span class="badge bg-primary x-small">LIVE PREVIEW</span>
                     </div>
                     <div class="card-body p-4 d-flex flex-column align-items-center justify-content-center">
                         <p class="x-small text-muted fw-bold text-uppercase mb-3">Auto-Generated Banner:</p>
                         
                         <div class="wa-bubble-mockup mx-auto">
-                            <!-- LIVE CLOUDINARY PREVIEW -->
+                            <!-- LIVE STATIC PREVIEW -->
                             <div class="preview-mockup-window mb-2 shadow-sm">
-                                <img id="cloudinaryLivePreview" src="" class="w-100 h-100 object-fit-cover" alt="Dynamic Marketing Asset" onerror="this.src='https://placehold.co/1200x630/0f172a/white?text=Syncing+Cloudinary+Root...'">
+                                <img id="staticLivePreview" src="" class="w-100 h-100 object-fit-cover" alt="Brand Asset" onerror="this.src='https://placehold.co/1200x630/0f172a/white?text=Loading+Brand+Asset...'">
                             </div>
                             <div class="px-1">
-                                <p class="fw-bold mb-0 text-dark" style="font-size: 0.75rem;">Verified Storefront | DataExpress</p>
-                                <p class="text-muted mb-0" style="font-size: 0.65rem; line-height: 1.2;">Escrow-Backed campus trade. Verified by Ledgehold Ghana.</p>
+                                <p class="fw-bold mb-0 text-dark" style="font-size: 0.75rem;">Verified Storefront | Ledgehold Ghana</p>
+                                <p class="text-muted mb-0" style="font-size: 0.65rem; line-height: 1.2;">Secure campus trade. Verified by DataExpress Gatekeeper Policy.</p>
                                 <p class="text-primary mt-1 mb-0" style="font-size: 0.6rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" id="previewUrlText"></p>
                             </div>
                         </div>
 
                         <div class="mt-4 pt-4 border-top w-100">
-                            <h6 class="fw-bold small text-dark mb-2 text-center">One-Tap Marketing</h6>
-                            <p class="x-small text-muted mb-0 text-center">
-                                All templates above automatically include the image link at the top. Simply click the green button, paste into WhatsApp, and send.
-                            </p>
+                            <h6 class="fw-bold small text-dark mb-2 text-center">One-Tap Strategy</h6>
                         </div>
                     </div>
                 </div>
@@ -241,7 +239,9 @@
 <script>
     let merchantInfo = null;
     let storefrontUrl = "";
-    let cloudinaryUrl = "";
+    // Using the static asset variable injected from Jinja2
+    const staticAssetUrl = STATIC_ASSET_URL;
+
     let logoutTimer, warningTimer, countdownInterval;
     const SESSION_TIMEOUT = 120000;
 
@@ -296,26 +296,22 @@
             const merchantRef = db.collection('artifacts').doc(__app_id)
                                  .collection('public').doc('data')
                                  .collection('verified_merchants').doc(merchantName);
+            
             const doc = await merchantRef.get();
             if (!doc.exists) { window.location.replace('/merchant_dashboard'); return; }
 
             merchantInfo = doc.data();
             
-            // LINK FORMATTING: Replace space with + as requested (e.g. merchant=Chris+Tetteh)
-            const urlSafeName = merchantName.replace(/\s+/g, '+');
+            // LINK FORMATTING: Replace spaces with '+' for URL (e.g., Chris+Tetteh)
+            const urlSafeName = merchantName.trim().replace(/\s+/g, '+');
             storefrontUrl = `${window.location.origin}/marketplace?merchant=${urlSafeName}`;
-            
-            // CLOUDINARY LOGIC (Visual Generation)
-            const cleanName = merchantName.toUpperCase();
-            const escapedName = encodeURIComponent(cleanName).replace(/%/g, '%25');
-            
-            // URL Syntax: upload/[TRANSFORMATIONS]/v1767906265/ledgehold_base.png
-            cloudinaryUrl = `https://res.cloudinary.com/${CLOUD_NAME}/image/upload/c_fill,w_1200,h_630/l_text:Arial_75_bold:${escapedName},co_rgb:FFFFFF,g_center/v1767906265/ledgehold_base.png`;
 
             document.getElementById('storefrontLink').value = storefrontUrl;
             document.getElementById('activeMerchantDisplay').innerText = merchantName;
             document.getElementById('previewUrlText').innerText = storefrontUrl;
-            document.getElementById('cloudinaryLivePreview').src = cloudinaryUrl;
+            
+            // Set Static Preview Source
+            document.getElementById('staticLivePreview').src = staticAssetUrl;
             
             document.getElementById('loadingView').classList.add('d-none');
             document.getElementById('mainContent').classList.remove('d-none');
@@ -332,8 +328,8 @@
      */
     window.copyEventBundle = async function(id) {
         const templateText = document.getElementById(`text-${id}`).innerText;
-        // Format: Image Link \n\n Template Text \n\n Storefront Link
-        const fullMessage = `${cloudinaryUrl}\n\n${templateText}\n\n${storefrontUrl}`;
+        // Format: Static Image URL \n\n Template Text \n\n Storefront Link
+        const fullMessage = `${staticAssetUrl}\n\n${templateText}\n\n${storefrontUrl}`;
         
         try {
             await navigator.clipboard.writeText(fullMessage);
@@ -359,6 +355,19 @@
             input.select();
             document.execCommand('copy');
             showToast("Link copied!");
+        }
+    };
+
+    window.copyImageToClipboard = async function() {
+        try {
+            const data = await fetch(staticAssetUrl);
+            const blob = await data.blob();
+            await navigator.clipboard.write([
+                new ClipboardItem({ [blob.type]: blob })
+            ]);
+            showToast("Visual asset copied! Now paste it into WhatsApp.");
+        } catch (err) {
+            showToast("Clipboard copy blocked. Please use the Share button.");
         }
     };
 

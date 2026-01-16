@@ -13,32 +13,37 @@
     <meta name="author" content="Ledgehold Enterprise">
 
     <!-- 3. SOCIAL MEDIA PREVIEW (Open Graph) -->
-    <!-- FIX 1: Updated og:url to use request.url for exact matching -->
-    <meta property="og:url" content="{{ request.url }}">
+    <meta property="og:url" content="{{ request.base_url }}{% if request.args.get('merchant') %}?merchant={{ request.args.get('merchant') }}{% endif %}">
     <meta property="og:type" content="website">
+    <meta property="og:site_name" content="DataExpress">
 
     {% set merchant_id = request.args.get('merchant') %}
     {% if merchant_id %}
-        <!-- FIX 2: Fixed Cloudinary encoding logic -->
-        {% set merchant_text = merchant_id | replace('_', ' ') | replace(' ', '%20') %}
+        <!-- VERIFIED MERCHANT PREVIEW (Dynamic Text, Static Image) -->
+        <meta property="og:title" content="Verified Storefront: {{ merchant_id | replace('_', ' ') }}">
+        <meta property="og:description" content="Official Ledgehold Partner. Secure campus trade verified by The Gatekeeper Policy.">
         
-        <!-- INSTITUTIONAL RICH PREVIEW ENGINE (Merchant-Specific) -->
-        <meta property="og:title" content="Verified Storefront | Ledgehold Ghana">
-        <meta property="og:description" content="Secure campus trade with {{ merchant_id | replace('_', ' ') }}. Verified by DataExpress Gatekeeper Policy.">
-        
-        <!-- CLOUDINARY DYNAMIC URL -->
-        <meta property="og:image" content="https://res.cloudinary.com/dfy4y7lqk/image/upload/c_fill,w_1200,h_630/l_text:Arial_75_bold:{{ merchant_text }},co_rgb:FFFFFF,g_center/v1767906265/ledgehold_base.png">
+        <!-- STATIC BRAND CARD (Reliable Fallback) -->
+        <meta property="og:image" content="{{ url_for('static', filename='images/brand_preview_card.png', _external=True) }}">
+        <meta property="og:image:type" content="image/png">
         <meta property="og:image:width" content="1200">
         <meta property="og:image:height" content="630">
         
-        <!-- FIX 3: Added Twitter Fallback for robust WhatsApp previews -->
+        <!-- Twitter Fallback -->
         <meta name="twitter:card" content="summary_large_image">
-        <meta name="twitter:image" content="https://res.cloudinary.com/dfy4y7lqk/image/upload/c_fill,w_1200,h_630/l_text:Arial_75_bold:{{ merchant_text }},co_rgb:FFFFFF,g_center/v1767906265/ledgehold_base.png">
+        <meta name="twitter:image" content="{{ url_for('static', filename='images/brand_preview_card.png', _external=True) }}">
     {% else %}
         <!-- DEFAULT BRAND PREVIEW -->
         <meta property="og:title" content="DataExpress | Campus Logistics & Utility Hub">
         <meta property="og:description" content="Streamline your campus life. Secure logistics, instant data utilities, and verified bill payments for students.">
-        <meta property="og:image" content="https://dataexpress.store/static/images/social_preview.png">
+        
+        <meta property="og:image" content="{{ url_for('static', filename='images/brand_preview_card.png', _external=True) }}">
+        <meta property="og:image:type" content="image/png">
+        <meta property="og:image:width" content="1200">
+        <meta property="og:image:height" content="630">
+        
+        <meta name="twitter:card" content="summary_large_image">
+        <meta name="twitter:image" content="{{ url_for('static', filename='images/brand_preview_card.png', _external=True) }}">
     {% endif %}
 
     <!-- TrustBox script -->
@@ -184,7 +189,7 @@
             <div class="row">
                 <div class="col-md-4 mb-4">
                     <h4 class="fw-bold text-warning mb-3">DataExpress</h4>
-                    <p class="text-secondary small">Your Trusted Connectivity Partner.</p>
+                    <p class="text-secondary small">Your Campus Connectivity Partner.</p>
                     <div class="d-flex gap-3 mt-4">
                         <a href="javascript:void(0)" data-bs-toggle="modal" data-bs-target="#socialMediaModal" class="text-white opacity-50 hover-opacity-100 fs-5"><i class="bi bi-instagram"></i></a>
                         <a href="javascript:void(0)" data-bs-toggle="modal" data-bs-target="#socialMediaModal" class="text-white opacity-50 hover-opacity-100 fs-5"><i class="bi bi-twitter-x"></i></a>
