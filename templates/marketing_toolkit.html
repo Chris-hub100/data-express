@@ -12,7 +12,7 @@
     var __firebase_config = '{{ __firebase_config | safe if __firebase_config else "{}" }}';
     
     // STATIC ASSET CONFIGURATION (Reliable)
-    // This is the verified image residing on your server
+    // This is the verified image residing on your server used for the DASHBOARD PREVIEW only
     var STATIC_ASSET_URL = "{{ url_for('static', filename='images/brand_preview_card.png', _external=True) }}";
 
     // Initialize Firebase Globally
@@ -115,7 +115,7 @@
                     <div class="smart-preview-badge d-flex align-items-center gap-3">
                         <i class="bi bi-magic fs-4"></i>
                         <div>
-                            <strong>One-Tap Marketing:</strong> All templates below automatically include the official brand card at the top. Simply click the green button, paste into WhatsApp, and send.
+                            <strong>One-Tap Marketing:</strong> We automatically add a unique ID to your link every time you copy it. This forces WhatsApp to fetch a fresh visual preview instantly.
                         </div>
                     </div>
                     
@@ -184,7 +184,7 @@
                         <span class="badge bg-primary x-small">LIVE PREVIEW</span>
                     </div>
                     <div class="card-body p-4 d-flex flex-column align-items-center justify-content-center">
-                        <p class="x-small text-muted fw-bold text-uppercase mb-3">Auto-Generated Banner:</p>
+                        <p class="x-small text-muted fw-bold text-uppercase mb-3">How it looks on WhatsApp:</p>
                         
                         <div class="wa-bubble-mockup mx-auto">
                             <!-- LIVE STATIC PREVIEW -->
@@ -192,14 +192,17 @@
                                 <img id="staticLivePreview" src="" class="w-100 h-100 object-fit-cover" alt="Brand Asset" onerror="this.src='https://placehold.co/1200x630/0f172a/white?text=Loading+Brand+Asset...'">
                             </div>
                             <div class="px-1">
-                                <p class="fw-bold mb-0 text-dark" style="font-size: 0.75rem;">Verified Storefront | Ledgehold Ghana</p>
-                                <p class="text-muted mb-0" style="font-size: 0.65rem; line-height: 1.2;">Secure campus trade. Verified by DataExpress Gatekeeper Policy.</p>
+                                <p class="fw-bold mb-0 text-dark" style="font-size: 0.75rem;">Verified Storefront | DataExpress</p>
+                                <p class="text-muted mb-0" style="font-size: 0.65rem; line-height: 1.2;">Secure campus trade. Verified by Ledgehold Gatekeeper Policy.</p>
                                 <p class="text-primary mt-1 mb-0" style="font-size: 0.6rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" id="previewUrlText"></p>
                             </div>
                         </div>
 
                         <div class="mt-4 pt-4 border-top w-100">
-                            <h6 class="fw-bold small text-dark mb-2 text-center">One-Tap Strategy</h6>
+                            <h6 class="fw-bold small text-dark mb-2 text-center">Institutional Marketing Hack</h6>
+                            <p class="x-small text-muted mb-0 text-center">
+                                Simply paste the copied text into WhatsApp. Wait 2 seconds for the image to load, then send.
+                            </p>
                         </div>
                     </div>
                 </div>
@@ -239,7 +242,7 @@
 <script>
     let merchantInfo = null;
     let storefrontUrl = "";
-    // Using the static asset variable injected from Jinja2
+    // Using the static asset variable injected from Jinja2 for PREVIEW ONLY
     const staticAssetUrl = STATIC_ASSET_URL;
 
     let logoutTimer, warningTimer, countdownInterval;
@@ -301,16 +304,14 @@
             if (!doc.exists) { window.location.replace('/merchant_dashboard'); return; }
 
             merchantInfo = doc.data();
+            storefrontUrl = `${window.location.origin}/marketplace?merchant=${encodeURIComponent(merchantName.replace(/\s+/g, '_'))}`;
             
-            // LINK FORMATTING: Replace spaces with '+' for URL (e.g., Chris+Tetteh)
-            const urlSafeName = merchantName.trim().replace(/\s+/g, '+');
-            storefrontUrl = `${window.location.origin}/marketplace?merchant=${urlSafeName}`;
-
+            // UI Updates
             document.getElementById('storefrontLink').value = storefrontUrl;
             document.getElementById('activeMerchantDisplay').innerText = merchantName;
             document.getElementById('previewUrlText').innerText = storefrontUrl;
             
-            // Set Static Preview Source
+            // Set Static Preview Source for the Dashboard
             document.getElementById('staticLivePreview').src = staticAssetUrl;
             
             document.getElementById('loadingView').classList.add('d-none');
@@ -323,13 +324,26 @@
     }
 
     /**
+     * CACHE-BUSTED LINK GENERATOR
+     * Forces WhatsApp to fetch fresh metadata from base.html
+     */
+    function getCacheBustedUrl() {
+        const timestamp = Math.floor(Date.now() / 1000);
+        return `${storefrontUrl}&v=${timestamp}`;
+    }
+
+    /**
      * UNIFIED EVENT BUNDLE COPIER
-     * Combines Image URL (Top) + Template Text + Storefront Link
+     * Copies CLEAN text + Cache-Busted Link.
+     * Relies on base.html to serve the image preview.
      */
     window.copyEventBundle = async function(id) {
         const templateText = document.getElementById(`text-${id}`).innerText;
-        // Format: Static Image URL \n\n Template Text \n\n Storefront Link
-        const fullMessage = `${staticAssetUrl}\n\n${templateText}\n\n${storefrontUrl}`;
+        const bustedUrl = getCacheBustedUrl();
+        
+        // Format: Template Text \n\n Link
+        // NO RAW IMAGE LINK IN TEXT - YouTube Style
+        const fullMessage = `${templateText}\n\n${bustedUrl}`;
         
         try {
             await navigator.clipboard.writeText(fullMessage);
@@ -347,27 +361,16 @@
     };
 
     window.copyLink = async function() {
+        const bustedUrl = getCacheBustedUrl();
         try {
-            await navigator.clipboard.writeText(storefrontUrl);
-            showToast("Storefront link copied!");
+            await navigator.clipboard.writeText(bustedUrl);
+            showToast("Fresh link copied!");
         } catch (err) {
             const input = document.getElementById('storefrontLink');
+            input.value = bustedUrl;
             input.select();
             document.execCommand('copy');
             showToast("Link copied!");
-        }
-    };
-
-    window.copyImageToClipboard = async function() {
-        try {
-            const data = await fetch(staticAssetUrl);
-            const blob = await data.blob();
-            await navigator.clipboard.write([
-                new ClipboardItem({ [blob.type]: blob })
-            ]);
-            showToast("Visual asset copied! Now paste it into WhatsApp.");
-        } catch (err) {
-            showToast("Clipboard copy blocked. Please use the Share button.");
         }
     };
 
