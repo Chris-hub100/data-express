@@ -19,65 +19,85 @@
             <div class="bg-slate-900 p-5 text-white text-center">
                 <i class="bi bi-shield-lock-fill display-4 text-primary mb-3"></i>
                 <h2 class="fw-bold">Privacy Policy</h2>
-                <p class="opacity-75 mb-0">Ledgehold Ghana's DataExpress Enterprise Standards</p>
+                <p class="opacity-75 mb-0">Ledgehold Enterprise's DataExpress Enterprise Standards</p>
             </div>
             <div class="card-body p-4 p-md-5">
                 
+                <!-- COMMITMENT TO ACT 843 -->
                 <section class="mb-5">
                     <h5 class="fw-bold text-dark border-start border-primary border-4 ps-3 mb-3">Commitment to Act 843</h5>
                     <p class="text-muted small">
-                        DataExpress operates in strict accordance with the <strong> Protection Act, 2012 (Act 843)</strong> of Ghana. We treat Student ID data as "Special Personal Data," ensuring maximum encryption and limited access.
+                        DataExpress operates in strict accordance with the <strong>Data Protection Act, 2012 (Act 843)</strong> of Ghana. We treat Student ID data and Merchant Access Keys as "Special Personal Data," ensuring maximum encryption and limited access to maintain the Ledgehold Standard.
                     </p>
                 </section>
 
+                <!-- DATA VISIBILITY GRID -->
                 <div class="row g-4 mb-5">
                     <div class="col-md-6">
-                        <div class="p-3 bg-light rounded-4 h-100">
+                        <div class="p-4 bg-light rounded-4 h-100 border">
                             <h6 class="fw-bold"><i class="bi bi-eye-slash-fill text-primary me-2"></i>What we see</h6>
-                            <ul class="small text-muted ps-3">
-                                <li>Full Name & University Details</li>
-                                <li>Course of Study</li>
-                                <li>MoMo Payout Numbers</li>
-                                <li>Daily Logs & Receipts</li>
+                            <ul class="small text-muted ps-3 mb-0">
+                                <li class="mb-2">Full Name & University Details</li>
+                                <li class="mb-2">Uploaded Photos</li>
+                                <li class="mb-2">Course of Study</li>
+                                <li class="mb-2">MoMo Payout Numbers</li>
+                                <li>Daily Logs & Verification Receipts</li>
                             </ul>
                         </div>
                     </div>
                     <div class="col-md-6">
-                        <div class="p-3 bg-light rounded-4 h-100">
+                        <div class="p-4 bg-light rounded-4 h-100 border">
                             <h6 class="fw-bold"><i class="bi bi-shield-check text-success me-2"></i>How we protect it</h6>
-                            <ul class="small text-muted ps-3">
-                                <li>AES-256 Cloud Encryption</li>
-                                <li>48-hour Auto-Purge for IDs</li>
-                                <li>No Third-Party Data Selling</li>
-                                <li>Encrypted Hubtel Handshakes</li>
+                            <ul class="small text-muted ps-3 mb-0">
+                                <li class="mb-2">AES-256 Cloud Encryption</li>
+                                <li class="mb-2">SHA-256 One-Way Hashing (PINs)</li>
+                                <li class="mb-2">6-hour Auto-Purge for ID uploads</li>
+                                <li class="mb-2">12-hour Auto-Purge for Photo uploads</li>
+                                <li>Encrypted Hubtel API Handshakes</li>
                             </ul>
                         </div>
                     </div>
                 </div>
 
+                <!-- ZERO-KNOWLEDGE ARCHITECTURE (NEW SECTION) -->
+                <section class="mb-5 bg-primary-subtle p-4 rounded-4">
+                    <h5 class="fw-bold text-primary mb-3"><i class="bi bi-cpu-fill me-2"></i>Zero-Knowledge PIN Standards</h5>
+                    <p class="text-muted small">
+                        To guarantee total data sovereignty for our <strong>Merchants</strong>, Ledgehold Enterprise utilizes a zero-knowledge architecture for dashboard access:
+                    </p>
+                    <ul class="text-muted small">
+                        <li><strong>Non-Retrievable Keys:</strong> We do not store plain-text PINs. Your PIN is mathematically transformed into a hash that cannot be reversed.</li>
+                        <li><strong>Staff Access:</strong> Ledgehold employees, administrators, and developers have zero visibility into your private keys.</li>
+                        <li><strong>Security Mandate:</strong> In the event of a lost PIN, the existing record must be administratively revoked (wiped) and the merchant must re-onboard to generate a new key.</li>
+                        <li><strong>Session Security:</strong> To prevent unauthorized access on shared devices, active dashboard sessions automatically terminate after 2 minutes of inactivity.</li>
+                    </ul>
+                </section>
+
+                <!-- THE GATEKEEPER POLICY -->
                 <section class="mb-5">
                     <h5 class="fw-bold text-dark mb-3">The Gatekeeper Policy</h5>
                     <p class="text-muted small">
-                        To maintain trust with the **Bank of Ghana** and audit partners, we require proof of delivery for every payout request submitted. This data is used solely to protect marketplace margins.
+                        DataExpress (via Ledgehold Enterprise) maintains a strict transparency mandate. <strong>Payout requests submitted without a corresponding proof of delivery will be flagged as ineligible for payout.</strong> This verification data is retained solely for compliance auditing and annual tax filing requirements.
                     </p>
                 </section>
 
+                <!-- THIRD-PARTY DISCLOSURE -->
                 <section class="mb-5">
                     <h5 class="fw-bold text-dark mb-3">Third-Party Disclosure</h5>
                     <p class="text-muted small">
-                        We use existing, enterprise tools to minimize OpEx. Your data is routed through <strong>ImgBB (Storage)</strong> and <strong>Hubtel (Payments)</strong>. These providers are industry-standard and maintain their own rigorous security protocols.
+                        We use existing, enterprise tools to optimize OpEx and for maximize reliability. Your data is securely routed through <strong>ImgBB</strong> (Identity Verification) and <strong>Hubtel</strong> (Financial Settlements). These providers are industry-standard and maintain their own rigorous security protocols.
                     </p>
                 </section>
 
                 <div class="alert bg-primary-subtle border-0 rounded-4 p-4 text-center">
                     <h6 class="fw-bold text-primary mb-1">Questions about your data?</h6>
-                    <p class="small text-primary opacity-75 mb-3">Our Compliance Team is ready to assist you.</p>
-                    <a href="https://wa.me/233535333868" class="btn btn-primary rounded-pill px-4 fw-bold">Contact Compliance</a>
+                    <p class="small text-primary opacity-75 mb-3">Our Compliance Team is ready to assist you with DPA-related inquiries.</p>
+                    <a href="https://wa.me/233535333868" class="btn btn-primary rounded-pill px-4 fw-bold shadow-sm">Contact Compliance</a>
                 </div>
 
             </div>
-            <div class="bg-light p-3 text-center">
-                <small class="text-muted">© 2025 DataExpress. Operated by Ledgehold Ghana.</small>
+            <div class="bg-light p-3 text-center border-top">
+                <small class="text-muted">© 2026 DataExpress. Operated by Ledgehold Enterprise.</small>
             </div>
         </div>
     </div>
@@ -85,7 +105,9 @@
 
 <style>
     .bg-slate-900 { background-color: #0f172a !important; }
+    .bg-primary-subtle { background-color: #e0e7ff !important; }
     section h5 { letter-spacing: -0.5px; }
     .card { border: 1px solid rgba(0,0,0,0.05) !important; }
+    ul li { margin-bottom: 8px; }
 </style>
 {% endblock %}

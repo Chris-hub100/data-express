@@ -1,266 +1,249 @@
 {% extends "base.html" %}
 
 {% block content %}
+<!-- FIREBASE COMPAT -->
+<script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore-compat.js"></script>
+
 <script>
-  /** * LEDGEHOLD ENTERPRISE CONFIG 
-   * API Key is retrieved from the environment for security.
-   * Ensure __imgbb_api_key is defined globally via your server-side template.
-   */
-  const IMGBB_API_KEY = typeof __imgbb_api_key !== 'undefined' ? __imgbb_api_key : "";
+    /** * LEDGEHOLD ENTERPRISE CONFIG */
+    const __app_id = '{{ __app_id }}';
+    const __firebase_config = '{{ __firebase_config | safe }}';
+    const IMGBB_API_KEY = '{{ IMGBB_API_KEY }}';
 
-  // Helper to show professional error messages
-  function showErrorMessage(msg) {
-    const errorDiv = document.getElementById('errorBox');
-    if (errorDiv) {
-      errorDiv.innerText = msg;
-      errorDiv.classList.remove('d-none');
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-      setTimeout(() => errorDiv.classList.add('d-none'), 8000);
-    }
-  }
+    // Initialize Firebase
+    const config = JSON.parse(__firebase_config);
+    if (!firebase.apps.length) firebase.initializeApp(config);
+    const db = firebase.firestore();
 
-  window.generateListingTicket = async function(event) {
-    event.preventDefault();
-    
-    const submitBtn = document.getElementById('submitBtn');
-    const loadingSpinner = document.getElementById('loadingSpinner');
-    const idFileInput = document.getElementById('studentId');
-    
-    if (!idFileInput || !idFileInput.files || idFileInput.files.length === 0) {
-      showErrorMessage("Please select your Student ID photo.");
-      return;
+    // Helper to show professional error messages
+    function showErrorMessage(msg) {
+        const errorDiv = document.getElementById('errorBox');
+        if (errorDiv) {
+            errorDiv.innerText = msg;
+            errorDiv.classList.remove('d-none');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            setTimeout(() => {
+                if (errorDiv) errorDiv.classList.add('d-none');
+            }, 8000);
+        }
     }
 
-    const idFile = idFileInput.files[0];
+    /**
+     * LIVE PREVIEW LOGIC
+     */
+    window.previewFile = function(input, targetContainerId, targetImgId) {
+        const container = document.getElementById(targetContainerId);
+        const img = document.getElementById(targetImgId);
+        
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                if (img) img.src = e.target.result;
+                if (container) container.classList.remove('d-none');
+            };
+            reader.readAsDataURL(input.files[0]);
+        }
+    };
 
-    if (!IMGBB_API_KEY) {
-      showErrorMessage("System Error: Storage configuration is missing. Please contact Ledgehold Admin.");
-      return;
-    }
+    /**
+     * RESET PREVIEW LOGIC
+     */
+    window.retakePhoto = function(inputId, containerId) {
+        const input = document.getElementById(inputId);
+        const container = document.getElementById(containerId);
+        if (input) input.value = "";
+        if (container) container.classList.add('d-none');
+        if (input) input.click();
+    };
 
-    // UI State: Starting Secure Handoff
-    submitBtn.disabled = true;
-    loadingSpinner.classList.remove('d-none');
-    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Securing & Uploading...';
+    // MAIN ONBOARDING: KYC Submission
+    window.submitOnboarding = async function(event) {
+        event.preventDefault();
+        
+        const submitBtn = document.getElementById('submitBtn');
+        const submitBtnText = document.getElementById('submitBtnText');
+        const loadingSpinner = document.getElementById('loadingSpinner');
+        const idFileInput = document.getElementById('studentId');
+        const selfieFileInput = document.getElementById('selfiePhoto');
+        
+        if (!idFileInput || !idFileInput.files[0] || !selfieFileInput || !selfieFileInput.files[0]) {
+            showErrorMessage("Both Student ID and Selfie are required for verification.");
+            return;
+        }
 
-    try {
-      // 1. UPLOAD TO SECURE CLOUD STORAGE (ImgBB API)
-      const formData = new FormData();
-      formData.append("image", idFile);
+        // Prevent double submission and show loading state
+        if (submitBtn) submitBtn.disabled = true;
+        if (loadingSpinner) loadingSpinner.classList.remove('d-none');
+        if (submitBtnText) submitBtnText.innerText = 'Securing Assets...';
 
-      const imgResponse = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, {
-        method: "POST",
-        body: formData
-      });
+        try {
+            // 1. Upload Student ID to ImgBB
+            const idFormData = new FormData();
+            idFormData.append("image", idFileInput.files[0]);
+            const idResp = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, { method: "POST", body: idFormData });
+            const idRes = await idResp.json();
+            if (!idRes || !idRes.success) throw new Error("ID Upload failed. Please try a clearer photo.");
 
-      const imgData = await imgResponse.json();
-      
-      if (!imgData.success) throw new Error("Upload failed. Try a smaller image or check your internet.");
+            // 2. Upload Selfie to ImgBB
+            const selfieFormData = new FormData();
+            selfieFormData.append("image", selfieFileInput.files[0]);
+            const sResp = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, { method: "POST", body: selfieFormData });
+            const sRes = await sResp.json();
+            if (!sRes || !sRes.success) throw new Error("Selfie Upload failed. Please try again.");
 
-      const cloudImageUrl = imgData.data.url;
+            // 3. Prepare Merchant Data
+            const fullName = document.getElementById('fullName').value.trim();
+            const payload = {
+                merchantId: fullName,
+                fullName: fullName,
+                university: document.getElementById('university').value,
+                course: document.getElementById('course').value,
+                whatsapp: document.getElementById('whatsapp').value,
+                momo: document.getElementById('momo').value,
+                idUrl: idRes.data.url,
+                selfieUrl: sRes.data.url,
+                timestamp: Date.now(),
+                status: 'pending'
+            };
 
-      // 2. GET FORM DATA
-      const title = document.getElementById('itemTitle').value;
-      const price = parseFloat(document.getElementById('itemPrice').value);
-      const uni = document.getElementById('university').value;
-      const name = document.getElementById('fullName').value;
-      const course = document.getElementById('course').value;
-      const whatsapp = document.getElementById('whatsapp').value;
-      const momo = document.getElementById('momo').value;
+            // 4. Save to Firestore (Follow Rule 1 path)
+            const appId = typeof __app_id !== 'undefined' ? __app_id : 'ledgehold-ghana-vault';
+            await db.collection('artifacts').doc(appId)
+                .collection('public').doc('data')
+                .collection('pending_merchants').add(payload);
 
-      // 3. PREPARE WHATSAPP TICKET
-      const fee = price * 0.05;
-      const payout = price - fee;
+            // 5. Success
+            const successModal = new bootstrap.Modal(document.getElementById('successModal'));
+            successModal.show();
 
-      const message = `Hello Ledgehold Compliance Team! %0A%0A` +
-                      `*NEW SECURE LISTING*%0A` +
-                      `--------------------------%0A` +
-                      `*Seller:* ${name}%0A` +
-                      `*Course:* ${course}%0A` +
-                      `*Campus:* ${uni}%0A%0A` +
-                      `*Item:* ${title}%0A` +
-                      `*Price:* GHS ${price.toFixed(2)}%0A` +
-                      `*Est. Payout:* GHS ${payout.toFixed(2)}%0A%0A` +
-                      `*Student ID (Secure Link):*%0A${cloudImageUrl}%0A` +
-                      `--------------------------%0A` +
-                      `My ID has been verified and uploaded to the Ledgehold Cloud. Please go live with my listing.`;
-
-      const adminPhone = "233535333868"; 
-      document.getElementById('whatsappLink').href = `https://wa.me/${adminPhone}?text=${message}`;
-      
-      // Show Success Modal
-      if (window.bootstrap && window.bootstrap.Modal) {
-        const myModal = new bootstrap.Modal(document.getElementById('successModal'));
-        myModal.show();
-      } else {
-        alert("Success! Your application has been uploaded. Please use the WhatsApp button to notify us.");
-      }
-
-    } catch (e) {
-      console.error("Workflow error:", e);
-      showErrorMessage(e.message || "Connection failed. Please check your data connection.");
-    } finally {
-      submitBtn.disabled = false;
-      submitBtn.innerHTML = 'Submit Secure Application';
-      loadingSpinner.classList.add('d-none');
-    }
-  };
+        } catch (e) {
+            console.error(e);
+            showErrorMessage(e.message || "Onboarding failed. Check your connection.");
+        } finally {
+            // Reset button state
+            if (submitBtn) submitBtn.disabled = false;
+            if (loadingSpinner) loadingSpinner.classList.add('d-none');
+            if (submitBtnText) submitBtnText.innerText = 'Submit Verification Request';
+        }
+    };
 </script>
 
-<div class="mb-6">
-  <a href="javascript:history.back()" class="hover:text-slate-900" style="display: inline-flex; align-items: center; gap: 12px; padding: 8px 4px; font-size: 0.875rem; font-weight: bold; color: #64748b; text-decoration: none;">
-    <div style="display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 50%; background-color: #f1f5f9;">
-      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
-    </div>
-    <span>Back</span>
-  </a>
-</div>
-
-<div class="container py-4">
+<div class="container py-5">
     <div class="row justify-content-center">
-        <div class="col-lg-6">
-            <div id="errorBox" class="alert alert-danger d-none rounded-4 border-0 shadow-sm mb-4" role="alert"></div>
+        <div class="col-lg-7">
+            <!-- Error Box -->
+            <div id="errorBox" class="alert alert-danger d-none rounded-4 border-0 shadow-sm mb-4"></div>
 
             <div class="text-center mb-5">
-                <div class="d-inline-flex align-items-center gap-2 mb-2 px-3 py-1 rounded-pill bg-primary-subtle text-primary border border-primary-subtle" style="font-size: 0.7rem; font-weight: 800; letter-spacing: 0.5px;">
-                   <i class="bi bi-shield-lock-fill"></i> SECURE CLOUD HANDOFF
+                <div class="d-inline-flex align-items-center gap-2 mb-3 px-3 py-1 rounded-pill bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25" style="font-size: 0.7rem; font-weight: 800; letter-spacing: 0.5px;">
+                    <i class="bi bi-shield-check"></i> SECURE KYC GATEWAY
                 </div>
-                <h2 class="fw-bold text-slate-900">Become a Seller</h2>
-                <p class="text-slate-500">List items instantly. No account needed. Your ID is encrypted during upload.</p>
+                <h2 class="fw-bold text-dark">Merchant Registry</h2>
+                <p class="text-muted small">Verify your institutional identity to run your business with us.</p>
             </div>
 
-            <form id="sellerForm" onsubmit="generateListingTicket(event)" class="space-y-6">
-                <!-- ITEM INFO -->
-                <div class="card border-0 shadow-sm p-4 mb-4" style="border-radius: 20px;">
-                    <h6 class="fw-bold mb-3 text-primary"><i class="bi bi-tag-fill me-2"></i>Item Details</h6>
+            <form onsubmit="submitOnboarding(event)">
+                <!-- IDENTITY SECTION -->
+                <div class="card border-0 shadow-sm p-4 mb-4 rounded-4 bg-white border">
+                    <h6 class="fw-bold mb-4 text-primary"><i class="bi bi-person-badge-fill me-2"></i>Institutional Identity</h6>
+                    
                     <div class="mb-3">
-                        <label class="form-label small fw-bold">What are you selling?</label>
-                        <input type="text" id="itemTitle" class="form-control rounded-pill border-light bg-light" placeholder="e.g. iPhone 13" required>
+                        <label class="form-label small fw-bold text-muted">FULL NAME (as on Student ID)</label>
+                        <input type="text" id="fullName" class="form-control rounded-pill border-light bg-light py-2 px-3" placeholder="e.g. Kwadwo Nkansah" required>
                     </div>
-                    <div class="row g-3">
-                        <div class="col-6">
-                            <label class="form-label small fw-bold">Price (GHS)</label>
-                            <input type="number" id="itemPrice" class="form-control rounded-pill border-light bg-light" placeholder="0.00" step="0.01" required>
+
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold text-muted">COURSE</label>
+                            <input type="text" id="course" class="form-control rounded-pill border-light bg-light" placeholder="e.g. BSc. Computer Science" required>
                         </div>
-                        <div class="col-6">
-                            <label class="form-label small fw-bold">University</label>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold text-muted">ENROLLED UNIVERSITY</label>
                             <select id="university" class="form-select rounded-pill border-light bg-light">
-                                <option>KNUST - Main Campus</option>
                                 <option>UCC</option>
+                                <option>KNUST - Main</option>
                                 <option>UG Legon</option>
-                                <option>UMaT - Essikado Campus</option>
+                                <option>UMaT - Essikado</option>
                             </select>
                         </div>
                     </div>
-                </div>
 
-                <!-- VERIFICATION -->
-                <div class="card border-0 shadow-sm p-4 mb-4" style="border-radius: 20px; border-top: 4px solid #3b82f6 !important;">
-                    <h6 class="fw-bold mb-3 text-primary"><i class="bi bi-person-badge me-2"></i>Identity & Payout</h6>
-                    
-                    <div class="row g-3 mb-3">
-                        <div class="col-md-6">
-                            <label class="form-label small fw-bold">Full Name (on ID)</label>
-                            <input type="text" id="fullName" class="form-control rounded-pill border-light bg-light" placeholder="As on ID" required>
+                    <!-- ID PREVIEW & UPLOAD -->
+                    <div class="mb-4">
+                        <label class="form-label small fw-bold text-muted text-uppercase">Student ID Card (Front)</label>
+                        <div id="idPreviewContainer" class="mb-3 d-none">
+                            <div class="position-relative d-inline-block w-100">
+                                <img id="idPreviewImg" src="" class="rounded-3 border shadow-sm w-100" style="max-height: 250px; object-fit: contain; background: #f8fafc;">
+                                <button type="button" onclick="retakePhoto('studentId', 'idPreviewContainer')" class="btn btn-dark btn-sm rounded-pill position-absolute top-0 end-0 m-2 shadow">
+                                    <i class="bi bi-camera-fill me-1"></i> Retake
+                                </button>
+                            </div>
                         </div>
-                        <div class="col-md-6">
-                            <label class="form-label small fw-bold">Course</label>
-                            <input type="text" id="course" class="form-control rounded-pill border-light bg-light" placeholder="e.g BSc. Computer Science" required>
-                        </div>
+                        <input type="file" id="studentId" accept="image/*" capture="environment" class="d-none" onchange="previewFile(this, 'idPreviewContainer', 'idPreviewImg')">
+                        <button type="button" onclick="document.getElementById('studentId').click()" class="btn btn-outline-primary w-100 rounded-pill py-3 fw-bold border-2">
+                            <i class="bi bi-card-image me-2"></i> Scan Student ID
+                        </button>
                     </div>
 
-                    <div class="mb-4">
-    <label class="form-label small fw-bold">Student ID Photo</label>
-    
-    <!-- Preview -->
-    <div id="photoPreview" class="text-center mb-3" style="display: none;">
-        <img id="idPhoto" src="#" alt="Student ID" class="rounded-3 border" 
-             style="max-width: 100%; max-height: 200px; object-fit: contain;">
-        <div class="mt-2">
-            <button type="button" onclick="retakePhoto()" class="btn btn-outline-warning btn-sm">
-                <i class="bi bi-arrow-clockwise"></i> Retake
-            </button>
-        </div>
-    </div>
-    
-    <!-- Camera Input (for mobile) -->
-    <input type="file" 
-           id="studentId" 
-           accept="image/*" 
-           capture="environment" 
-           class="d-none" 
-           onchange="previewPhoto(this)" 
-           required>
-    
-    <!-- Trigger Button -->
-    <button type="button" onclick="document.getElementById('studentId').click()" 
-            class="btn btn-primary w-100 rounded-pill py-3">
-        <i class="bi bi-camera-fill me-2"></i> Take Photo of Student ID
-    </button>
-    
-    <!-- Fallback text -->
-    <div class="form-text text-center mt-2" style="font-size: 0.7rem;">
-        <i class="bi bi-check text-primary"></i> Handled by Ledgehold Secure Gateway. Visible only to verified Compliance Teams.
-    </div>
-</div>
+                    <!-- SELFIE PREVIEW & UPLOAD -->
+                    <div class="mb-2">
+                        <label class="form-label small fw-bold text-muted text-uppercase">Live Selfie Verification</label>
+                        <div id="selfiePreviewContainer" class="mb-3 d-none text-center">
+                            <div class="position-relative d-inline-block">
+                                <img id="selfiePreviewImg" src="" class="rounded-circle border border-4 border-white shadow" style="width: 180px; height: 180px; object-fit: cover;">
+                                <button type="button" onclick="retakePhoto('selfiePhoto', 'selfiePreviewContainer')" class="btn btn-dark btn-sm rounded-pill position-absolute bottom-0 end-0 shadow">
+                                    <i class="bi bi-arrow-clockwise"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <input type="file" id="selfiePhoto" accept="image/*" capture="user" class="d-none" onchange="previewFile(this, 'selfiePreviewContainer', 'selfiePreviewImg')">
+                        <button type="button" onclick="document.getElementById('selfiePhoto').click()" class="btn btn-outline-primary w-100 rounded-pill py-3 fw-bold border-2">
+                            <i class="bi bi-person-bounding-box me-2"></i> Take Live Selfie
+                        </button>
+                    </div>
+                </div>
 
-<script>
-function previewPhoto(input) {
-    if (input.files && input.files[0]) {
-        const reader = new FileReader();
-        const preview = document.getElementById('photoPreview');
-        const img = document.getElementById('idPhoto');
-        
-        reader.onload = function(e) {
-            img.src = e.target.result;
-            preview.style.display = 'block';
-        };
-        
-        reader.readAsDataURL(input.files[0]);
-    }
-}
-
-function retakePhoto() {
-    document.getElementById('studentId').value = '';
-    document.getElementById('photoPreview').style.display = 'none';
-    document.getElementById('studentId').click();
-}
-</script>
-                    
+                <!-- SETTLEMENT SECTION -->
+                <div class="card border-0 shadow-sm p-4 mb-4 rounded-4 bg-white border">
+                    <h6 class="fw-bold mb-4 text-primary"><i class="bi bi-wallet2 me-2"></i>Settlement Channels</h6>
                     <div class="row g-3">
                         <div class="col-md-6">
-                            <label class="form-label small fw-bold">WhatsApp Number</label>
-                            <input type="tel" id="whatsapp" class="form-control rounded-pill border-light bg-light" placeholder="0500000000" required>
+                            <label class="form-label small fw-bold text-muted">WhatsApp Number</label>
+                            <input type="tel" id="whatsapp" class="form-control rounded-pill border-light bg-light" placeholder="0240000000" required>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label small fw-bold">MoMo Payout Number</label>
-                            <input type="tel" id="momo" class="form-control rounded-pill border-light bg-light" placeholder="0240000000" required>
+                            <label class="form-label small fw-bold text-muted">MoMo (Payout) Number</label>
+                            <input type="tel" id="momo" class="form-control rounded-pill border-light bg-light" placeholder="0550000000" required>
                         </div>
                     </div>
                 </div>
 
-                <!-- POLICY -->
-                <div class="card bg-slate-900 text-white p-4 mb-4" style="border-radius: 20px;">
-                    <h6 class="fw-bold mb-2 text-primary" style="font-size: 0.8rem;">THE GATEKEEPER POLICY</h6>
-                    <div class="form-check mb-2">
+                <!-- POLICY CARD -->
+                <div class="card bg-dark text-white p-4 mb-4 rounded-4 shadow-lg border-0">
+                    <h6 class="fw-bold text-primary small mb-3 text-uppercase" style="letter-spacing: 1px;">Compliance Agreement</h6>
+                    <div class="form-check mb-3">
                         <input class="form-check-input" type="checkbox" id="policyCheck" required>
                         <label class="form-check-label small opacity-75" for="policyCheck">
-                            I will provide a <strong>proof of delivery</strong> for every sale to be eligible for payout.
+                            I understand that I have to provide valid <strong>Proof of Delivery</strong> to be eligible for Payout.
                         </label>
                     </div>
                     <div class="form-check">
                         <input class="form-check-input" type="checkbox" id="feeCheck" required>
                         <label class="form-check-label small opacity-75" for="feeCheck">
-                            I agree to the <strong>5% total service fee</strong> before payout.
+                            I agree to the <strong>5% Service Fee</strong> deducted at Payout.
                         </label>
                     </div>
                 </div>
 
-                <div class="d-grid">
-                    <button type="submit" id="submitBtn" class="btn btn-primary btn-lg rounded-pill fw-bold shadow-lg d-flex align-items-center justify-content-center gap-2">
-                        <span id="loadingSpinner" class="spinner-border spinner-border-sm d-none" role="status"></span>
-                        Submit Application
+                <div class="d-grid gap-2">
+                    <button type="submit" id="submitBtn" class="btn btn-primary btn-lg rounded-pill fw-bold py-3 shadow-lg">
+                        <span id="loadingSpinner" class="spinner-border spinner-border-sm d-none me-2" role="status"></span>
+                        <span id="submitBtnText">Submit Verification Request</span>
                     </button>
+                    <p class="text-center text-muted mt-2" style="font-size: 0.65rem;">
+                        <i class="bi bi-lock-fill me-1"></i> Your sensitive documents are encrypted during transfer.
+                    </p>
                 </div>
             </form>
         </div>
@@ -268,31 +251,30 @@ function retakePhoto() {
 </div>
 
 <!-- SUCCESS MODAL -->
-<div class="modal fade" id="successModal" data-bs-backdrop="static" tabindex="-1" aria-hidden="true">
+<div class="modal fade" id="successModal" data-bs-backdrop="static" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content border-0 shadow-lg" style="border-radius: 25px;">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 30px;">
             <div class="modal-body p-5 text-center">
-                <div class="bg-success-subtle text-success rounded-circle d-inline-flex align-items-center justify-content-center mb-4" style="width: 70px; height: 70px;">
-                    <i class="bi bi-cloud-check-fill fs-1"></i>
+                <div class="bg-success bg-opacity-10 text-success rounded-circle d-inline-flex align-items-center justify-content-center mb-4" style="width: 80px; height: 80px;">
+                    <i class="bi bi-hourglass-split fs-1"></i>
                 </div>
-                <h4 class="fw-bold text-dark mb-2">Securely Uploaded!</h4>
+                <h4 class="fw-bold text-dark">Verification Pending</h4>
                 <p class="text-secondary small mb-4">
-                    Your details and Student ID have been routed to the Ledgehold Cloud. Click below to notify our compliance team.
+                    Our compliance team is verifying your request. Once approved, you'll be notified on WhatsApp with a link to get your Merchant Dashboard logins.
                 </p>
-                <div class="d-grid">
-                    <a id="whatsappLink" href="#" class="btn btn-success rounded-pill fw-bold py-3">
-                        <i class="bi bi-whatsapp me-2"></i>Notify Compliance Team
-                    </a>
-                </div>
+                <a href="/" class="btn btn-dark w-100 rounded-pill fw-bold py-3">Got it, thanks!</a>
             </div>
         </div>
     </div>
 </div>
 
 <style>
-    .form-control:focus, .form-select:focus { border-color: #3b82f6; box-shadow: 0 0 0 0.25rem rgba(59, 130, 246, 0.1); }
-    input[type="file"] { border-radius: 12px; padding: 10px; background: #f8fafc; font-size: 0.8rem; }
-    .bg-primary-subtle { background-color: #e0e7ff !important; }
-    .bg-slate-900 { background-color: #0f172a !important; }
+    body { background-color: #f8fafc; }
+    .form-control:focus, .form-select:focus { 
+        border-color: #0d6efd; 
+        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.05); 
+        background-color: #fff !important;
+    }
+    .btn-outline-primary:hover { color: #fff !important; }
 </style>
 {% endblock %}

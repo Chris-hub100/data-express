@@ -2,8 +2,14 @@ from flask import Flask, render_template, request, jsonify
 import requests
 import os
 import random
+import json
 import datetime
+import firebase_admin
+from firebase_admin import credentials, firestore
 from datetime import date, timedelta
+from dotenv import load_dotenv
+
+load_dotenv(override=True)
 
 app = Flask(__name__)
 
@@ -16,12 +22,54 @@ PAYSTACK_SECRET_KEY = "sk_test_205609e95584b8704c90e2c8c72b6f1dbcee60db"
 # Set to FALSE once approved to unlock Movies & Vouchers.
 COMPLIANCE_MODE = False
 
+def get_firebase_context():
+    return {
+        "__app_id": os.environ.get("__app_id", "ledgehold-ghana"),
+        "__firebase_config": os.environ.get("__firebase_config", "{}")
+    }
+
+# --- SECURE ADMIN CREDENTIALS ---
+# Pulled directly from your .env file
+# Logic: Use environment variables, with no unsafe fallbacks.
+ADMIN_ID = os.environ.get("ADMIN_ID")
+ADMIN_PIN = os.environ.get("ADMIN_PIN")
+
+def get_firebase_context():
+    """Retrieves standard Ledgehold context from .env"""
+    return {
+        "__app_id": os.environ.get("__app_id", "ledgehold-ghana"),
+        "__firebase_config": os.environ.get("__firebase_config", "{}"),
+        "IMGBB_API_KEY": os.environ.get("IMGBB_API_KEY", "")
+    }
+
+if not firebase_admin._apps:
+    try:
+        # Ensure 'service-account.json' is in your folder and named in .env
+        key_path = os.getenv('SERVICE_ACCOUNT_PATH', 'service-account.json')
+        
+        if os.path.exists(key_path):
+            cred = credentials.Certificate(key_path)
+            firebase_admin.initialize_app(cred)
+            print(f"Ledgehold System: Backend Node Secure via {key_path}")
+        else:
+            # Fallback for production or default environments
+            firebase_admin.initialize_app()
+            print("Ledgehold System: Backend Node Secure via Default credentials")
+    except Exception as e:
+        print(f"CRITICAL AUTH ERROR: {e}")
+
+# Database Hook
+db = firestore.client()
+# Get the app_id from your .env (e.g., ledgehold_)
+APP_ID = os.getenv('__app_id', 'ledgehold-essikado-v1')
+
 # --- CONTEXT PROCESSOR (NEW ADDITION FROM SECOND CODE) ---
 # This makes 'compliance_mode' available in ALL templates automatically
 # Now you can use {{ compliance_mode }} in any template without passing it manually
 @app.context_processor
 def inject_compliance_status():
     return dict(compliance_mode=COMPLIANCE_MODE)
+
 
 @app.route('/')
 def home():
@@ -53,6 +101,104 @@ def home():
 def health_check():
     return "OK", 200
 
+@app.route('/admin-auth', methods=['POST'])
+def admin_auth():
+    """DPA COMPLIANT SERVER-SIDE HANDSHAKE"""
+    data = request.json
+    client_id = data.get('id')
+    client_pin = data.get('pin')
+
+    if not ADMIN_ID or not ADMIN_PIN:
+        return jsonify({"success": False, "message": "System Error: Admin credentials not configured"}), 500
+
+    if client_id == ADMIN_ID and client_pin == ADMIN_PIN:
+        return jsonify({"success": True})
+    else:
+        return jsonify({"success": False, "message": "Invalid Command Credentials"}), 401
+
+@app.route('/admin_controls')
+def admin_controls():
+    """
+    The Command Center Entry Point.
+    We pass the Firebase context so the Tabbed Dashboard can:
+    1. Synchronize with the Firestore DPA Registry (for Revocations).
+    2. Maintain the Ledgehold Security Standard.
+    """
+    return render_template('admin.html', **get_firebase_context())
+
+@app.route('/api/marketplace/listings', methods=['GET'])
+def get_all_listings():
+    """
+    Fetches real-time listings from the Firestore silo.
+    Wires directly into the logic in the Canvas (marketplace.html).
+    """
+    try:
+        # 1. Fetch Takedown Registry (Institutional Safety)
+        # Path matches Rule 1: artifacts/{appId}/public/data/takedown_registry
+        takedown_ref = db.collection('artifacts').document(APP_ID)\
+                         .collection('public').document('data')\
+                         .collection('takedown_registry')
+        blocked_ids = [doc.id for doc in takedown_ref.stream()]
+
+        # 2. Fetch Active Listings
+        # Path matches Canvas: artifacts/{appId}/public/data/market_listings
+        listings_ref = db.collection('artifacts').document(APP_ID)\
+                         .collection('public').document('data')\
+                         .collection('market_listings')
+        
+        all_items = []
+        for doc in listings_ref.stream():
+            data = doc.to_dict()
+            # Safety Checks: Must be 'active' and NOT in the Takedown Registry
+            if data.get('status') == 'active' and doc.id not in blocked_ids:
+                data['id'] = doc.id
+                all_items.append(data)
+
+        # 3. Randomize the display to maintain a "busy" and fair market feel
+        random.shuffle(all_items)
+
+        return jsonify({
+            "success": True, 
+            "count": len(all_items),
+            "listings": all_items
+        })
+
+    except Exception as e:
+        print(f"Firestore Client Error: {e}")
+        return jsonify({
+            "success": False, 
+            "error": "The Marketplace Node is currently re-syncing.",
+            "listings": []
+        }), 500
+
+@app.route('/api/admin/takedown', methods=['POST'])
+def execute_takedown():
+    """
+    Administrative Takedown wiring for future Command Center button.
+    Neutralizes a listing by adding its ID to the registry.
+    """
+    auth_header = request.headers.get('Authorization')
+    if not auth_header:
+        return jsonify({"success": False, "error": "Unauthorized"}), 401
+    
+    data = request.json
+    listing_id = data.get('listingId')
+    
+    if not listing_id:
+        return jsonify({"success": False, "error": "ID Required"}), 400
+
+    try:
+        db.collection('artifacts').document(APP_ID)\
+          .collection('public').document('data')\
+          .collection('takedown_registry').document(listing_id).set({
+              "timestamp": firestore.SERVER_TIMESTAMP,
+              "reason": data.get('reason', 'Institutional Safety Audit'),
+              "active": True
+          })
+        return jsonify({"success": True, "message": f"Listing {listing_id} neutralized."})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
 @app.route('/foodrun')
 def food_run_page():
     # Logic: Open Friday (4), Saturday (5), Sunday (6)
@@ -65,7 +211,7 @@ def food_run_page():
         menu = [
             {
                 "item": "KFC Streetwise 2 (Rice)", 
-                "price": 45.00, 
+                "price": 90.00, 
                 "img": "https://cdn.tictuk.com/staging/fc9ab8a5-b3d3-4cf6-0e30-555e691086bf/7824c8df-6c6b-d80d-7e44-877899c2ed9b.jpeg?a=d1cb9c76-1f98-19c4-1a27-597c125b2738",
                 "description": "Classic KFC chicken with seasoned rice and signature sauce",
                 "prep_time": "25"
@@ -86,14 +232,14 @@ def food_run_page():
             },
             {
                 "item": "Jollof Rice + Chicken", 
-                "price": 35.00, 
+                "price": 45.00, 
                 "img": "https://th.bing.com/th/id/OIP.n_wJL9qZ16lh_uiRCqNiUgHaHa?w=197&h=197&c=7&r=0&o=7&cb=ucfimg2&dpr=1.5&pid=1.7&rm=3&ucfimg=1",
                 "description": "Spicy Ghanaian jollof rice with grilled chicken",
                 "prep_time": "25"
             },
             {
                 "item": "Fried Rice + Chicken", 
-                "price": 35.00, 
+                "price": 45.00, 
                 "img": "https://th.bing.com/th/id/OIP.RfVI9SuTBNY6oWetN8uMXgHaFO?w=252&h=180&c=7&r=0&o=7&cb=ucfimg2&dpr=1.5&pid=1.7&rm=3&ucfimg=1",
                 "description": "Fried rice with vegetables and grilled chicken",
                 "prep_time": "25"
@@ -107,12 +253,13 @@ def food_run_page():
             },
             {
                 "item": "Plain Rice + Chicken Stew", 
-                "price": 25.00, 
+                "price": 35.00, 
                 "img": "https://th.bing.com/th/id/OIP.kBNJKGnK8BFTISvoUVRlIwHaFI?w=251&h=180&c=7&r=0&o=7&cb=ucfimg2&dpr=1.5&pid=1.7&rm=3&ucfimg=1",
                 "description": "Steamed rice with rich chicken stew",
                 "prep_time": "20"
             }
         ]
+        random.shuffle(menu)
     else:
         # The ELSE is now aligned correctly with the IF
         state = "closed"
@@ -124,6 +271,25 @@ def food_run_page():
 def quote_page():
     return render_template('quote.html')
 
+@app.route('/marketing_toolkit')
+def marketing():
+    cloudinary_name = os.getenv('CLOUDINARY_CLOUD_NAME')
+    return render_template('marketing_toolkit.html',CLOUDINARY_CLOUD_NAME=cloudinary_name, **get_firebase_context())
+
+@app.route('/endorsement')
+def endorsement():
+    return render_template('endorsement.html', **get_firebase_context())
+
+@app.route('/marketplace')
+def marketplace():
+    actual_key = os.getenv('IMGBB_API_KEY')
+    return render_template('marketplace.html', **get_firebase_context())
+
+@app.route('/inventory_management')
+def inventory():
+    actual_key = os.getenv('IMGBB_API_KEY')
+    return render_template('inventory_management.html', **get_firebase_context())
+
 @app.route('/seller_onboarding')
 @app.route('/onboarding') # Both URLs now lead here and pass the key
 def onboarding():
@@ -132,19 +298,68 @@ def onboarding():
     actual_key = os.getenv('IMGBB_API_KEY') 
     
     # Pass it to the template
-    return render_template('seller_onboarding.html', IMGBB_API_KEY=actual_key)
+    return render_template('seller_onboarding.html', **get_firebase_context())
 
-@app.route('/marketplace')
-def marketplace():
-    return render_template('marketplace.html')
+@app.route('/list_item')
+def list_item():
+    actual_key = os.getenv('IMGBB_API_KEY')
+    return render_template('list_item.html', **get_firebase_context())
 
 @app.route('/directory')
 def directory():
     return render_template('directory.html')
 
+@app.route('/faq')
+def faq():
+    return render_template('faq.html')
+
+@app.route('/handshake')
+def handshake():
+    return render_template('handshake.html', **get_firebase_context())
+
+@app.route('/cms')
+def admin():
+    # We must pass the Firebase context so the Canvas can initialize the DPA Registry
+    return render_template('cms.html', **get_firebase_context())
+
+@app.route('/merchant_dashboard')
+def merchant_dashboard():
+    # We must pass the Firebase context so the Canvas can initialize the DPA Registry
+    return render_template('merchant_dashboard.html', **get_firebase_context())
+
+@app.route('/payout_portal')
+def payout():
+    actual_key = os.getenv('IMGBB_API_KEY') 
+    # Pass it to the template
+    return render_template('payout_portal.html', **get_firebase_context())
+
 @app.route('/shop')
 def shop():
     return render_template('shop.html')
+
+@app.route('/chat')
+def chat():
+    return render_template('chat.html', **get_firebase_context())
+
+@app.route('/receipt_request')
+def receipt():
+    return render_template('receipt_request.html', **get_firebase_context())
+
+@app.route('/receipt_generator')
+def receipt_generator():
+    return render_template('receipt_generator.html', **get_firebase_context())
+
+@app.route('/inbox')
+def inbox():
+    return render_template('inbox.html', **get_firebase_context())
+
+@app.route('/intel')
+def intel():
+    return render_template('insights.html', **get_firebase_context())
+
+@app.route('/merch')
+def merch():
+    return render_template('merch.html', **get_firebase_context())
 
 @app.route('/privacy')
 def privacy():
@@ -167,7 +382,6 @@ def tv_page():
     # A. THE MOVIE POOL (From second code - complete list)
     movies = [
         {"id": "43R9l7EkJwE", "title": "Predator: Badlands", "creator": "20th Century", "type": "video"},
-        {"id": "ZdC5mFHPldg", "title": "Mortal Kombat II", "creator": "Warner Bros", "type": "video"},
         {"id": "OpThntO9ixc", "title": "Weapons", "creator": "Warner Bros", "type": "video"},
         {"id": "8yh9BPUBbbQ", "title": "F1® The Movie", "creator": "Warner Bros", "type": "video"},
         {"id": "-E3lMRx7HRQ", "title": "Now You See Me 3", "creator": "Lionsgate", "type": "video"},
