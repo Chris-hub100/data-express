@@ -27,7 +27,8 @@
 
             <div class="card border-0 shadow-lg p-4 rounded-4 bg-white">
                 <div class="mb-3 text-start">
-                    <label class="form-label small fw-bold text-muted">IDENTIFIER</label>
+                    <!-- UPDATED: Label and placeholder for clarity -->
+                    <label class="form-label small fw-bold text-muted">MERCHANT NAME</label>
                     <input type="text" id="merchantNameInput" 
                            class="form-control rounded-pill border-light bg-light py-2 px-4" 
                            placeholder="e.g. Kwadwo Nkansah" 
@@ -401,7 +402,7 @@
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
     import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
-    import { getFirestore, doc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
+    import { getFirestore, doc, getDoc, collection, query, where, getDocs, onSnapshot } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
 
     // 1. Initialization
     const config = JSON.parse(__firebase_config);
@@ -660,40 +661,55 @@
         }
     }
 
-    // THE GATEKEEPER: Secure Login Challenge
+    // THE GATEKEEPER: Smart Query Login (Decoupled Name/ID Logic) - FROM SECOND FILE
     window.handleLogin = async function() {
-        const name = document.getElementById('merchantNameInput').value.trim();
-        const pin = document.getElementById('merchantPinInput').value.trim();
+        const nameInput = document.getElementById('merchantNameInput').value.trim();
+        const pinInput = document.getElementById('merchantPinInput').value.trim();
         const btn = document.getElementById('unlockBtn');
         const err = document.getElementById('loginError');
         const errMsg = document.getElementById('errorMsg');
 
-        if (!name || !pin) return;
+        if (!nameInput || !pinInput) return;
 
         btn.disabled = true;
         btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Verifying...';
 
         try {
-            const inputHash = await hashPin(pin);
-            const merchantRef = doc(db, 'artifacts', appId, 'public', 'data', 'verified_merchants', name);
-            const docSnap = await getDoc(merchantRef);
+            const inputHash = await hashPin(pinInput);
+            
+            // SECURITY UPGRADE: Query by Human Name, Verify by PIN
+            const merchantsRef = collection(db, 'artifacts', appId, 'public', 'data', 'verified_merchants');
+            // Look for any document where 'fullName' matches the input (e.g. "Chris Tetteh")
+            const q = query(merchantsRef, where("fullName", "==", nameInput));
+            const querySnapshot = await getDocs(q);
 
-            if (!docSnap.exists()) {
-                throw new Error("Incorrect Identifier or PIN. Please try again. And note that your Identifier is Case Sensitive");
-            }
+            let matchFound = false;
+            let foundMerchantId = null;
 
-            if (docSnap.data().pin === inputHash) {
-                localStorage.setItem('ledgehold_merchant_name', name);
+            // Iterate through potential duplicates to find the one with the matching PIN
+            querySnapshot.forEach((doc) => {
+                const data = doc.data();
+                if (data.pin === inputHash) {
+                    matchFound = true;
+                    // CAPTURE THE UNIQUE ID (e.g., "Chris Tetteh 3863")
+                    foundMerchantId = doc.id; 
+                }
+            });
+
+            if (matchFound && foundMerchantId) {
+                // IMPORTANT: Save the UNIQUE ID to session, NOT just the name they typed.
+                // This ensures all backend systems (Inventory, Links) use the collision-proof ID.
+                localStorage.setItem('ledgehold_merchant_name', foundMerchantId);
                 localStorage.setItem('ledgehold_last_active', Date.now());
-                currentMerchant = name;
+                currentMerchant = foundMerchantId;
                 refreshUI();
             } else {
-                throw new Error("Incorrect Identifier or PIN. Please try again. And note that your Identifier is Case Sensitive");
+                throw new Error("Invalid Name or PIN. Please check your credentials.");
             }
         } catch (e) {
             errMsg.innerText = e.message;
             err.classList.remove('d-none');
-            setTimeout(() => err.classList.add('d-none'), 10000);
+            setTimeout(() => err.classList.add('d-none'), 5000);
         } finally {
             btn.disabled = false;
             btn.innerHTML = 'Unlock Dashboard';

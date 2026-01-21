@@ -19,8 +19,15 @@
 
     {% set merchant_id = request.args.get('merchant') %}
     {% if merchant_id %}
+        <!-- ADDED: Logic to remove last 4 digits for visual display -->
+        <!-- Changed from replace('_', ' ') to replace('+', ' ') for URL format -->
+        {% set raw_name = merchant_id | replace('+', ' ') %}
+        
+        <!-- Logic: If name ends in ' 1234' (Space + 4 Digits), strip it for the visual banner -->
+        {% set visual_name = raw_name[:-5] if raw_name[-1] in '0123456789' and raw_name[-5] == ' ' else raw_name %}
+
         <!-- VERIFIED MERCHANT PREVIEW (Dynamic Text, Static Image) -->
-        <meta property="og:title" content="Verified Storefront: {{ merchant_id | replace('_', ' ') }}">
+        <meta property="og:title" content="Verified Storefront: {{ visual_name }}">
         <meta property="og:description" content="Official Ledgehold Partner. Secure campus trade verified by The Gatekeeper Policy.">
         
         <!-- STATIC BRAND CARD (Reliable Fallback) -->
@@ -262,6 +269,7 @@
                     </div>
                 </div>
             </div>
+</div>
         </div>
     </div>
 

@@ -527,6 +527,20 @@ const merchantFilter = params.get('merchant');
 document.addEventListener('DOMContentLoaded', loadListings);
 
 /**
+ * CLEAN MERCHANT NAME FUNCTION
+ * Strips trailing digits and any trailing spaces for cleaner UI display
+ */
+function cleanMerchantName(merchantName) {
+    if (!merchantName) return "Verified Merchant";
+    
+    // Remove trailing digits and any spaces before them
+    const cleaned = merchantName.replace(/\s+\d+$/, '');
+    
+    // Also remove any trailing spaces that might remain
+    return cleaned.trim();
+}
+
+/**
  * FETCH LOGIC
  */
 async function loadListings() {
@@ -679,7 +693,8 @@ function showItemDetail() {
     document.getElementById('detailTitle').innerText = d.itemName;
     document.getElementById('detailCampus').innerText = d.university;
     document.getElementById('detailPrice').innerText = 'GHS ' + d.price.toFixed(2);
-    document.getElementById('detailSeller').innerText = d.merchantId || d.seller || "Verified Merchant";
+    // Use cleanMerchantName for display
+    document.getElementById('detailSeller').innerText = cleanMerchantName(d.merchantId || d.seller) || "Verified Merchant";
     document.getElementById('detailDescription').innerText = d.description || "Verified institutional listing.";
     document.getElementById('detailAvailability').innerText = d.availability || "Ready for Instant Pickup";
     document.getElementById('detailLandmark').innerText = d.landmark || "TBA at Campus";
@@ -759,7 +774,8 @@ window.viewFullImage = function(url) {
 
 function applyBrandingUI(merchant) {
     document.getElementById('merchantBrandIndicator').classList.remove('d-none');
-    document.getElementById('activeMerchantName').innerText = merchant;
+    // Use cleanMerchantName for the banner display
+    document.getElementById('activeMerchantName').innerText = cleanMerchantName(merchant);
     document.getElementById('merchantResetBar').classList.remove('d-none');
 }
 
