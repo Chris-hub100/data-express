@@ -282,7 +282,7 @@
         <div style="position: relative; z-index: 1;">
             <div style="border-bottom: 2px solid #0f172a; padding-bottom: 20px; margin-bottom: 30px; display: flex; justify-content: space-between; align-items: center;">
                 <div>
-                    <h1 style="margin: 0; font-size: 24px; font-weight: 900; letter-spacing: -1px;">Ledgehold Enterprise</h1>
+                    <h1 style="margin: 0; font-size: 24px; font-weight: 900; letter-spacing: -1px;">LEDGEHOLD GHANA</h1>
                     <p style="margin: 2px 0 0 0; font-size: 10px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 1px;">Infrastructure & Compliance Division</p>
                 </div>
                 <div style="text-align: right;">
@@ -337,7 +337,7 @@
                 <div style="display: flex; justify-content: space-between; align-items: flex-end;">
                     <div style="max-width: 400px;">
                         <p style="margin: 0 0 10px 0; font-size: 10px; font-weight: 800; color: #0f172a; text-transform: uppercase;">The Gatekeeper Policy Attestation</p>
-                        <p style="margin: 0; font-size: 9px; color: #64748b; line-height: 1.5;">This document serves as a verified digital receipt of trade, under the Ledgehold Enterprise infrastructure policies. All transactions are backed by Ledgehold Escrow.</p>
+                        <p style="margin: 0; font-size: 9px; color: #64748b; line-height: 1.5;">This document serves as a verified digital receipt of trade. Under Ledgehold Ghana infrastructure policies, this receipt is required for daily log reconciliation and Act 843 tax compliance audits. All transactions are backed by Ledgehold Escrow.</p>
                     </div>
                     <div style="text-align: right;">
                         <div style="display: inline-block; padding: 8px; border: 2px solid #0f172a; border-radius: 8px; text-align: center;">
@@ -389,12 +389,8 @@
                 const items = [];
                 snap.forEach(d => items.push({id: d.id, ...d.data()}));
                 
-                if (items.length > 0) {
-                    badge.innerText = items.length;
-                    badge.classList.remove('d-none');
-                } else {
-                    badge.classList.add('d-none');
-                }
+                badge.innerText = items.length;
+                items.length > 0 ? badge.classList.remove('d-none') : badge.classList.add('d-none');
 
                 list.innerHTML = items.length === 0 ? '<div class="col-12 text-center py-5 text-muted small">No pending verification requests.</div>' :
                 items.map(m => `
@@ -412,7 +408,7 @@
                             </div>
                             <div class="p-3 bg-white">
                                 <p class="x-small text-muted mb-2"><b>University:</b> ${m.university} | <b>Course:</b> ${m.course}</p>
-                                <!-- NEW: FINANCIAL DATA DISPLAY -->
+                                <!-- FINANCIAL DATA DISPLAY -->
                                 <div class="bg-warning bg-opacity-10 p-2 rounded-3 mb-3 border border-warning border-opacity-25">
                                     <div class="d-flex align-items-center gap-2 mb-1">
                                         <i class="bi bi-phone text-dark"></i>
@@ -441,6 +437,7 @@
             const snap = await reqRef.get();
             const data = snap.data();
 
+            // USE UNIQUE ID AS DOC KEY
             await db.collection('artifacts').doc(__app_id).collection('public').doc('data').collection('verified_merchants').doc(merchantId).set({
                 ...data, isApproved: true, approvedAt: Date.now(), status: 'active'
             });
@@ -449,10 +446,15 @@
             
             const cleanPhone = phone.replace(/\D/g, '');
             const formattedPhone = cleanPhone.startsWith('0') ? '233' + cleanPhone.substring(1) : cleanPhone;
-            const message = `Hello ${data.fullName}! Your Ledgehold Merchant Account is approved. %0A%0AUse the following invite link to set up your dashboard PIN: %0A%0A[PASTE_TOKEN_LINK_HERE] %0A%0AWelcome to DataExpress!`;
+            
+            // UNIQUE ID IN MESSAGE
+            const message = `Hello ${data.fullName}! Your Ledgehold Merchant Account has been approved. %0A%0A` +
+                            `*Your Approved Merchant ID:* ${merchantId} %0A` +
+                            `*(Use this exact ID to get your pin using the link below)*%0A%0A` +
+                            `Set up your Merchant Dashboard PIN here: [PASTE_TOKEN_LINK_HERE]`;
             
             window.open(`https://wa.me/${formattedPhone}?text=${message}`, '_blank');
-            alert(`${merchantId} Activated. WhatsApp opened.`);
+            alert(`${merchantId} Activated.`);
         } catch (e) { alert("Approval failed: " + e.message); }
     };
 
@@ -462,66 +464,13 @@
     };
 
     /**
-     * REGISTRY: RESET & REVOKE
+     * MARKETPLACE MODERATION
      */
-    function loadMerchantRegistry() {
-        db.collection('artifacts').doc(__app_id).collection('public').doc('data').collection('verified_merchants')
-            .onSnapshot(snap => {
-                const list = document.getElementById('merchantRegistry');
-                document.getElementById('merchantCount').innerText = snap.size + " Merchants";
-                list.innerHTML = snap.docs.map(doc => {
-                    const m = doc.data();
-                    const statusClass = m.setup_complete ? 'success' : 'warning';
-                    const statusText = m.setup_complete ? 'Active' : 'Awaiting PIN';
-                    
-                    return `
-                    <div class="col-md-4">
-                        <div class="p-3 border rounded-4 bg-light shadow-sm position-relative">
-                            <div class="d-flex justify-content-between align-items-start mb-2">
-                                <p class="fw-bold small mb-0 text-truncate pe-2">${doc.id}</p>
-                                <span class="badge bg-${statusClass}-subtle text-${statusClass} x-small border border-${statusClass}">${statusText}</span>
-                            </div>
-                            
-                            <!-- NEW: COLLAPSIBLE DETAILS TOGGLE -->
-                            <button class="btn btn-link p-0 x-small text-decoration-none mb-3" type="button" data-bs-toggle="collapse" data-bs-target="#details-${doc.id.replace(/\s+/g, '')}">
-                                <i class="bi bi-eye me-1"></i> View Payout Info
-                            </button>
-                            
-                            <div class="collapse mb-3" id="details-${doc.id.replace(/\s+/g, '')}">
-                                <div class="bg-white p-2 rounded border x-small">
-                                    <div class="mb-1"><span class="text-muted">MoMo:</span> <span class="fw-bold select-all">${m.momo || 'N/A'}</span></div>
-                                    <div class="mb-1"><span class="text-muted">WhatsApp:</span> <span class="fw-bold select-all">${m.whatsapp || 'N/A'}</span></div>
-                                    <div class="mb-0"><span class="text-muted">Uni:</span> ${m.university}</div>
-                                </div>
-                            </div>
-
-                            <div class="d-flex gap-2">
-                                <button onclick="resetSecurity('${doc.id}')" class="btn btn-warning btn-xs px-2 py-1 rounded-pill x-small fw-bold text-dark">Reset PIN</button>
-                                <button onclick="revokeMerchant('${doc.id}')" class="btn btn-outline-danger btn-xs px-2 py-1 rounded-pill x-small fw-bold">Wipe</button>
-                            </div>
-                        </div>
-                    </div>`;
-                }).join('');
-            });
-    }
-
-    // [REST OF THE FUNCTIONS REMAIN UNCHANGED: takedownListing, loadMarketListings, loadEndorsementWaitlist, etc.]
-    // ... (All existing logic preserved below) ...
-
-    window.takedownListing = async (id, name) => {
-        if (!confirm(`ADMIN TAKEDOWN: Permanently remove "${name}" from the marketplace? This action is logged.`)) return;
-        try {
-            await db.collection('artifacts').doc(__app_id).collection('public').doc('data').collection('market_listings').doc(id).delete();
-            alert("Listing neutralized.");
-        } catch (e) { alert("Takedown failed: " + e.message); }
-    };
-
     function loadMarketListings() {
         db.collection('artifacts').doc(__app_id).collection('public').doc('data').collection('market_listings')
             .onSnapshot(snap => {
                 const list = document.getElementById('listingsList');
-                const countBadge = document.getElementById('listingsCount');
-                countBadge.innerText = snap.size + " Active";
+                document.getElementById('listingsCount').innerText = snap.size + " Active";
                 
                 if (snap.empty) {
                     list.innerHTML = '<div class="col-12 text-center py-5 text-muted small">No items currently listed in marketplace.</div>';
@@ -554,12 +503,22 @@
             });
     }
 
+    window.takedownListing = async (id, name) => {
+        if (!confirm(`ADMIN TAKEDOWN: Permanently remove "${name}" from the marketplace? This action is logged.`)) return;
+        try {
+            await db.collection('artifacts').doc(__app_id).collection('public').doc('data').collection('market_listings').doc(id).delete();
+            alert("Listing neutralized.");
+        } catch (e) { alert("Takedown failed: " + e.message); }
+    };
+
+    /**
+     * ENDORSEMENT WAITLIST
+     */
     function loadEndorsementWaitlist() {
         db.collection('artifacts').doc(__app_id).collection('public').doc('data').collection('endorsement_waitlist')
             .onSnapshot(snap => {
                 const list = document.getElementById('waitlistEntries');
-                const countBadge = document.getElementById('waitlistCount');
-                countBadge.innerText = snap.size + " Pending Audit";
+                document.getElementById('waitlistCount').innerText = snap.size + " Pending Audit";
 
                 if (snap.empty) {
                     list.innerHTML = '<tr><td colspan="4" class="text-center py-5 text-muted small">No merchants have joined the waitlist yet.</td></tr>';
@@ -589,6 +548,50 @@
         await db.collection('artifacts').doc(__app_id).collection('public').doc('data').collection('endorsement_waitlist').doc(id).delete();
     };
 
+    /**
+     * REGISTRY: RESET & REVOKE
+     */
+    function loadMerchantRegistry() {
+        db.collection('artifacts').doc(__app_id).collection('public').doc('data').collection('verified_merchants')
+            .onSnapshot(snap => {
+                const list = document.getElementById('merchantRegistry');
+                document.getElementById('merchantCount').innerText = snap.size + " Merchants";
+                list.innerHTML = snap.docs.map(doc => {
+                    const m = doc.data();
+                    const statusClass = m.setup_complete ? 'success' : 'warning';
+                    const statusText = m.setup_complete ? 'Active' : 'Awaiting PIN';
+                    
+                    return `
+                    <div class="col-md-4">
+                        <div class="p-3 border rounded-4 bg-light shadow-sm position-relative">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <p class="fw-bold small mb-0 text-truncate pe-2">${doc.id}</p>
+                                <span class="badge bg-${statusClass}-subtle text-${statusClass} x-small border border-${statusClass}">${statusText}</span>
+                            </div>
+                            
+                            <!-- COLLAPSIBLE DETAILS TOGGLE -->
+                            <button class="btn btn-link p-0 x-small text-decoration-none mb-3" type="button" data-bs-toggle="collapse" data-bs-target="#details-${doc.id.replace(/[^a-zA-Z0-9]/g, '')}">
+                                <i class="bi bi-eye me-1"></i> View Payout Info
+                            </button>
+                            
+                            <div class="collapse mb-3" id="details-${doc.id.replace(/[^a-zA-Z0-9]/g, '')}">
+                                <div class="bg-white p-2 rounded border x-small">
+                                    <div class="mb-1"><span class="text-muted">MoMo:</span> <span class="fw-bold select-all">${m.momo || 'N/A'}</span></div>
+                                    <div class="mb-1"><span class="text-muted">WhatsApp:</span> <span class="fw-bold select-all">${m.whatsapp || 'N/A'}</span></div>
+                                    <div class="mb-0"><span class="text-muted">Uni:</span> ${m.university}</div>
+                                </div>
+                            </div>
+
+                            <div class="d-flex gap-2">
+                                <button onclick="resetSecurity('${doc.id}')" class="btn btn-warning btn-xs px-2 py-1 rounded-pill x-small fw-bold text-dark">Reset PIN</button>
+                                <button onclick="revokeMerchant('${doc.id}')" class="btn btn-outline-danger btn-xs px-2 py-1 rounded-pill x-small fw-bold">Wipe</button>
+                            </div>
+                        </div>
+                    </div>`;
+                }).join('');
+            });
+    }
+
     window.resetSecurity = async (id) => {
         if (!confirm(`Security Reset for ${id}? Their current PIN will be deleted.`)) return;
         await db.collection('artifacts').doc(__app_id).collection('public').doc('data').collection('verified_merchants').doc(id).update({
@@ -600,10 +603,13 @@
     };
 
     window.revokeMerchant = async (id) => {
-        if (!confirm(`PERMANENT WIPE: Delete ${id}?`)) return;
+        if (!confirm(`PERMANENT WIPE: Delete ${id}? All verified data will be lost.`)) return;
         await db.collection('artifacts').doc(__app_id).collection('public').doc('data').collection('verified_merchants').doc(id).delete();
     };
 
+    /**
+     * TOKENS / SECURE INVITES
+     */
     window.generateOnboardingToken = async () => {
         const btn = document.getElementById('genTokenBtn'); btn.disabled = true;
         try {
@@ -631,6 +637,9 @@
 
     window.revokeToken = async (id) => { await db.collection('artifacts').doc(__app_id).collection('public').doc('data').collection('onboarding_tokens').doc(id).delete(); };
 
+    /**
+     * INTEL / BROADCAST / RECEIPT
+     */
     window.publishIntelligence = async () => {
         const header = document.getElementById('intelHeader').value.trim();
         const msg = document.getElementById('intelMsg').value.trim();
@@ -706,19 +715,27 @@
         await db.collection('artifacts').doc(__app_id).collection('public').doc('data').collection('security_config').doc('onboarding').set({ enforceTokens: isEnabled, lastModified: Date.now(), modifiedBy: currentAdmin });
     };
 
+    /**
+     * RECEIPT LOGIC
+     */
     window.prepareReceipt = (e) => {
         e.preventDefault();
         const gross = parseFloat(document.getElementById('grossPrice').value);
         const fee = gross * 0.05;
         const net = gross - fee;
+
+        // Map to Upgraded Template IDs
         document.getElementById('pdf_ref').innerText = document.getElementById('refId').value;
         document.getElementById('pdf_merchant').innerText = document.getElementById('merchantName').value;
         document.getElementById('pdf_item').innerText = document.getElementById('itemName').value;
         document.getElementById('pdf_date').innerText = new Date(document.getElementById('saleDate').value).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' });
+        
         document.getElementById('pdf_gross').innerText = gross.toFixed(2);
         document.getElementById('pdf_subtotal').innerText = gross.toFixed(2);
         document.getElementById('pdf_fee').innerText = `- ${fee.toFixed(2)}`;
         document.getElementById('pdf_net').innerText = net.toFixed(2);
+
+        // Inject clone into preview
         const container = document.getElementById('previewContainer');
         container.innerHTML = ''; 
         container.appendChild(document.getElementById('receiptMaster').cloneNode(true));
@@ -727,10 +744,26 @@
 
     window.downloadPDF = () => {
         const element = document.getElementById('receiptMaster');
-        const opt = { margin: [0.5, 0.5, 0.5, 0.5], filename: `Ledgehold_Receipt_${document.getElementById('refId').value}.pdf`, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 3, useCORS: true, letterRendering: true, scrollY: 0, width: 720 }, jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }, pagebreak: { mode: ['avoid-all', 'css', 'legacy'] } };
+        const opt = {
+            margin: [0.5, 0.5, 0.5, 0.5],
+            filename: `Ledgehold_Receipt_${document.getElementById('refId').value}.pdf`,
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { 
+                scale: 3, 
+                useCORS: true, 
+                letterRendering: true,
+                scrollY: 0,
+                width: 720
+            },
+            jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' },
+            pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+        };
         html2pdf().set(opt).from(element).save();
     };
 
+    /**
+     * ADMIN SYSTEM
+     */
     window.handleAdminLogin = () => { 
         const id = document.getElementById('adminIdInput').value.trim();
         const pin = document.getElementById('adminPinInput').value.trim();
@@ -763,5 +796,7 @@
     .object-fit-cover { object-fit: cover; }
     .ratio-1x1 { aspect-ratio: 1 / 1; }
     .select-all { user-select: all; }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none;  scrollbar-width: none; }
 </style>
 {% endblock %}

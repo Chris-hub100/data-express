@@ -121,7 +121,7 @@
                 </div>
                 <div class="col-lg-5 text-lg-end">
                     <button type="button" class="btn btn-warning btn-sm rounded-pill fw-bold px-4 py-2 shadow-sm transition-transform active:scale-95" data-bs-toggle="modal" data-bs-target="#escrowModal">
-                        <i class="bi bi-shield-check"></i> How Escrow Works
+                        <i class="bi bi-shield-check"></i> How Escrow Protects You
                     </button>
                 </div>
             </div>
@@ -214,17 +214,17 @@
                 <h4 class="fw-bold text-dark mb-3">Caution</h4>
                 <div class="bg-light p-3 rounded-4 mb-4">
                     <p class="small text-muted mb-0">
-                        Only purchase this item if you are a student of <span id="targetUniversity" class="fw-bold text-primary"></span>.
+                        Only purchase this item if you are a student of <span id="targetUniversity" class="fw-bold text-primary"></span> and available for pickup on campus.
                     </p>
                 </div>
                 <p class="text-secondary small mb-4">
-                    DataExpress logistics nodes are campus-specific. We only facilitate verified in-person handovers within the specified university grounds.
+                    Do <strong>not</strong> scan the QR Code provided by the seller at pickup until you have fully inspected the purchased item.
                 </p>
                 <div class="p-3 rounded-3 mt-4" style="background-color: #fffbeb; border: 1px solid #fef3c7;">
                     <div class="d-flex gap-2">
                         <i class="bi bi-info-circle-fill text-warning"></i>
                         <p class="mb-0 text-warning-emphasis" style="font-size: 0.75rem; line-height: 1.4;">
-                            <strong>Note:</strong> For refunds, a 5% Security & Processing Fee is retained to cover network costs and escrow services. Read our
+                            <strong>Note:</strong> For refunds, a 5% Security & Processing Fee is retained to cover security costs and escrow services. Read our
                             <a href="/terms" class="text-warning-emphasis fw-bold text-decoration-underline" style="text-underline-offset: 2px;">
                                 Terms of Service
                             </a>
@@ -324,9 +324,13 @@
                             <i class="bi bi-shield-lock-fill me-2"></i> Confirm & Buy
                         </button>
                         
-                        <a href="#" id="chatSellerBtn" class="btn btn-outline-dark btn-lg rounded-pill fw-bold py-3 shadow-sm transition-all text-decoration-none">
-                            <i class="bi bi-chat me-2"></i> Chat with Seller
-                        </a>
+                        <!-- INSTITUTIONAL TRUST SIGNAL (Replaces Chat) -->
+                        <div class="text-center mt-2 px-2">
+                            <p class="x-small text-muted mb-0 fst-italic" style="line-height: 1.4;">
+                                <i class="bi bi-shield-check text-success me-1"></i>
+                                <strong>Pay with Confidence:</strong> Your funds are held securely in Escrow and released <strong>only</strong> after you are satisfied with the item and scan the QR code at delivery.
+                            </p>
+                        </div>
                         
                         <button type="button" class="btn btn-link text-muted text-decoration-none small" onclick="bootstrap.Modal.getInstance(document.getElementById('itemDetailModal')).hide()">
                             Cancel
@@ -374,7 +378,7 @@
                         <div class="flex-shrink-0 bg-primary-subtle text-primary rounded-circle d-inline-flex align-items-center justify-content-center fw-bold" style="width: 28px; height: 28px; font-size: 0.8rem;">3</div>
                         <div>
                             <p class="fw-bold mb-1 text-dark">Collect & Release</p>
-                            <p class="text-muted mb-0" style="font-size: 0.8rem;">Get your item on campus. Once you're happy, we pay the seller. If not, we issue a refund. Easy!<br><br><em>*Read our <a href="/terms">Terms of Service</a> to understand the full context.</em></p>
+                            <p class="text-muted mb-0" style="font-size: 0.8rem;">Get your item on campus. Once you're happy, we pay the seller. If not, we issue a refund. Easy!<br><br><em>Read our <a href="/terms">Terms of Service</a> to understand the full context.</em></p>
                         </div>
                     </div>
                 </div>
@@ -382,7 +386,7 @@
                     <div class="d-flex gap-2">
                         <i class="bi bi-info-circle-fill text-warning"></i>
                         <p class="mb-0 text-warning-emphasis" style="font-size: 0.75rem; line-height: 1.4;">
-                            <strong>Note:</strong> For refunds, a 5% Security & Processing Fee is retained to cover network & security costs and escrow services.
+                            <strong>Note:</strong> For refunds, a 5% Fee is retained to cover security costs and escrow services.
                         </p>
                     </div>
                 </div>
@@ -732,7 +736,6 @@ function showItemDetail() {
         window.location.href = `/checkout?item=${encodeURIComponent(d.itemName)}&price=${d.price}&id=${d.id}${v ? '&variety='+v : ''}`;
     };
 
-    document.getElementById('chatSellerBtn').href = `/chat?seller=${encodeURIComponent(d.merchantId || d.seller)}&item=${encodeURIComponent(d.itemName)}&vault_id=buyer-${Math.random().toString(36).substr(2, 5)}`;
 
     new bootstrap.Modal(document.getElementById('itemDetailModal')).show();
 }

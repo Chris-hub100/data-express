@@ -93,7 +93,7 @@
                     <p class="text-muted small mb-0">Institutional visual engine for verified merchants.</p>
                 </div>
                 <div class="premium-badge bg-dark text-white px-3 py-1 rounded-pill small fw-bold" style="font-size: 0.65rem; letter-spacing: 1px;">
-                    <i class="bi bi-megaphone-fill me-1"></i> SMART GROWTH ENABLED
+                    <i class="bi bi-megaphone-fill me-1"></i> SMART GROWTH
                 </div>
             </div>
         </div>
@@ -115,7 +115,7 @@
                     <div class="smart-preview-badge d-flex align-items-center gap-3">
                         <i class="bi bi-magic fs-4"></i>
                         <div>
-                            <strong>One-Tap Marketing:</strong> We automatically add a unique ID to your link every time you copy it. This forces WhatsApp to fetch a fresh visual preview instantly.
+                            <strong>One-Tap Marketing:</strong> Simply paste the copied text into WhatsApp. Wait 2 seconds for the image to load, then send.
                         </div>
                     </div>
                     
@@ -304,7 +304,7 @@
             if (!doc.exists) { window.location.replace('/merchant_dashboard'); return; }
 
             merchantInfo = doc.data();
-            storefrontUrl = `${window.location.origin}/marketplace?merchant=${encodeURIComponent(merchantName.replace(/\s+/g, '_'))}`;
+            storefrontUrl = `${window.location.origin}/marketplace?merchant=${merchantName.replace(/\s+/g, '+')}`;
             
             // UI Updates
             document.getElementById('storefrontLink').value = storefrontUrl;

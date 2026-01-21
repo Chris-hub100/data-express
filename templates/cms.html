@@ -88,16 +88,16 @@
 
   /**
    * MERCHANT SELF-ONBOARDING
-   * SECURITY FEATURE: Only accepts names approved by Admin.
+   * SECURITY FEATURE: Only accepts Unique Merchant IDs approved by Admin.
    */
   async function selfOnboardMerchant() {
     const nameInput = document.getElementById('mName');
-    const name = nameInput.value.trim();
+    const merchantId = nameInput.value.trim(); // This is now the Unique ID (Name + 4 digits)
     const btn = document.getElementById('issueBtn');
     const resultArea = document.getElementById('genResult');
 
-    if (!name) {
-        alert("Please enter your Approved Merchant Name.");
+    if (!merchantId) {
+        alert("Please enter your Approved Merchant ID (sent via WhatsApp).");
         return;
     }
     
@@ -108,13 +108,13 @@
     try {
         if (!db) throw new Error("Infrastructure offline. Contact Ledgehold Support.");
 
-        // 1. Fetch the merchant document from the verified registry
-        const merchantRef = getCol('verified_merchants').doc(name);
+        // 1. Fetch the merchant document from the verified registry using Unique ID
+        const merchantRef = getCol('verified_merchants').doc(merchantId);
         const docSnap = await merchantRef.get();
 
         // 2. Security Validation
         if (!docSnap.exists) {
-            throw new Error("Identifier not found. You must complete the Seller Onboarding and ID verification first.");
+            throw new Error("Invalid Merchant ID. Please ensure you typed it exactly as received on WhatsApp (e.g., 'Chris Tetteh 3863').");
         }
 
         const merchantData = docSnap.data();
@@ -124,9 +124,9 @@
             throw new Error("Your application is still under review. You will receive a WhatsApp notification once approved.");
         }
 
-        // Check if they already have a PIN
+        // Check if they already have a PIN (Prevent Overwrite/Takeover)
         if (merchantData.pin) {
-            throw new Error("This merchant account has already been activated. If you forgot your PIN, please contact Ledgehold support.");
+            throw new Error("This merchant ID has already been activated. If you forgot your PIN, please contact Ledgehold support.");
         }
 
         // 3. Generate random 6-digit PIN
@@ -211,8 +211,9 @@
                         <p class="small opacity-75 mb-4">Approved merchants can activate their private vault and generate a security PIN.</p>
                         
                         <div class="mb-4">
-                            <label class="small fw-bold mb-2 opacity-75 text-uppercase">Approved Merchant Name</label>
-                            <input type="text" id="mName" class="form-control rounded-pill border-0 py-2 px-3 bg-secondary bg-opacity-25 text-white" placeholder="Enter Approved ID">
+                            <!-- UPDATED LABEL AND PLACEHOLDER -->
+                            <label class="small fw-bold mb-2 opacity-75 text-uppercase">Approved Merchant ID</label>
+                            <input type="text" id="mName" class="form-control rounded-pill border-0 py-2 px-3 bg-secondary bg-opacity-25 text-white" placeholder="e.g. Kwadwo Nkansah 1234">
                         </div>
 
                         <button id="issueBtn" onclick="selfOnboardMerchant()" class="btn btn-warning w-100 rounded-pill fw-bold py-3 text-dark shadow">

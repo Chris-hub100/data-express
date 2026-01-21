@@ -384,9 +384,17 @@ def merch():
 def privacy():
     return render_template('privacy.html')
 
+@app.route('/merchant_guide')
+def guide():
+    return render_template('merchant_guide.html')
+
 @app.route('/success')
 def success_page():
     return render_template('success.html')
+
+@app.route('/about_us')
+def about():
+    return render_template('about_us.html')
 
 @app.route('/terms')
 def terms_page():

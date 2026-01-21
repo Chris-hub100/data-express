@@ -1,65 +1,156 @@
 {% extends "base.html" %}
 
 {% block content %}
+<style>
+    /* MASTERCLASS ANIMATIONS & TYPOGRAPHY */
+    @keyframes fadeInUp {
+        from { opacity: 0; transform: translateY(30px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
 
-<!-- 1. HERO SECTION -->
-<div class="text-center text-white rounded-4 mb-5 shadow d-flex flex-column justify-content-center align-items-center position-relative overflow-hidden" 
-     style="background: linear-gradient(135deg, #003366 0%, #0056b3 100%); min-height: 400px; padding: 30px;">
-    
-    <div style="position: absolute; top: -50px; right: -50px; width: 200px; height: 200px; background: rgba(255,255,255,0.1); border-radius: 50%;"></div>
-    <div style="position: absolute; bottom: -50px; left: -50px; width: 150px; height: 150px; background: rgba(255,255,255,0.05); border-radius: 50%;"></div>
+    @keyframes gradientFlow {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+    }
 
-    <h1 class="display-4 fw-bold mb-3">DataExpress</h1>
-    
-    <p class="mb-4 opacity-75 fs-5" style="max-width: 500px; line-height: 1.6;">
-        Your trusted campus connectivity partner for Peer-to-peer Sales, Utility Payments, Food Runs and Entertainment.
-    </p>
-    
-    <a href="/directory" class="btn btn-warning rounded-pill px-5 py-3 fw-bold shadow hover-scale fs-6">
-        Explore
-    </a>
+    .animate-in {
+        animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        opacity: 0;
+    }
 
+    .delay-100 { animation-delay: 0.1s; }
+    .delay-200 { animation-delay: 0.2s; }
+    .delay-300 { animation-delay: 0.3s; }
+
+    .hero-section {
+        /* Added Texture: Dot Matrix Pattern */
+        background-color: #f8fafc;
+        background-image: radial-gradient(#94a3b8 1px, transparent 1px);
+        background-size: 32px 32px;
+
+        border-radius: 40px;
+        padding: 100px 20px;
+        margin-bottom: 50px;
+        
+        /* Higher Contrast Border & Shadow */
+        border: 1px solid #cbd5e1;
+        box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.15);
+        
+        position: relative;
+        overflow: hidden;
+    }
+
+    /* Massive Brand Header */
+    .brand-hero-text {
+        font-size: clamp(3.5rem, 10vw, 6.5rem);
+        font-weight: 900;
+        letter-spacing: -0.04em;
+        line-height: 1;
+        background: linear-gradient(135deg, #0f172a 0%, #3b82f6 50%, #0f172a 100%);
+        background-size: 200% auto;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        animation: gradientFlow 5s ease infinite, fadeInUp 1s ease-out forwards;
+        margin-bottom: 1.5rem;
+        
+        /* Added Drop Shadow for Contrast against Pattern */
+        filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));
+    }
+
+    .hero-subtitle {
+        font-size: 1.15rem;
+        color: #475569; /* Slightly darker for better contrast */
+        font-weight: 500;
+        line-height: 1.6;
+        letter-spacing: -0.01em;
+    }
+
+    /* Original Component Styles Preserved */
+    .ad-billboard {
+        background: white;
+        border: 1px dashed #cbd5e1;
+        border-radius: 20px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    .ad-billboard:hover {
+        border-color: #3b82f6;
+        background: #f8fafc;
+        transform: translateY(-3px);
+    }
+    .hover-lift { transition: transform 0.3s ease, box-shadow 0.3s ease; }
+    .hover-lift:hover { transform: translateY(-5px); box-shadow: 0 10px 30px rgba(0,0,0,0.1) !important; }
+    .animate-pulse { animation: pulse 2s infinite; }
+    @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+    .backdrop-blur { backdrop-filter: blur(5px); }
+</style>
+
+<!-- 1. MASTERCLASS HERO SECTION -->
+<div class="hero-section text-center">
+    <!-- Spotlight Effect: Fades the pattern in the center for text readability -->
+    <div class="position-absolute top-50 start-50 translate-middle" 
+         style="width: 120%; height: 120%; background: radial-gradient(circle, rgba(255,255,255,1) 0%, rgba(255,255,255,0.85) 40%, rgba(255,255,255,0) 70%); pointer-events: none;">
+    </div>
+    
+    <div class="position-relative z-1">
+        <!-- Powered By Badge -->
+        <div class="animate-in delay-100">
+            <span class="d-inline-block px-3 py-1 rounded-pill bg-white border border-secondary border-opacity-25 shadow-sm text-dark fw-bold small mb-3 text-uppercase tracking-wider" style="font-size: 0.65rem;">
+                <i class="bi bi-cpu-fill text-primary me-1"></i> Powered by Ledgehold®
+            </span>
+        </div>
+
+        <h1 class="brand-hero-text">DataExpress</h1>
+        
+        <p class="hero-subtitle mx-auto mb-4 animate-in delay-200" style="max-width: 550px;">
+            Your trusted campus connectivity partner for Peer-to-peer Sales, Utility Payments, Food Runs and Entertainment.
+        </p>
+        
+        <div class="animate-in delay-300">
+            <a href="/directory" class="btn btn-warning rounded-pill px-5 py-3 fw-bold shadow-lg hover-scale border border-white">
+                Explore Hub <i class="bi bi-arrow-right ms-2"></i>
+            </a>
+        </div>
+    </div>
 </div>
 
 <!-- 2. ADVERTISEMENT BANNER -->
-<div class="container mb-5">
+<div class="container mb-5 animate-in delay-400">
     <div class="ad-billboard p-4 text-center" onclick="window.location.href='https://wa.me/233535333868?text=I+want+to+advertise+on+DataExpress'">
-        
         <div class="my-3">
             <i class="bi bi-megaphone-fill fs-1 text-muted opacity-50"></i>
         </div>
-        
         <h5 class="fw-bold text-secondary">Your Business Here</h5>
         <p class="text-muted small mb-3">
             Reach our active users every day.<br>
             <strong>Competitive Rates</strong>
         </p>
-        
         <button class="btn btn-outline-dark btn-sm rounded-pill px-4">
             Place Ad <i class="bi bi-arrow-right"></i>
         </button>
     </div>
 </div>
 
-<!-- 3. NEW FOOD RUN BANNER (Added Here) -->
-<div class="mb-5">
+<!-- 3. CAMPUS LOGISTICS (FOOD RUN) -->
+<div class="mb-5 animate-in delay-400">
     <h6 class="fw-bold text-muted ms-1 mb-3">Campus Logistics</h6>
     
     <a href="/foodrun" class="text-decoration-none">
         <div class="card border-0 text-white overflow-hidden shadow-sm hover-lift position-relative" 
-             style="background: linear-gradient(to bottom, rgba(0,0,0,0.3), rgba(0,0,0,0.8)), url('https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80'); background-size: cover; background-position: center; border-radius: 15px; min-height: 200px;">
+             style="background: linear-gradient(to bottom, rgba(0,0,0,0.3), rgba(0,0,0,0.8)), url('https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80'); background-size: cover; background-position: center; border-radius: 20px; min-height: 220px;">
             
             <div class="card-body d-flex flex-column justify-content-end p-4">
                 <div class="mb-auto">
                     <!-- Dynamic Badge based on Python Logic -->
                     {% if food_active %}
-                    <span class="badge bg-danger animate-pulse border border-white">LIVE NOW</span>
+                    <span class="badge bg-danger animate-pulse border border-white shadow-sm">LIVE NOW</span>
                     {% else %}
-                    <span class="badge bg-dark bg-opacity-75 backdrop-blur">OPENS FRIDAY</span>
+                    <span class="badge bg-dark bg-opacity-75 backdrop-blur border border-white border-opacity-25">OPENS FRIDAY</span>
                     {% endif %}
                 </div>
                 
-                <h3 class="fw-bold mb-1">FoodRun™ </h3>
+                <h3 class="fw-bold mb-1">FoodRun™</h3>
                 <p class="mb-0 opacity-90 small">KFC, Waakye and many more delivered directly to your Hostel. No delivery stress.</p>
             </div>
         </div>
@@ -77,28 +168,6 @@
 <span class="fw-bold text-dark fs-5">hubtel</span>
 </div>
 </div>
-
-<!-- 4. PARTNER DEALS -->
-<!--div class="mb-5">
-    <h6 class="fw-bold text-muted ms-1 mb-3">Partner Deals</h6>
-    
-    <div class="card border-0 text-white overflow-hidden shadow-sm hover-lift" 
-         style="background: linear-gradient(45deg, #0f2027, #2c5364); border-radius: 15px;">
-        <div class="card-body d-flex align-items-center justify-content-between p-4">
-            <div>
-                <span class="badge bg-warning text-dark mb-2">SPONSORED</span>
-                <h4 class="fw-bold mb-1">Amazon Prime Video</h4>
-                <p class="small mb-0 opacity-75">30 Days Free Trial. Cancel Anytime</p>
-            </div>
-            <a href="https://www.primevideo.com/?tag=dataexpressgh-20" 
-               target="_blank" 
-               class="btn btn-light rounded-circle shadow" 
-               style="width: 50px; height: 50px; display: flex; align-items: center; justify-content: center;">
-                <i class="bi bi-chevron-right text-dark"></i>
-            </a>
-        </div>
-    </div>
-</div-->
 
 <div style="height: 80px;"></div>
 
@@ -152,22 +221,23 @@
 </script>
 {% endif %}
 
-<!-- Styles -->
-<style>
-    .hover-scale { transition: transform 0.2s; }
-    .hover-scale:hover { transform: scale(1.05); }
-    .hover-lift { transition: transform 0.3s; }
-    .hover-lift:hover { transform: translateY(-5px); }
-    
-    .animate-pulse { animation: pulse 2s infinite; }
-    @keyframes pulse {
-        0% { transform: scale(1); opacity: 1; }
-        50% { transform: scale(1.05); opacity: 0.8; }
-        100% { transform: scale(1); opacity: 1; }
-    }
-    
-    /* Extra blur for badges on images */
-    .backdrop-blur { backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px); }
-</style>
+<script>
+    // Trigger animations on scroll (simple observer)
+    document.addEventListener('DOMContentLoaded', () => {
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.animationPlayState = 'running';
+                    entry.target.style.opacity = '1';
+                }
+            });
+        });
+        
+        // Ensure animations run
+        document.querySelectorAll('.animate-in').forEach(el => {
+            el.style.opacity = '1'; 
+        });
+    });
+</script>
 
 {% endblock %}

@@ -1,5 +1,7 @@
 {% extends "base.html" %}
 
+{% block title %}Become a Merchant | DataExpress{% endblock %}
+
 {% block content %}
 <!-- FIREBASE COMPAT -->
 <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-app-compat.js"></script>
@@ -46,9 +48,6 @@
         }
     };
 
-    /**
-     * RESET PREVIEW LOGIC
-     */
     window.retakePhoto = function(inputId, containerId) {
         const input = document.getElementById(inputId);
         const container = document.getElementById(containerId);
@@ -92,22 +91,29 @@
             const sRes = await sResp.json();
             if (!sRes || !sRes.success) throw new Error("Selfie Upload failed. Please try again.");
 
-            // 3. Prepare Merchant Data
+            // 3. Prepare Merchant Data with UNIQUE DISCRIMINATOR
             const fullName = document.getElementById('fullName').value.trim();
+            const momo = document.getElementById('momo').value.trim();
+            
+            // GATEKEEPER PROTOCOL: Create Unique ID to prevent database collision
+            // Format: "Chris Tetteh 3863"
+            const discriminator = momo.slice(-4);
+            const uniqueMerchantId = `${fullName} ${discriminator}`;
+
             const payload = {
-                merchantId: fullName,
-                fullName: fullName,
+                merchantId: uniqueMerchantId, // The Unique Database Key
+                fullName: fullName,           // The Display Name (Clean)
                 university: document.getElementById('university').value,
                 course: document.getElementById('course').value,
                 whatsapp: document.getElementById('whatsapp').value,
-                momo: document.getElementById('momo').value,
+                momo: momo,
                 idUrl: idRes.data.url,
                 selfieUrl: sRes.data.url,
                 timestamp: Date.now(),
                 status: 'pending'
             };
 
-            // 4. Save to Firestore (Follow Rule 1 path)
+            // 4. Save to Firestore
             const appId = typeof __app_id !== 'undefined' ? __app_id : 'ledgehold-ghana-vault';
             await db.collection('artifacts').doc(appId)
                 .collection('public').doc('data')
@@ -260,7 +266,7 @@
                 </div>
                 <h4 class="fw-bold text-dark">Verification Pending</h4>
                 <p class="text-secondary small mb-4">
-                    Our compliance team is verifying your request. Once approved, you'll be notified on WhatsApp with a link to get your Merchant Dashboard logins.
+                    Our compliance team is verifying your request. Once approved, you'll be notified on WhatsApp with your <strong>Unique Merchant ID</strong> and login link.
                 </p>
                 <a href="/" class="btn btn-dark w-100 rounded-pill fw-bold py-3">Got it, thanks!</a>
             </div>
