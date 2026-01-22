@@ -11,7 +11,10 @@
 <script>
     var __app_id = '{{ __app_id }}';
     var __firebase_config = '{{ __firebase_config | safe }}';
-    var __imgbb_api_key = '{{ IMGBB_API_KEY }}';
+    
+    // CLOUDINARY CONFIG - ADDED FROM SECOND FILE
+    const CLOUD_NAME = 'dfy4y7lqk'; 
+    const UPLOAD_PRESET = 'ledgehold_uploads';
 </script>
 
 <div class="container py-4" style="min-height: 80vh;">
@@ -215,6 +218,11 @@
                             <label class="form-label small fw-bold text-muted text-uppercase">Message</label>
                             <textarea id="intelMsg" class="form-control rounded-4 border-light bg-light p-3" rows="4"></textarea>
                         </div>
+                        <!-- UPDATED: Image Input from Second File -->
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold text-muted text-uppercase">Visual Asset (Optional)</label>
+                            <input type="file" id="intelImage" class="form-control rounded-pill border-light bg-light" accept="image/*">
+                        </div>
                         <button id="publishIntelBtn" onclick="publishIntelligence()" class="btn btn-dark w-100 rounded-pill py-3 fw-bold shadow-sm">Push to Feed</button>
                     </div>
                 </div>
@@ -376,6 +384,43 @@
         } else {
             document.getElementById('loginSection').classList.remove('d-none');
         }
+    }
+
+    /**
+     * SHARED COMPRESSION UTILITY - ADDED FROM SECOND FILE
+     */
+    async function compressImage(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = (event) => {
+                const img = new Image();
+                img.src = event.target.result;
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    let width = img.width;
+                    let height = img.height;
+                    const MAX_DIM = 1200; 
+
+                    if (width > height) {
+                        if (width > MAX_DIM) { height *= MAX_DIM / width; width = MAX_DIM; }
+                    } else {
+                        if (height > MAX_DIM) { width *= MAX_DIM / height; height = MAX_DIM; }
+                    }
+
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+
+                    canvas.toBlob((blob) => {
+                        resolve(blob);
+                    }, 'image/jpeg', 0.7);
+                };
+                img.onerror = reject;
+            };
+            reader.onerror = reject;
+        });
     }
 
     /**
@@ -549,7 +594,7 @@
     };
 
     /**
-     * REGISTRY: RESET & REVOKE
+     * REGISTRY: RESET & REVOKE - UPDATED WITH ENHANCED WIPE LOGIC
      */
     function loadMerchantRegistry() {
         db.collection('artifacts').doc(__app_id).collection('public').doc('data').collection('verified_merchants')
@@ -602,9 +647,25 @@
         alert("PIN cleared. Merchant can now use /cms again.");
     };
 
+    // UPDATED: Enhanced wipe functionality from second file
     window.revokeMerchant = async (id) => {
-        if (!confirm(`PERMANENT WIPE: Delete ${id}? All verified data will be lost.`)) return;
-        await db.collection('artifacts').doc(__app_id).collection('public').doc('data').collection('verified_merchants').doc(id).delete();
+        if (!confirm(`PERMANENT WIPE: Delete ${id} and ALL their listings? All verified data will be lost.`)) return;
+        try {
+            // Delete all listings by this merchant
+            const listingsRef = db.collection('artifacts').doc(__app_id).collection('public').doc('data').collection('market_listings');
+            const listingsSnap = await listingsRef.where('merchantId', '==', id).get();
+            const batch = db.batch();
+            listingsSnap.forEach(doc => batch.delete(doc.ref));
+            
+            // Delete the merchant
+            const merchantRef = db.collection('artifacts').doc(__app_id).collection('public').doc('data').collection('verified_merchants').doc(id);
+            batch.delete(merchantRef);
+            
+            await batch.commit();
+            alert("Merchant and all listings wiped.");
+        } catch(e) { 
+            alert("Wipe failed: " + e.message); 
+        }
     };
 
     /**
@@ -638,14 +699,55 @@
     window.revokeToken = async (id) => { await db.collection('artifacts').doc(__app_id).collection('public').doc('data').collection('onboarding_tokens').doc(id).delete(); };
 
     /**
-     * INTEL / BROADCAST / RECEIPT
+     * INTEL / BROADCAST / RECEIPT - UPDATED WITH CLOUDINARY
      */
     window.publishIntelligence = async () => {
         const header = document.getElementById('intelHeader').value.trim();
         const msg = document.getElementById('intelMsg').value.trim();
+        const imgInput = document.getElementById('intelImage');
+        const btn = document.getElementById('publishIntelBtn');
+        
         if(!header || !msg) return;
-        await db.collection('artifacts').doc(__app_id).collection('public').doc('data').collection('intelligence_channel').add({ header, message: msg, timestamp: Date.now(), adminId: currentAdmin });
-        document.getElementById('intelHeader').value = ""; document.getElementById('intelMsg').value = "";
+        btn.disabled = true;
+        btn.innerHTML = 'Publishing...';
+        
+        let imgUrl = null;
+        try {
+            // Upload to Cloudinary if image exists
+            if (imgInput.files.length > 0) {
+                const compressed = await compressImage(imgInput.files[0]);
+                const formData = new FormData();
+                formData.append("file", compressed);
+                formData.append("upload_preset", UPLOAD_PRESET);
+                const resp = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, { 
+                    method: "POST", 
+                    body: formData 
+                });
+                const data = await resp.json();
+                if (data.secure_url) imgUrl = data.secure_url;
+            }
+            
+            // Save to Firestore
+            await db.collection('artifacts').doc(__app_id).collection('public').doc('data').collection('intelligence_channel').add({ 
+                header, 
+                message: msg, 
+                imgUrl, 
+                timestamp: Date.now(), 
+                adminId: currentAdmin 
+            });
+            
+            // Clear form
+            document.getElementById('intelHeader').value = ""; 
+            document.getElementById('intelMsg').value = ""; 
+            imgInput.value = "";
+            alert("Published successfully.");
+        } catch (e) { 
+            alert("Error: " + e.message); 
+        }
+        finally { 
+            btn.disabled = false; 
+            btn.innerText = "Push to Feed"; 
+        }
     };
 
     function loadChannelLog() {
@@ -658,6 +760,7 @@
                     <div class="card p-3 rounded-4 mb-2 small border-0 bg-light shadow-sm position-relative">
                         <button onclick="deleteIntel('${i.id}')" class="btn btn-link text-danger p-0 position-absolute top-0 end-0 m-3" title="Take Down"><i class="bi bi-trash3-fill"></i></button>
                         <p class="fw-bold mb-1 pe-4">${i.header}</p>
+                        ${i.imgUrl ? `<img src="${i.imgUrl}" class="img-fluid rounded-3 mb-2" style="max-height: 100px; object-fit: cover;">` : ''}
                         <p class="text-muted mb-0">${i.message}</p>
                     </div>
                 `).join('');

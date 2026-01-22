@@ -40,7 +40,7 @@
         background-image: radial-gradient(#cbd5e1 1px, transparent 1px);
         background-size: 40px 40px;
         border-radius: 40px;
-        padding: 100px 20px;
+        padding: 80px 15px; /* Adjusted padding for mobile safety */
         margin-bottom: 60px;
         border: 1px solid white;
         position: relative;
@@ -48,12 +48,13 @@
         box-shadow: 0 25px 50px -12px rgba(0,0,0,0.05);
     }
 
-    /* MASSIVE PURPLE-GOLD HEADER */
+    /* MASSIVE PURPLE-GOLD HEADER (Dynamic & Big) */
     .brand-hero-text {
-        font-size: clamp(3.5rem, 9vw, 6.5rem);
+        /* RESPONSIVE FIX: Lowered minimum size to 2.5rem for mobile safety */
+        font-size: clamp(2.5rem, 10vw, 6rem);
         font-weight: 900;
         letter-spacing: -0.04em;
-        line-height: 1;
+        line-height: 1.1; /* Increased to prevent clipping */
         /* Royal Purple to Gold Gradient */
         background: linear-gradient(135deg, #4c1d95 0%, #fbbf24 50%, #4c1d95 100%);
         background-size: 200% auto;
@@ -62,6 +63,10 @@
         animation: gradientFlow 6s ease infinite, fadeInUp 1s ease-out forwards;
         margin-bottom: 1.5rem;
         filter: drop-shadow(0 10px 20px rgba(76, 29, 149, 0.1));
+        
+        /* Safety for small screens */
+        max-width: 100%;
+        word-wrap: break-word;
     }
 
     .stat-card {
@@ -140,7 +145,7 @@
                 <div class="value-icon bg-primary bg-opacity-10 text-primary">
                     <i class="bi bi-shield-lock-fill"></i>
                 </div>
-                <h5 class="fw-bold text-dark">The Gatekeeper Policy</h5>
+                <h5 class="fw-bold text-dark mb-3">The Gatekeeper Policy</h5>
                 <p class="text-muted small mb-0" style="line-height: 1.6;">
                     Our proprietary compliance standard. We believe that trust is an engineering problem. By enforcing 100% receipt-to-log matching and SHA-256 identity hashing, we create a fraud-resistant trade environment.
                 </p>
@@ -151,7 +156,7 @@
                 <div class="value-icon bg-warning bg-opacity-10 text-warning">
                     <i class="bi bi-diagram-3-fill"></i>
                 </div>
-                <h5 class="fw-bold text-dark">Aggregated Logistics</h5>
+                <h5 class="fw-bold text-dark mb-3">Aggregated Logistics</h5>
                 <p class="text-muted small mb-0" style="line-height: 1.6;">
                     We solve the "Last-Mile" chaos by building "Hub-to-Hub" corridors. By consolidating student volume at campus landmarks, we turn fragmented deliveries into efficient logistics contracts.
                 </p>
@@ -180,6 +185,7 @@
 
                 <h3 class="fw-bold mb-5 display-6">One Engine. <br>Two Frontiers.</h3>
                 
+                <!-- Floating Card 1: Ledgehold -->
                 <div class="d-flex gap-4 mb-4 bg-white bg-opacity-10 p-4 rounded-4 border border-white border-opacity-10 floating-card">
                     <div class="border-start border-warning border-4 ps-3">
                         <h5 class="fw-bold text-warning">Ledgehold</h5>
@@ -187,6 +193,7 @@
                     </div>
                 </div>
                 
+                <!-- Floating Card 2: DataExpress -->
                 <div class="d-flex gap-4 bg-white bg-opacity-10 p-4 rounded-4 border border-white border-opacity-10 floating-card delay-200" style="animation-delay: 1s;">
                     <div class="border-start border-primary border-4 ps-3">
                         <h5 class="fw-bold text-primary">DataExpress</h5>

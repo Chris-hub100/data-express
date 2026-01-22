@@ -1,138 +1,196 @@
 {% extends "base.html" %}
 
-{% block title %}Become a Merchant | DataExpress{% endblock %}
+{% block title %}Merchant Onboarding | Ledgehold Ghana{% endblock %}
 
 {% block content %}
-<!-- FIREBASE COMPAT -->
+<!-- Firebase Web SDKs (Compat Version for Secure Tools) -->
 <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore-compat.js"></script>
 
 <script>
-    /** * LEDGEHOLD ENTERPRISE CONFIG */
-    const __app_id = '{{ __app_id }}';
-    const __firebase_config = '{{ __firebase_config | safe }}';
-    const IMGBB_API_KEY = '{{ IMGBB_API_KEY }}';
+  /**
+   * LEDGEHOLD SELF-ONBOARDING CONFIG
+   */
+  var __app_id = '{{ __app_id if __app_id else "ledgehold-ghana" }}';
+  var __firebase_config = '{{ __firebase_config | safe if __firebase_config else "{}" }}';
+  
+  // CLOUDINARY CONFIG (Zero-OpEx Infrastructure)
+  const CLOUD_NAME = 'dfy4y7lqk'; // Verified Cloud Name
+  const UPLOAD_PRESET = 'ledgehold_uploads'; // Create this "Unsigned" preset in Cloudinary Settings
+  
+  let db = null;
 
-    // Initialize Firebase
-    const config = JSON.parse(__firebase_config);
-    if (!firebase.apps.length) firebase.initializeApp(config);
-    const db = firebase.firestore();
+  // Initialize Firebase App
+  const config = JSON.parse(__firebase_config);
+  if (config && config.apiKey) { 
+      try {
+          if (!firebase.apps.length) {
+              firebase.initializeApp(config);
+          }
+          db = firebase.firestore(); 
+          console.log("Ledgehold System: Secure Onboarding Node Connected.");
+      } catch (initErr) {
+          console.error("Firebase Setup Failed:", initErr);
+      }
+  }
 
-    // Helper to show professional error messages
-    function showErrorMessage(msg) {
-        const errorDiv = document.getElementById('errorBox');
-        if (errorDiv) {
-            errorDiv.innerText = msg;
-            errorDiv.classList.remove('d-none');
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-            setTimeout(() => {
-                if (errorDiv) errorDiv.classList.add('d-none');
-            }, 8000);
-        }
+  /**
+   * HELPER: IMAGE COMPRESSION ENGINE
+   * Reduces 5MB photos to ~200KB to maximize free storage.
+   */
+  async function compressImage(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = (event) => {
+            const img = new Image();
+            img.src = event.target.result;
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                let width = img.width;
+                let height = img.height;
+                const MAX_DIM = 1200; // Standard HD limit
+
+                // Resize logic
+                if (width > height) {
+                    if (width > MAX_DIM) { height *= MAX_DIM / width; width = MAX_DIM; }
+                } else {
+                    if (height > MAX_DIM) { width *= MAX_DIM / height; height = MAX_DIM; }
+                }
+
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+
+                // Compress to JPEG at 70% quality
+                canvas.toBlob((blob) => {
+                    resolve(blob);
+                }, 'image/jpeg', 0.7);
+            };
+            img.onerror = reject;
+        };
+        reader.onerror = reject;
+    });
+  }
+
+  /**
+   * HELPER: PATH RESOLUTION
+   */
+  function getCol(name) {
+    if (!db) throw new Error("System initialization pending. Please refresh the page.");
+    return db.collection('artifacts').doc(__app_id).collection('public').doc('data').collection(name);
+  }
+
+  /**
+   * LIVE PREVIEW LOGIC
+   */
+  window.previewFile = function(input, targetContainerId, targetImgId) {
+      const container = document.getElementById(targetContainerId);
+      const img = document.getElementById(targetImgId);
+      
+      if (input.files && input.files[0]) {
+          const reader = new FileReader();
+          reader.onload = function(e) {
+              if (img) img.src = e.target.result;
+              if (container) container.classList.remove('d-none');
+          };
+          reader.readAsDataURL(input.files[0]);
+      }
+  };
+
+  window.retakePhoto = function(inputId, containerId) {
+      const input = document.getElementById(inputId);
+      const container = document.getElementById(containerId);
+      if (input) input.value = "";
+      if (container) container.classList.add('d-none');
+      if (input) input.click();
+  };
+
+  /**
+   * MAIN ONBOARDING: KYC Submission
+   */
+  window.submitOnboarding = async function(event) {
+    event.preventDefault();
+    
+    const submitBtn = document.getElementById('submitBtn');
+    const submitBtnText = document.getElementById('submitBtnText');
+    const loadingSpinner = document.getElementById('loadingSpinner');
+    const idFileInput = document.getElementById('studentId');
+    const selfieFileInput = document.getElementById('selfiePhoto');
+    
+    if (!idFileInput || !idFileInput.files[0] || !selfieFileInput || !selfieFileInput.files[0]) {
+        alert("Both Student ID and Selfie are required for verification.");
+        return;
     }
 
-    /**
-     * LIVE PREVIEW LOGIC
-     */
-    window.previewFile = function(input, targetContainerId, targetImgId) {
-        const container = document.getElementById(targetContainerId);
-        const img = document.getElementById(targetImgId);
+    // Prevent double submission
+    if (submitBtn) submitBtn.disabled = true;
+    if (loadingSpinner) loadingSpinner.classList.remove('d-none');
+    if (submitBtnText) submitBtnText.innerText = 'Optimizing & Securing Assets...';
+
+    try {
+        // 1. Compress & Upload Student ID to Cloudinary
+        const compressedId = await compressImage(idFileInput.files[0]);
+        const idFormData = new FormData();
+        idFormData.append("file", compressedId);
+        idFormData.append("upload_preset", UPLOAD_PRESET);
         
-        if (input.files && input.files[0]) {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                if (img) img.src = e.target.result;
-                if (container) container.classList.remove('d-none');
-            };
-            reader.readAsDataURL(input.files[0]);
-        }
-    };
+        const idResp = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, { method: "POST", body: idFormData });
+        const idRes = await idResp.json();
+        if (!idRes.secure_url) throw new Error("ID Upload failed. Check Cloudinary preset.");
 
-    window.retakePhoto = function(inputId, containerId) {
-        const input = document.getElementById(inputId);
-        const container = document.getElementById(containerId);
-        if (input) input.value = "";
-        if (container) container.classList.add('d-none');
-        if (input) input.click();
-    };
-
-    // MAIN ONBOARDING: KYC Submission
-    window.submitOnboarding = async function(event) {
-        event.preventDefault();
+        // 2. Compress & Upload Selfie to Cloudinary
+        const compressedSelfie = await compressImage(selfieFileInput.files[0]);
+        const selfieFormData = new FormData();
+        selfieFormData.append("file", compressedSelfie);
+        selfieFormData.append("upload_preset", UPLOAD_PRESET);
         
-        const submitBtn = document.getElementById('submitBtn');
-        const submitBtnText = document.getElementById('submitBtnText');
-        const loadingSpinner = document.getElementById('loadingSpinner');
-        const idFileInput = document.getElementById('studentId');
-        const selfieFileInput = document.getElementById('selfiePhoto');
+        const sResp = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, { method: "POST", body: selfieFormData });
+        const sRes = await sResp.json();
+        if (!sRes.secure_url) throw new Error("Selfie Upload failed.");
+
+        // 3. Prepare Data with UNIQUE DISCRIMINATOR
+        const fullName = document.getElementById('fullName').value.trim();
+        const momo = document.getElementById('momo').value.trim();
         
-        if (!idFileInput || !idFileInput.files[0] || !selfieFileInput || !selfieFileInput.files[0]) {
-            showErrorMessage("Both Student ID and Selfie are required for verification.");
-            return;
-        }
+        // GATEKEEPER PROTOCOL: Unique ID
+        const discriminator = momo.slice(-4);
+        const uniqueMerchantId = `${fullName} ${discriminator}`;
 
-        // Prevent double submission and show loading state
-        if (submitBtn) submitBtn.disabled = true;
-        if (loadingSpinner) loadingSpinner.classList.remove('d-none');
-        if (submitBtnText) submitBtnText.innerText = 'Securing Assets...';
+        const payload = {
+            merchantId: uniqueMerchantId, 
+            fullName: fullName,          
+            university: document.getElementById('university').value,
+            course: document.getElementById('course').value,
+            whatsapp: document.getElementById('whatsapp').value,
+            momo: momo,
+            idUrl: idRes.secure_url,
+            selfieUrl: sRes.secure_url,
+            timestamp: Date.now(),
+            status: 'pending'
+        };
 
-        try {
-            // 1. Upload Student ID to ImgBB
-            const idFormData = new FormData();
-            idFormData.append("image", idFileInput.files[0]);
-            const idResp = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, { method: "POST", body: idFormData });
-            const idRes = await idResp.json();
-            if (!idRes || !idRes.success) throw new Error("ID Upload failed. Please try a clearer photo.");
+        // 4. Save to Firestore
+        // Using global __app_id variable defined at top
+        await db.collection('artifacts').doc(__app_id)
+            .collection('public').doc('data')
+            .collection('pending_merchants').add(payload);
 
-            // 2. Upload Selfie to ImgBB
-            const selfieFormData = new FormData();
-            selfieFormData.append("image", selfieFileInput.files[0]);
-            const sResp = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, { method: "POST", body: selfieFormData });
-            const sRes = await sResp.json();
-            if (!sRes || !sRes.success) throw new Error("Selfie Upload failed. Please try again.");
+        // 5. Success
+        const successModal = new bootstrap.Modal(document.getElementById('successModal'));
+        successModal.show();
 
-            // 3. Prepare Merchant Data with UNIQUE DISCRIMINATOR
-            const fullName = document.getElementById('fullName').value.trim();
-            const momo = document.getElementById('momo').value.trim();
-            
-            // GATEKEEPER PROTOCOL: Create Unique ID to prevent database collision
-            // Format: "Chris Tetteh 3863"
-            const discriminator = momo.slice(-4);
-            const uniqueMerchantId = `${fullName} ${discriminator}`;
-
-            const payload = {
-                merchantId: uniqueMerchantId, // The Unique Database Key
-                fullName: fullName,           // The Display Name (Clean)
-                university: document.getElementById('university').value,
-                course: document.getElementById('course').value,
-                whatsapp: document.getElementById('whatsapp').value,
-                momo: momo,
-                idUrl: idRes.data.url,
-                selfieUrl: sRes.data.url,
-                timestamp: Date.now(),
-                status: 'pending'
-            };
-
-            // 4. Save to Firestore
-            const appId = typeof __app_id !== 'undefined' ? __app_id : 'ledgehold-ghana-vault';
-            await db.collection('artifacts').doc(appId)
-                .collection('public').doc('data')
-                .collection('pending_merchants').add(payload);
-
-            // 5. Success
-            const successModal = new bootstrap.Modal(document.getElementById('successModal'));
-            successModal.show();
-
-        } catch (e) {
-            console.error(e);
-            showErrorMessage(e.message || "Onboarding failed. Check your connection.");
-        } finally {
-            // Reset button state
-            if (submitBtn) submitBtn.disabled = false;
-            if (loadingSpinner) loadingSpinner.classList.add('d-none');
-            if (submitBtnText) submitBtnText.innerText = 'Submit Verification Request';
-        }
-    };
+    } catch (e) {
+        console.error(e);
+        alert(e.message || "Onboarding failed. Check your connection.");
+    } finally {
+        if (submitBtn) submitBtn.disabled = false;
+        if (loadingSpinner) loadingSpinner.classList.add('d-none');
+        if (submitBtnText) submitBtnText.innerText = 'Submit Verification Request';
+    }
+  };
 </script>
 
 <div class="container py-5">
@@ -215,7 +273,7 @@
                     <h6 class="fw-bold mb-4 text-primary"><i class="bi bi-wallet2 me-2"></i>Settlement Channels</h6>
                     <div class="row g-3">
                         <div class="col-md-6">
-                            <label class="form-label small fw-bold text-muted">WhatsApp Number</label>
+                            <label class="form-label small fw-bold text-muted">WhatsApp</label>
                             <input type="tel" id="whatsapp" class="form-control rounded-pill border-light bg-light" placeholder="0240000000" required>
                         </div>
                         <div class="col-md-6">
@@ -266,7 +324,7 @@
                 </div>
                 <h4 class="fw-bold text-dark">Verification Pending</h4>
                 <p class="text-secondary small mb-4">
-                    Our compliance team is verifying your request. Once approved, you'll be notified on WhatsApp with your <strong>Unique Merchant ID</strong> and login link.
+                    Our compliance team is verifying your request. Once approved, you'll be notified on WhatsApp with your <strong>Unique Merchant ID</strong> (Your Name + 4 Digits). You will need this ID to activate your vault.
                 </p>
                 <a href="/" class="btn btn-dark w-100 rounded-pill fw-bold py-3">Got it, thanks!</a>
             </div>

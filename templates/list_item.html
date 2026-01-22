@@ -9,9 +9,12 @@
 
 <script>
     /** * LEDGEHOLD MERCHANT CONFIG */
-    const __app_id = '{{ __app_id }}';
-    const __firebase_config = '{{ __firebase_config | safe }}';
-    const IMGBB_API_KEY = '{{ IMGBB_API_KEY }}';
+    var __app_id = '{{ __app_id if __app_id else "ledgehold-ghana" }}';
+    var __firebase_config = '{{ __firebase_config | safe if __firebase_config else "{}" }}';
+    
+    // CLOUDINARY CONFIG (Zero-OpEx Infrastructure)
+    const CLOUD_NAME = 'dfy4y7lqk'; // Verified Cloud Name
+    const UPLOAD_PRESET = 'ledgehold_uploads'; // Unsigned Preset
 
     // Initialize Firebase
     const config = JSON.parse(__firebase_config);
@@ -67,7 +70,7 @@
                             <input type="number" id="itemPrice" step="0.01" class="form-control rounded-pill border-light bg-light py-2 px-3" placeholder="0.00" required>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label small fw-bold text-muted">Stock Level</label>
+                            <label class="form-label small fw-bold text-muted">Initial Stock Level</label>
                             <input type="number" id="itemStock" class="form-control rounded-pill border-light bg-light py-2 px-3" placeholder="1" min="1" required>
                         </div>
                     </div>
@@ -144,7 +147,7 @@
 
                 <!-- SECTION 4: VISUALS -->
                 <div class="card border-0 shadow-sm p-4 mb-5 rounded-4 bg-white border">
-                    <h6 class="fw-bold mb-4 text-primary small" style="letter-spacing: 1px;">PRODUCT VISUALS</h6>
+                    <h6 class="fw-bold mb-4 text-primary small" style="letter-spacing: 1px;">Product Visual</h6>
                     
                     <!-- PREVIEW BOX -->
                     <div id="imagePreviewContainer" class="mb-3 d-none">
@@ -170,7 +173,7 @@
                                 </button>
                             </div>
                         </div>
-                        <p class="text-center text-muted x-small mt-2 mb-0 italic">Clear and accurate product visuals increases buyer trust.</p>
+                        <p class="text-center text-muted x-small mt-2 mb-0 italic">High-Speed Image Engine Active (Cloudinary).</p>
                     </div>
 
                     <!-- HIDDEN INPUTS -->
@@ -242,8 +245,8 @@
     }
 
     /**
-     * INDUSTRY-GRADE CLIENT-SIDE COMPRESSION
-     * Optimizes visual assets for Ledgehold Performance Standards
+     * IMAGE COMPRESSION ENGINE
+     * Same robust logic as Onboarding to ensure Zero-OpEx Compliance
      */
     async function compressImage(file) {
         return new Promise((resolve, reject) => {
@@ -256,19 +259,12 @@
                     const canvas = document.createElement('canvas');
                     let width = img.width;
                     let height = img.height;
+                    const MAX_DIM = 1200; // Standard HD limit
 
-                    // Industry Standard: Maximum dimension of 1200px for web listings
-                    const MAX_DIM = 1200;
                     if (width > height) {
-                        if (width > MAX_DIM) {
-                            height *= MAX_DIM / width;
-                            width = MAX_DIM;
-                        }
+                        if (width > MAX_DIM) { height *= MAX_DIM / width; width = MAX_DIM; }
                     } else {
-                        if (height > MAX_DIM) {
-                            width *= MAX_DIM / height;
-                            height = MAX_DIM;
-                        }
+                        if (height > MAX_DIM) { width *= MAX_DIM / height; height = MAX_DIM; }
                     }
 
                     canvas.width = width;
@@ -276,7 +272,7 @@
                     const ctx = canvas.getContext('2d');
                     ctx.drawImage(img, 0, 0, width, height);
 
-                    // Re-encode to highly efficient JPEG at 0.7 quality
+                    // Compress to JPEG at 70% quality
                     canvas.toBlob((blob) => {
                         resolve(blob);
                     }, 'image/jpeg', 0.7);
@@ -435,9 +431,6 @@
         document.getElementById('uploadButtonsGroup').classList.remove('d-none');
     }
 
-    /**
-     * COPY LINK UTILITY
-     */
     window.copyStorefrontLink = function() {
         const input = document.getElementById('storefrontUrl');
         input.select();
@@ -453,8 +446,7 @@
     };
 
     /**
-     * HANDLE ITEM SUBMISSION
-     * Orchestrates compression, upload, and synchronization
+     * HANDLE ITEM SUBMISSION (UPDATED FOR CLOUDINARY)
      */
     async function handleItemSubmission(e) {
         e.preventDefault();
@@ -479,22 +471,23 @@
 
         btn.disabled = true;
         loader.classList.remove('d-none');
-        btnText.innerText = "Optimizing Visual Assets...";
+        btnText.innerText = "Optimizing Visuals...";
 
         try {
-            // 1. INDUSTRY-GRADE COMPRESSION
-            const compressedBlob = await compressImage(imgFile);
-            const finalImageFile = new File([compressedBlob], imgFile.name, { type: 'image/jpeg' });
-
-            btnText.innerText = "Syncing Marketplace Node...";
-
-            // 2. Upload to ImgBB
+            // 1. Client-Side Compression
+            const compressedFile = await compressImage(imgFile);
+            
+            // 2. Upload to Cloudinary (Replaces ImgBB)
             const formData = new FormData();
-            formData.append("image", finalImageFile);
-            const imgResp = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, { method: "POST", body: formData });
+            formData.append("file", compressedFile);
+            formData.append("upload_preset", UPLOAD_PRESET);
+
+            const imgResp = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, { method: "POST", body: formData });
             const imgRes = await imgResp.json();
             
-            if (!imgRes.success) throw new Error("Visual synchronization failed.");
+            if (!imgRes.secure_url) throw new Error("Visual synchronization failed.");
+
+            btnText.innerText = "Syncing marketplace...";
 
             // 3. Prepare Delivery Schedule
             const availability = document.getElementById('availability').value;
@@ -503,7 +496,7 @@
             if (availability === "Ready for Instant Pickup") {
                 const days = document.getElementById('pickupDays').value;
                 const time = document.getElementById('pickupTime').value;
-                if (!days || !time) throw new Error("Logistics schedule incomplete.");
+                if (!days || !time) throw new Error("Schedule incomplete.");
                 finalSchedule = `${days} | ${time}`;
             }
 
@@ -518,7 +511,7 @@
                 schedule: finalSchedule,
                 landmark: document.getElementById('landmark').value.trim(),
                 varieties: varieties,
-                imgUrl: imgRes.data.url,
+                imgUrl: imgRes.secure_url, // Using Cloudinary URL
                 merchantId: merchantName,
                 seller: merchantName,
                 timestamp: Date.now(),
