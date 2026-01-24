@@ -480,6 +480,42 @@
 .stock-warning .premium-stock-pill { background: rgba(255, 251, 235, 0.9); border-color: rgba(245, 158, 11, 0.2); }
 .stock-warning .stock-text { color: #92400e; }
 button:disabled { opacity: 0.6; cursor: not-allowed; }
+
+/* HORIZONTAL SCROLL ENGINE - FROM SECOND FILE */
+.horizontal-scroll-container {
+    overflow-x: auto;
+    white-space: nowrap;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 10px;
+    padding-left: 5px;
+    padding-right: 5px;
+    scrollbar-width: none;
+}
+.horizontal-scroll-container::-webkit-scrollbar { display: none; }
+
+.official-card {
+    display: inline-block;
+    width: 160px;
+    margin-right: 12px;
+    vertical-align: top;
+    white-space: normal;
+    border: 1px solid #e2e8f0;
+    transition: transform 0.2s;
+}
+
+.official-card:hover {
+    transform: translateY(-3px);
+    border-color: #3b82f6;
+}
+
+.official-banner {
+    background: linear-gradient(90deg, #0f172a 0%, #1e40af 100%);
+    border-radius: 16px;
+    padding: 15px;
+    margin-bottom: 15px;
+    box-shadow: 0 10px 25px -5px rgba(30, 64, 175, 0.25);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
 </style>
 
 <script>
@@ -487,6 +523,9 @@ let allItems = [];
 let currentItemData = null;
 const params = new URLSearchParams(window.location.search);
 const merchantFilter = params.get('merchant');
+
+// OFFICIAL STORE CONSTANT - FROM SECOND FILE
+const OFFICIAL_STORE_ID = "DataExpress Official"; 
 
 document.addEventListener('DOMContentLoaded', loadListings);
 
@@ -505,7 +544,7 @@ function cleanMerchantName(merchantName) {
 }
 
 /**
- * FETCH LOGIC
+ * FETCH LOGIC - ORIGINAL FROM FIRST FILE
  */
 async function loadListings() {
     try {
@@ -567,7 +606,7 @@ function generateStockComponent(stock) {
 }
 
 /**
- * RENDER LOGIC - UPDATED: JUMIA-STYLE TIGHT GRID FROM SECOND FILE
+ * RENDER LOGIC - UPDATED WITH OFFICIAL STORE FROM SECOND FILE
  */
 function renderMarketplace(campus = 'all') {
     const grid = document.getElementById('marketplaceGrid');
@@ -588,52 +627,140 @@ function renderMarketplace(campus = 'all') {
     }
 
     noResults.style.display = 'none';
-    const shuffled = [...filtered].sort(() => Math.random() - 0.5);
     
-    grid.innerHTML = shuffled.map(item => {
-        const stockHtml = generateStockComponent(item.stock);
-        
-        return `
-        <div class="col-6 col-md-4 col-lg-3">
-            <div class="card shadow-sm border-0 h-100 overflow-hidden position-relative market-item" style="border-radius: 15px; background: #fff;">
-                <div class="position-absolute top-0 end-0 m-2 z-3">
-                    <span class="badge bg-primary rounded-pill" style="font-size: 0.65rem;">${item.university}</span>
-                </div>
-                <!-- Image Container with Stock Level - 1:1 ratio for tighter grid -->
-                <div class="ratio ratio-1x1 bg-light overflow-hidden cursor-zoom-in position-relative" onclick="viewFullImage('${item.imgUrl}')">
-                    <img src="${item.imgUrl}" class="object-fit-cover hover-zoom" alt="${item.itemName}">
-                    
-                    <!-- NEW COMPACT PREMIUM STOCK PILL -->
-                    ${stockHtml}
-
-                    <!-- Full Screen Icon (hidden on mobile for space) -->
+    // SEPARATE OFFICIAL STORE ITEMS - FROM SECOND FILE
+    const officialItems = filtered.filter(i => i.merchantId && i.merchantId.includes(OFFICIAL_STORE_ID));
+    const generalItems = filtered.filter(i => !i.merchantId || !i.merchantId.includes(OFFICIAL_STORE_ID));
+    
+    const shuffledGeneral = [...generalItems].sort(() => Math.random() - 0.5);
+    
+    // Logic for item count based on screen size - FROM SECOND FILE
+    const isLaptop = window.innerWidth >= 992;
+    const sliceCount = isLaptop ? 8 : 6;
+    
+    let html = '';
+    
+    // A. Render first batch of general items
+    const firstBatch = shuffledGeneral.slice(0, sliceCount);
+    firstBatch.forEach(item => { 
+        html += buildCard(item); 
+    });
+    
+    // B. Inject Official Store Carousel (if items exist and not filtered by merchant) - FROM SECOND FILE
+// B. Inject Official Store Carousel (if items exist and not filtered by merchant) - FROM SECOND FILE
+if (officialItems.length > 0 && !merchantFilter) {
+    html += `
+    <div class="col-12 my-4">
+        <div class="official-banner">
+            <div class="d-flex align-items-center justify-content-between">
+                <div class="d-flex align-items-center gap-2">
+                    <div class="bg-white rounded-circle p-1 d-flex align-items-center justify-content-center" style="width: 30px; height: 30px;">
+                        <i class="bi bi-patch-check-fill text-primary"></i>
+                    </div>
                     <div>
-                        <i class="bi bi-arrows-fullscreen"></i>
+                        <h6 class="fw-bold text-white mb-0">Official Store</h6>
+                        <small class="text-white-50 x-small">DataExpress - UMaT Essikado</small>
                     </div>
                 </div>
-                <div class="card-body p-2 p-md-3">
-                    <div class="mb-1">
-                        <h6 class="fw-bold mb-0 text-truncate text-dark" style="font-size: 0.9rem;">${item.itemName}</h6>
-                        <span class="fw-bold text-primary" style="font-size: 0.85rem;">GHS ${item.price.toFixed(2)}</span>
-                    </div>
-                    <div class="d-flex align-items-center mb-2">
-                        <i class="bi bi-patch-check-fill text-info me-1" style="font-size: 0.7rem;"></i>
-                        <span class="text-muted text-truncate" style="font-size: 0.65rem; max-width: 85%;">Verified Student Merchant</span>
-                    </div>
-                    <div class="d-grid">
-                        <button class="btn btn-outline-dark btn-sm rounded-pill fw-bold py-1" 
-                                style="font-size: 0.75rem;"
-                                onclick='openPurchaseFlow(${JSON.stringify(item).replace(/'/g, "&apos;")})'>
-                            <span class="d-none d-md-inline"><i class="bi bi-cart-plus me-1"></i> View Details</span>
-                            <span class="d-md-none">View</span>
-                        </button>
-                    </div>
+                <span class="badge bg-warning text-dark text-uppercase x-small">New</span>
+            </div>
+        </div>
+        
+        <div class="horizontal-scroll-container">
+            ${officialItems.map(item => buildHorizontalCard(item)).join('')}
+        </div>
+        
+        <!-- Simple Ruler -->
+        <div class="mt-3" style="border-top: 1px solid #e2e8f0; padding-top: 8px;">
+            <p class="text-center text-muted small mb-0" style="font-size: 0.7rem;">
+                <i class="bi bi-arrow-left-right me-1"></i>Scroll horizontally to see more items
+            </p>
+        </div>
+    </div>
+    `;
+}
+    
+    // C. Render remaining general items
+    const secondBatch = shuffledGeneral.slice(sliceCount);
+    secondBatch.forEach(item => { 
+        html += buildCard(item); 
+    });
+    
+    grid.innerHTML = html;
+}
+
+/**
+ * STANDARD VERTICAL CARD - ORIGINAL FROM FIRST FILE
+ */
+function buildCard(item) {
+    const stockHtml = generateStockComponent(item.stock);
+    // ANONYMIZATION: Use static "Verified Seller" label instead of name - FROM SECOND FILE
+    const displaySeller = "Verified Student Merchant";
+    
+    return `
+    <div class="col-6 col-md-4 col-lg-3">
+        <div class="card shadow-sm border-0 h-100 overflow-hidden position-relative market-item" style="border-radius: 15px; background: #fff;">
+            <div class="position-absolute top-0 end-0 m-2 z-3">
+                <span class="badge bg-primary rounded-pill" style="font-size: 0.65rem;">${item.university}</span>
+            </div>
+            <!-- Image Container with Stock Level - 1:1 ratio for tighter grid -->
+            <div class="ratio ratio-1x1 bg-light overflow-hidden cursor-zoom-in position-relative" onclick="viewFullImage('${item.imgUrl}')">
+                <img src="${item.imgUrl}" class="object-fit-cover hover-zoom" alt="${item.itemName}">
+                
+                <!-- NEW COMPACT PREMIUM STOCK PILL -->
+                ${stockHtml}
+
+                <!-- Full Screen Icon (Laptop only) - FROM SECOND FILE -->
+                <!--div class="position-absolute bottom-0 start-0 m-1 m-md-2 bg-dark bg-opacity-50 text-white px-2 py-1 rounded-pill d-none d-md-block" style="font-size: 0.55rem; z-index: 5;"></div-->
+                <div>
+                    <i class="bi bi-arrows-fullscreen"></i>
+                </div>
+            </div>
+            <div class="card-body p-2 p-md-3">
+                <div class="mb-1">
+                    <h6 class="fw-bold mb-0 text-truncate text-dark" style="font-size: 0.9rem;">${item.itemName}</h6>
+                    <span class="fw-bold text-primary" style="font-size: 0.85rem;">GHS ${item.price.toFixed(2)}</span>
+                </div>
+                <div class="d-flex align-items-center mb-2">
+                    <i class="bi bi-patch-check-fill text-info me-1" style="font-size: 0.7rem;"></i>
+                    <!-- ANONYMIZED SELLER DISPLAY - FROM SECOND FILE -->
+                    <span class="text-muted text-truncate" style="font-size: 0.65rem; max-width: 85%;">${displaySeller}</span>
+                </div>
+                <div class="d-grid">
+                    <button class="btn btn-outline-dark btn-sm rounded-pill fw-bold py-1" 
+                            style="font-size: 0.75rem;"
+                            onclick='openPurchaseFlow(${JSON.stringify(item).replace(/'/g, "&apos;")})'>
+                        <span class="d-none d-md-inline"><i class="bi bi-cart-plus me-1"></i> View Details</span>
+                        <span class="d-md-none">View</span>
+                    </button>
                 </div>
             </div>
         </div>
-        `;
-    }).join('');
+    </div>
+    `;
 }
+
+/**
+ * HORIZONTAL SCROLL CARD (Official Store) - FROM SECOND FILE
+ */
+function buildHorizontalCard(item) {
+    return `
+    <div class="official-card bg-white rounded-4 overflow-hidden position-relative" onclick='openPurchaseFlow(${JSON.stringify(item).replace(/'/g, "&apos;")})'>
+        <div class="ratio ratio-1x1 bg-light position-relative">
+             <img src="${item.imgUrl}" class="object-fit-cover" alt="${item.itemName}">
+             <!--div class="position-absolute bottom-0 start-0 w-100 p-1 bg-dark bg-opacity-75 text-center"></div-->
+             <div class="text-center">
+                <span class="text-white fw-bold x-small">GHS ${item.price.toFixed(2)}</span>
+             </div>
+        </div>
+        <div class="p-2">
+            <p class="fw-bold text-dark text-truncate mb-0 x-small">${item.itemName}</p>
+        </div>
+    </div>
+    `;
+}
+
+// ALL ORIGINAL FUNCTIONS FROM FIRST FILE PRESERVED BELOW
 
 function openPurchaseFlow(item) {
     currentItemData = item;
@@ -658,8 +785,11 @@ function showItemDetail() {
     document.getElementById('detailTitle').innerText = d.itemName;
     document.getElementById('detailCampus').innerText = d.university;
     document.getElementById('detailPrice').innerText = 'GHS ' + d.price.toFixed(2);
-    // Use cleanMerchantName for display - specifically removing 4-digit IDs
-    document.getElementById('detailSeller').innerText = cleanMerchantName(d.merchantId || d.seller) || "Verified Merchant";
+    
+    // SHOW SELLER'S NAME (not anonymized)
+    const rawSeller = d.merchantId || d.seller;
+    const cleanSeller = cleanMerchantName(rawSeller) || "Verified Merchant";
+    document.getElementById('detailSeller').innerText = cleanSeller;
     document.getElementById('detailDescription').innerText = d.description || "Verified institutional listing.";
     document.getElementById('detailAvailability').innerText = d.availability || "Ready for Instant Pickup";
     document.getElementById('detailLandmark').innerText = d.landmark || "TBA at Campus";
@@ -715,7 +845,6 @@ function showItemDetail() {
         if (hasVarieties && !v) return;
         window.location.href = `/checkout?item=${encodeURIComponent(d.itemName)}&price=${d.price}&id=${d.id}${v ? '&variety='+v : ''}`;
     };
-
 
     new bootstrap.Modal(document.getElementById('itemDetailModal')).show();
 }

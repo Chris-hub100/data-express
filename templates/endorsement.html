@@ -11,7 +11,7 @@
     var __app_id = '{{ __app_id }}';
     var __firebase_config = '{{ __firebase_config | safe }}';
     
-    // Initialize Firebase Globally to avoid "db not defined" errors
+    // Initialize Firebase Globally
     var config = JSON.parse(__firebase_config);
     if (!firebase.apps.length) firebase.initializeApp(config);
     var db = firebase.firestore();
@@ -276,8 +276,9 @@
                 </div>
                 <form onsubmit="handleWaitlistVerification(event)">
                     <div class="mb-3">
-                        <label class="form-label small fw-bold text-muted">MERCHANT IDENTIFIER</label>
-                        <input type="text" id="waitlistMerchantId" class="form-control rounded-pill border-light bg-light py-2 px-4 shadow-none" placeholder="e.g. Kwadwo Nkansah" required>
+                        <!-- UPDATED: Asking for NAME not ID -->
+                        <label class="form-label small fw-bold text-muted">MERCHANT NAME</label>
+                        <input type="text" id="waitlistMerchantName" class="form-control rounded-pill border-light bg-light py-2 px-4 shadow-none" placeholder="e.g. Kwadwo Nkansah" required>
                     </div>
                     <div class="mb-4">
                         <label class="form-label small fw-bold text-muted">PRIVATE PIN</label>
@@ -329,7 +330,7 @@
 
     window.handleWaitlistVerification = async function(e) {
         e.preventDefault();
-        const merchantId = document.getElementById('waitlistMerchantId').value.trim();
+        const merchantName = document.getElementById('waitlistMerchantName').value.trim();
         const pin = document.getElementById('waitlistPin').value.trim();
         const btn = document.getElementById('verifyBtn');
         const err = document.getElementById('verifyError');
@@ -340,17 +341,32 @@
 
         try {
             const inputHash = await hashPin(pin);
-            const merchantRef = db.collection('artifacts').doc(__app_id)
-                                 .collection('public').doc('data')
-                                 .collection('verified_merchants').doc(merchantId);
             
-            const docSnap = await merchantRef.get();
+            // SMART LOOKUP: Query by Name, Verify by PIN
+            const merchantsRef = db.collection('artifacts').doc(__app_id)
+                                 .collection('public').doc('data')
+                                 .collection('verified_merchants');
+            
+            // Note: In firebase-compat v9, we chain .where().get()
+            const snapshot = await merchantsRef.where('fullName', '==', merchantName).get();
 
-            if (docSnap.exists && docSnap.data().pin === inputHash) {
+            let matchFound = false;
+            let uniqueMerchantId = null;
+
+            snapshot.forEach(doc => {
+                const data = doc.data();
+                if (data.pin === inputHash) {
+                    matchFound = true;
+                    uniqueMerchantId = doc.id; // Capture the unique ID (Name + digits)
+                }
+            });
+
+            if (matchFound && uniqueMerchantId) {
+                // Add Unique ID to waitlist
                 await db.collection('artifacts').doc(__app_id)
                         .collection('public').doc('data')
-                        .collection('endorsement_waitlist').doc(merchantId).set({
-                            merchantId,
+                        .collection('endorsement_waitlist').doc(uniqueMerchantId).set({
+                            merchantId: uniqueMerchantId,
                             timestamp: Date.now(),
                             status: 'pending_audit'
                         });
@@ -363,7 +379,7 @@
                     new bootstrap.Modal(document.getElementById('successWaitlistModal')).show();
                 }, 500);
             } else {
-                throw new Error("Invalid Identifier or PIN. Authentication failed.");
+                throw new Error("Invalid Name or PIN. Please check your credentials.");
             }
         } catch (e) {
             err.querySelector('span').innerText = e.message;
