@@ -5,17 +5,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     
     <!-- 1. DYNAMIC SEO TITLES -->
-    <title>{% block title %}DataExpress | Campus Logistics & Utility Hub{% endblock %}</title>
+    <title>{% block title %}ProlyfiQ | Campus Community{% endblock %}</title>
     
     <!-- 2. SEO META TAGS -->
-    <meta name="description" content="{% block description %}DataExpress is a premier campus logistics and utility platform. Providing secure student delivery services, instant data utilities, and verified bill payments for DStv, GOtv, and ECG. Operated by Gatekeep Ghana LTD.{% endblock %}">
-    <meta name="keywords" content="campus logistics ghana, student delivery service, mtn data bundles ghana, telecel data, bill payments ghana, gatekeep ghana, ledgehold ghana, campus utility app">
+    <meta name="description" content="{% block description %}ProlyfiQ is a premier campus community, logistics and utility platform. Providing secure student delivery services, and verified bill payments for DStv, GOtv, ECG and instant data top-ups. Operated by Ledgehold Enterprise.{% endblock %}">
+    <meta name="keywords" content="campus logistics ghana, student delivery service, campus community ghana, utility hub ghana, bill payments ghana, gatekeeper, ledgehold ghana, campus utility app">
     <meta name="author" content="Ledgehold Enterprise">
 
     <!-- 3. SOCIAL MEDIA PREVIEW (Open Graph) -->
     <meta property="og:url" content="{{ request.base_url }}{% if request.args.get('merchant') %}?merchant={{ request.args.get('merchant') }}{% endif %}">
     <meta property="og:type" content="website">
-    <meta property="og:site_name" content="DataExpress">
+    <meta property="og:site_name" content="ProlyfiQ">
 
     {% set merchant_id = request.args.get('merchant') %}
     {% if merchant_id %}
@@ -41,8 +41,8 @@
         <meta name="twitter:image" content="{{ url_for('static', filename='images/brand_preview_card.png', _external=True) }}">
     {% else %}
         <!-- DEFAULT BRAND PREVIEW -->
-        <meta property="og:title" content="DataExpress | Campus Logistics & Utility Hub">
-        <meta property="og:description" content="Streamline your campus life. Secure logistics, instant data utilities, and verified bill payments for students.">
+        <meta property="og:title" content="ProlyfiQ | Campus Logistics & Utility Hub">
+        <meta property="og:description" content="Streamline your campus life. Secure logistics, and verified bill & utility payments for students.">
         
         <meta property="og:image" content="{{ url_for('static', filename='images/brand_preview_card.png', _external=True) }}">
         <meta property="og:image:type" content="image/png">
@@ -58,7 +58,7 @@
     <!-- End TrustBox script -->
 
     <!-- Favicon -->
-    <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/favicon.png') }}">
+    <!--link rel="icon" type="image/png" href="{{ url_for('static', filename='images/favicon.png') }}"-->
     
     <!-- CSS Links -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -82,8 +82,7 @@
     <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm mb-4 sticky-top">
         <div class="container">
             <a class="navbar-brand d-flex align-items-center gap-2" href="/">
-                <i class="bi bi-wifi text-primary"></i> 
-                DataExpress
+                ProlyfiQ
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#desktopMenu">
                 <span class="navbar-toggler-icon"></span>
@@ -195,7 +194,7 @@
         <div class="container">
             <div class="row">
                 <div class="col-md-4 mb-4">
-                    <h4 class="fw-bold text-warning mb-3">DataExpress</h4>
+                    <h4 class="fw-bold text-warning mb-3">ProlyfiQ</h4>
                     <p class="text-secondary small">Your Campus Connectivity Partner.</p>
                     <div class="d-flex gap-3 mt-4">
                         <a href="javascript:void(0)" data-bs-toggle="modal" data-bs-target="#socialMediaModal" class="text-white opacity-50 hover-opacity-100 fs-5"><i class="bi bi-instagram"></i></a>
@@ -240,7 +239,7 @@
 
             <hr class="border-secondary opacity-25 my-4">
             <div class="text-center text-secondary small">
-                <p class="mb-0">&copy; 2026 DataExpress. Operated by Ledgehold Enterprise.</p>
+                <p class="mb-0">&copy; 2026 ProlyfiQ. Operated by Ledgehold Enterprise.</p>
                 <p class="x-small opacity-50 mt-1">Institutional Hub • Act 843 Compliant</p>
             </div>
         </div>
@@ -258,7 +257,7 @@
                 <div class="modal-body text-center py-4">
                     <div class="mb-4">
                         <h6 class="fw-bold">Email Us</h6>
-                        <a href="mailto:support@dataexpress.store" class="btn btn-outline-primary rounded-pill px-4">support@dataexpress.store</a>
+                        <a href="mailto:support@prolyfiq.store" class="btn btn-outline-primary rounded-pill px-4">support@prolyfiq.store</a>
                     </div>
                     <hr class="opacity-25">
                     <div class="mt-4">
@@ -285,7 +284,7 @@
                 </div>
                 <div class="modal-body py-4">
                     <p class="mb-3"><strong>Please Be Careful!</strong> There are fake websites claiming to be us. Bookmark this site.</p>
-                    <p class="mb-4">Always verify you are on <strong>dataexpress.store</strong>.</p>
+                    <p class="mb-4">Always verify you are on <strong>prolyfiq.store</strong>.</p>
                     <div class="d-grid gap-2">
                         <button type="button" class="btn btn-primary btn-sm rounded-pill py-2 fw-bold" data-bs-dismiss="modal">I Understand, Continue</button>
                     </div>

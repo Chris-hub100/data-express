@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+
+{% block title %}Secure Gateway | ProlyfiQ{% endblock %}
+
+{% block content %}
+<style>
+    body { background-color: #f8fafc; font-family: 'Inter', sans-serif; }
+    
+    .maintenance-card {
+        background: white;
+        border-radius: 24px;
+        box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.05);
+        border: 1px solid rgba(0,0,0,0.05);
+        overflow: hidden;
+        position: relative;
+    }
+
+    .pulse-ring {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 150px;
+        height: 150px;
+        border-radius: 50%;
+        border: 2px solid #fbbf24;
+        opacity: 0;
+        animation: pulse-ring 2s infinite;
+    }
+
+    @keyframes pulse-ring {
+        0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
+        50% { opacity: 0.5; }
+        100% { transform: translate(-50%, -50%) scale(1.5); opacity: 0; }
+    }
+</style>
+
+<div class="container d-flex align-items-center justify-content-center" style="min-height: 80vh;">
+    <div class="col-lg-6 col-md-8">
+        <div class="maintenance-card p-5 text-center">
+            
+            <!-- Dynamic Item Header -->
+            {% if request.args.get('item') %}
+            <div class="mb-4">
+                <span class="badge bg-light text-dark border rounded-pill mb-2 px-3">PENDING TRANSACTION</span>
+                <h4 class="fw-bold text-dark mb-1">{{ request.args.get('item') }}</h4>
+                <p class="text-primary fw-bold mb-0">GHS {{ request.args.get('price') }}</p>
+            </div>
+            <hr class="border-light mb-5">
+            {% endif %}
+
+            <!-- Icon Animation -->
+            <div class="position-relative mb-5" style="height: 100px;">
+                <div class="pulse-ring"></div>
+                <div class="bg-dark text-white rounded-circle d-inline-flex align-items-center justify-content-center shadow-lg position-relative z-1" style="width: 80px; height: 80px;">
+                    <i class="bi bi-shield-lock-fill fs-1 text-warning"></i>
+                </div>
+            </div>
+
+            <!-- The Narrative -->
+            <h3 class="fw-bold text-dark mb-3">Institutional Integration in Progress</h3>
+            <p class="text-muted mb-4" style="line-height: 1.6;">
+                We are currently finalizing our <b>Hubtel</b> & <b>Gatekeeper Compliance</b> rails to ensure your funds are 100% protected before we accept real payments.
+            </p>
+
+            <div class="alert bg-warning bg-opacity-10 border-0 rounded-4 mb-4">
+                <div class="d-flex gap-3 text-start align-items-center">
+                    <i class="bi bi-info-circle-fill text-warning fs-4"></i>
+                    <div>
+                        <p class="small text-dark mb-0 fw-bold">Projected Live Date:</p>
+                        <p class="x-small text-muted mb-0">Within 14 Days (Pending ORC Certification)</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="d-grid gap-2">
+                <a href="/marketplace" class="btn btn-outline-dark rounded-pill fw-bold py-3">
+                    <i class="bi bi-arrow-left me-2"></i> Browse Other Items
+                </a>
+                <a href="/onboarding" class="btn btn-primary rounded-pill fw-bold py-3 shadow-sm">
+                    Become a Verified Merchant
+                </a>
+            </div>
+
+            <div class="mt-4">
+                <p class="x-small text-muted fw-bold opacity-50" style="letter-spacing: 1px;">
+                    POWERED BY LEDGEHOLD <span class="text-primary">escrow</span>.
+                </p>
+            </div>
+
+        </div>
+    </div>
+</div>
+{% endblock %}

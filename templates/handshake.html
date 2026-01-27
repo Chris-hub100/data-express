@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}P.O.D. Handshake | Ledgehold Ghana{% endblock %}
+{% block title %}P.O.D. Handshake | ProlyfiQ{% endblock %}
 
 {% block content %}
 <!-- BRIDGE SCRIPT -->
@@ -123,7 +123,7 @@
         const handshakeToken = `RELEASE:${currentMerchant.replace(/\s+/g, '_')}:${item.replace(/\s+/g, '_')}`;
         
         // Deep Link for Buyer
-        const message = `HANDSHAKE_P.O.D:%0A%0A*${handshakeToken}*%0A%0AI confirm receipt of this item and authorize Ledgehold Enterprise to release funds to the merchant.`;
+        const message = `HANDSHAKE_P.O.D:%0A%0A*${handshakeToken}*%0A%0AI confirm receipt of this item and authorize ProlyfiQ to release funds to the merchant.`;
         const whatsappUrl = `https://wa.me/233551681706?text=${message}`;
         
         // Generate QR

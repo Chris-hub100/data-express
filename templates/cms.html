@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Merchant Onboarding | Ledgehold Ghana{% endblock %}
+{% block title %}Merchant Onboarding | ProlyfiQ{% endblock %}
 
 {% block content %}
 <!-- Firebase Web SDKs (Compat Version for Secure Tools) -->
@@ -106,7 +106,7 @@
     resultArea.innerHTML = ""; 
 
     try {
-        if (!db) throw new Error("Infrastructure offline. Contact Ledgehold Support.");
+        if (!db) throw new Error("Infrastructure offline. Contact ProlyfiQ Support.");
 
         // 1. Fetch the merchant document from the verified registry using Unique ID
         const merchantRef = getCol('verified_merchants').doc(merchantId);
@@ -114,7 +114,7 @@
 
         // 2. Security Validation
         if (!docSnap.exists) {
-            throw new Error("Invalid Merchant ID. Please ensure you typed it exactly as received on WhatsApp (e.g., 'Chris Tetteh 3863').");
+            throw new Error("Invalid Merchant ID. Please ensure you typed it exactly as received on WhatsApp (e.g., 'Kwadwo Nkansah 3863').");
         }
 
         const merchantData = docSnap.data();
@@ -126,7 +126,7 @@
 
         // Check if they already have a PIN (Prevent Overwrite/Takeover)
         if (merchantData.pin) {
-            throw new Error("This merchant ID has already been activated. If you forgot your PIN, please contact Ledgehold support.");
+            throw new Error("This merchant ID has already been activated. If you forgot your PIN, please contact ProlyfiQ support.");
         }
 
         // 3. Generate random 6-digit PIN
@@ -175,7 +175,7 @@
                 <div class="p-3 rounded-3 bg-warning-subtle border-start border-warning border-4">
                     <p class="mb-0 text-dark fw-bold" style="font-size: 0.7rem;">SAVE THIS PIN IMMEDIATELY.</p>
                     <p class="mb-0 text-muted mt-1" style="font-size: 0.65rem; line-height: 1.3;">
-                        We store only the encrypted hash. This PIN cannot be recovered if lost. You will need it to login to DataExpress.
+                        We store only the encrypted hash. This PIN cannot be recovered if lost. You will need it to login to your Merchant Dashboard.
                     </p>
                 </div>
             </div>
@@ -276,7 +276,7 @@
                 </div>
                 <h4 class="fw-bold text-dark">Setup Complete!</h4>
                 <p class="text-secondary small mb-4">
-                    Your merchant vault is now active. You can now login to your merchant portal and begin your operations.
+                    Your merchant vault is now active. You can now login to your merchant dashboard and begin your operations.
                 </p>
                 <div class="d-grid">
                     <a href="/merchant_dashboard" class="btn btn-dark rounded-pill fw-bold py-3">Login to Portal</a>

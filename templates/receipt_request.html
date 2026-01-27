@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Request Sale Receipt | Ledgehold{% endblock %}
+{% block title %}Request Sale Receipt | ProlyfiQ{% endblock %}
 
 {% block content %}
 <script>
@@ -307,7 +307,7 @@
         const date = document.getElementById('saleDate').value;
         const buyer = document.getElementById('buyerName').value || "N/A";
 
-        const message = `Hello Ledgehold Compliance! %0A%0A` +
+        const message = `Hello ProlyfiQ Compliance! %0A%0A` +
                         `*RECEIPT REQUEST*%0A` +
                         `--------------------------%0A` +
                         `*Merchant:* ${currentMerchant}%0A` +
@@ -320,7 +320,7 @@
                         `--------------------------%0A` +
                         `I require an official digital receipt for my audit trail.`;
 
-        document.getElementById('whatsappBridge').href = `https://wa.me/233535333868?text=${message}`;
+        document.getElementById('whatsappBridge').href = `https://wa.me/233551681706?text=${message}`;
         new bootstrap.Modal(document.getElementById('requestSuccessModal')).show();
     };
 

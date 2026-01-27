@@ -1,81 +1,39 @@
 {% extends "base.html" %}
 
-{% block title %}Seller Payout Portal | DataExpress{% endblock %}
+{% block title %}Seller Payout Portal | ProlyfiQ{% endblock %}
 
 {% block content %}
-<!-- BRIDGE SCRIPT: Connects Flask/Jinja variables to JavaScript -->
+<!-- EXTERNAL ENGINES -->
+<script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore-compat.js"></script>
+
 <script>
-    var __firebase_config = '{{ __firebase_config | safe if __firebase_config else "{}" }}';
     var __app_id = '{{ __app_id if __app_id else "ledgehold-ghana" }}';
-    // Ensure we capture the key from the global scope defined in base.html
-    const IMGBB_API_KEY = typeof __imgbb_api_key !== 'undefined' ? __imgbb_api_key : "";
+    var __firebase_config = '{{ __firebase_config | safe if __firebase_config else "{}" }}';
+    
+    // CLOUDINARY CONFIG (Replaces ImgBB for Stability)
+    const CLOUD_NAME = 'dfy4y7lqk'; 
+    const UPLOAD_PRESET = 'ledgehold_uploads';
+
+    // Initialize Firebase
+    var config = JSON.parse(__firebase_config);
+    if (!firebase.apps.length) firebase.initializeApp(config);
+    var db = firebase.firestore();
 </script>
 
 <div class="container py-4" style="min-height: 80vh;">
     <!-- INITIAL LOADING STATE -->
     <div id="loadingView" class="text-center py-5">
         <div class="spinner-border text-primary" role="status"></div>
-        <p class="mt-3 text-muted small">Synchronizing Vault Access...</p>
+        <p class="mt-3 text-muted small">Verifying Vault Session...</p>
     </div>
 
-    <!-- SECTION 1: SECURE LOGIN GATEWAY -->
-    <div id="loginSection" class="row justify-content-center d-none">
-        <div class="col-md-6 col-lg-5 text-center py-5">
-            <div class="mb-4">
-                <div class="bg-dark text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3 shadow-lg" style="width: 80px; height: 80px; border: 2px solid #fbbf24;">
-                    <i class="bi bi-shield-lock-fill fs-1 text-warning"></i>
-                </div>
-                <h4 class="fw-bold text-dark">Merchant Vault</h4>
-                <p class="text-muted small">Enter your credentials to unlock the Payout Portal.</p>
-            </div>
-
-            <div id="loginError" class="alert alert-danger d-none rounded-4 border-0 small mb-3 text-start">
-                <i class="bi bi-exclamation-triangle-fill me-2"></i> <span id="errorMsg">Invalid Credentials.</span>
-            </div>
-
-            <div class="card border-0 shadow-lg p-4 rounded-4 bg-white">
-                <div class="mb-3 text-start">
-                    <label class="form-label small fw-bold text-muted">IDENTIFIER</label>
-                    <input type="text" id="merchantNameInput" class="form-control rounded-pill border-light bg-light py-2 px-4" placeholder="e.g. Kwadwo Nkansah" spellcheck="false" autocomplete="off">
-                </div>
-                <div class="mb-4 text-start">
-                    <label class="form-label small fw-bold text-muted">PRIVATE PIN</label>
-                    <input type="password" id="merchantPinInput" maxlength="6" class="form-control rounded-pill border-light bg-light py-2 px-4 text-center fw-bold" style="letter-spacing: 8px;" placeholder="••••••" inputmode="numeric">
-                </div>
-                <button id="unlockBtn" onclick="handleLogin()" class="btn btn-dark w-100 rounded-pill py-3 fw-bold shadow-sm">
-                    Verify & Access Portal
-                </button>
-            
-            <!-- NEW: FORGOT PIN BRIDGE -->
-                <div class="mt-3">
-                    <a href="https://wa.me/233535333868?text=Hello%20DataExpress%20Support%20Team!%20I%20have%20forgotten%20my%20Merchant%20PIN.%20Please%20assist%20with%20identity%20verification."
-                       target="_blank" 
-                       class="text-decoration-none small fw-bold text-muted hover-primary transition-all">
-                        <i class="bi bi-question-circle me-1"></i> Forgot my PIN?
-                    </a>
-                </div>
-            </div>
-            
-            <p class="mt-4 text-muted" style="font-size: 0.6rem; letter-spacing: 1px; text-transform: uppercase;">
-                <i class="bi bi-patch-check-fill me-1 text-primary"></i> DPA SHA-256 SECURED
-            </p>
-        </div>
-    </div>
-
-    <!-- SECTION 2: PAYOUT PORTAL (AUTHENTICATED) -->
-    <div id="portalSection" class="d-none">
-        <div class="mb-6">
-          <a href="javascript:history.back()" 
-            style="display: inline-flex; align-items: center; gap: 12px; padding: 8px 4px; font-size: 0.875rem; font-weight: bold; color: #64748b; text-decoration: none; transition: all 0.3s ease;"
-            class="hover:text-slate-900"
-          >
-            <div style="display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 50%; background-color: #f1f5f9;">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-                <path d="m15 18-6-6 6-6"/>
-              </svg>
-            </div>
-            <span>Back</span>
-          </a>
+    <!-- MAIN CONTENT (Hidden until Auth Check) -->
+    <div id="mainContent" class="d-none animate-in fade-in duration-500">
+        <div class="mb-5">
+            <a href="/merchant_dashboard" class="text-decoration-none small fw-bold text-muted d-inline-flex align-items-center gap-2">
+                <i class="bi bi-arrow-left"></i> Back to Dashboard
+            </a>
         </div>
 
         <div class="row justify-content-center pb-5">
@@ -84,7 +42,7 @@
 
                 <div class="text-center mb-5">
                     <div class="d-inline-flex align-items-center gap-2 mb-3 px-3 py-1 rounded-pill bg-primary-subtle text-primary" style="font-size: 0.7rem; font-weight: 800;">
-                       <i class="bi bi-wallet2"></i> LEDGEHOLD VAULT ACCESS
+                        <i class="bi bi-wallet2"></i> LEDGEHOLD VAULT ACCESS
                     </div>
                     <h2 class="fw-bold text-dark">Merchant Payouts</h2>
                     <p class="text-muted small">Authenticated as: <span id="activeMerchantName" class="fw-bold text-primary" style="text-transform: capitalize;"></span></p>
@@ -95,77 +53,80 @@
                     <div class="d-flex gap-3 align-items-center">
                         <i class="bi bi-shield-exclamation text-warning fs-3"></i>
                         <div>
-                            <h6 class="fw-bold text-dark mb-1" style="font-size: 0.85rem;">Reference ID Security</h6>
+                            <h6 class="fw-bold text-dark mb-1" style="font-size: 0.85rem;">Gatekeeper Compliance</h6>
                             <p class="mb-0 text-dark opacity-75" style="font-size: 0.75rem;">
-                                Your Reference ID is the unique key to manual payout. <strong>Always keep this ID safe</strong> as you cannot claim your funds manually without it.
+                                Funds are only released after we verify your <strong>Proof of Delivery (POD)</strong> against the buyer's confirmation log.
                             </p>
                         </div>
                     </div>
                 </div>
 
                 <form id="payoutForm" onsubmit="submitPayoutRequest(event)" class="space-y-4">
-                    <div class="card border-0 shadow-sm p-4 mb-4" style="border-radius: 20px;">
-                        <h6 class="fw-bold mb-3 text-dark"><i class="bi bi-person-circle me-2 text-primary"></i>Item REF ID</h6>
+                    <!-- Item Reference -->
+                    <div class="card border-0 shadow-sm p-4 mb-4 bg-white" style="border-radius: 20px;">
+                        <h6 class="fw-bold mb-3 text-dark"><i class="bi bi-upc-scan me-2 text-primary"></i>Transaction ID</h6>
                         <div class="mb-0">
-                            <input type="text" id="listingRefId" class="form-control rounded-pill border-light bg-light py-2 px-3" placeholder="e.g. zmedTkXD" required>
+                            <input type="text" id="listingRefId" class="form-control rounded-pill border-light bg-light py-2 px-3" placeholder="e.g. The unique ID from your Dashboard" required>
                         </div>
                     </div>
 
-                    <div class="card border-0 shadow-sm p-4 mb-4" style="border-radius: 20px;">
+                    <!-- Financials -->
+                    <div class="card border-0 shadow-sm p-4 mb-4 bg-white" style="border-radius: 20px;">
                         <h6 class="fw-bold mb-3 text-dark"><i class="bi bi-receipt me-2 text-primary"></i>Sale Details</h6>
                         <div class="mb-3">
-                            <label class="form-label small fw-bold">Final Sale Price (GHS)</label>
+                            <label class="form-label small fw-bold text-muted">Final Sale Price (GHS)</label>
                             <input type="number" id="itemSoldPrice" class="form-control rounded-pill border-light bg-light" placeholder="0.00" step="0.01" oninput="calculateNetPayout()" required>
                         </div>
                         <div id="payoutDisplay" class="bg-light p-3 rounded-4 border border-white">
-                            <p class="text-muted small mb-0">Enter price to see payout calculation.</p>
+                            <p class="text-muted small mb-0 text-center">Enter price to see payout calculation.</p>
                         </div>
                     </div>
 
-                    <div class="card border-0 shadow-sm p-4 mb-4" style="border-radius: 20px; border-left: 5px solid #ffc107 !important;">
+                    <!-- POD Upload -->
+                    <div class="card border-0 shadow-sm p-4 mb-4 bg-white" style="border-radius: 20px; border-left: 5px solid #198754 !important;">
                         <div class="d-flex justify-content-between align-items-center mb-3">
-                            <h6 class="fw-bold mb-0 text-dark"><i class="bi bi-camera-fill me-2 text-warning"></i>Proof of Delivery</h6>
+                            <h6 class="fw-bold mb-0 text-dark"><i class="bi bi-camera-fill me-2 text-success"></i>Proof of Delivery</h6>
                         </div>
-                        <p class="text-muted small mb-3">Upload evidence (e.g., photo of handoff) to release funds.</p>
+                        <p class="text-muted small mb-3">Upload visual evidence (e.g., item handoff or receipt) to authorize release.</p>
                         
-                        <div class="row g-2 mb-3">
+                        <!-- PREVIEW CONTAINER -->
+                        <div id="podPreviewContainer" class="text-center mb-3 position-relative d-none">
+                            <img id="podImageDisplay" src="#" alt="Proof" class="rounded-3 border shadow-sm w-100" style="max-height: 250px; object-fit: cover;">
+                            <button type="button" onclick="resetPod()" class="btn btn-dark btn-sm rounded-pill position-absolute top-0 end-0 m-2 shadow">
+                                <i class="bi bi-x-lg"></i>
+                            </button>
+                        </div>
+
+                        <!-- BUTTONS -->
+                        <div id="podButtons" class="row g-2 mb-3">
                             <div class="col-6">
                                 <input type="file" id="podGallery" accept="image/*" class="d-none" onchange="handlePodSelection(this)">
-                                <button type="button" onclick="document.getElementById('podGallery').click()" class="btn btn-outline-dark w-100 rounded-pill py-3">
+                                <button type="button" onclick="document.getElementById('podGallery').click()" class="btn btn-outline-secondary w-100 rounded-pill py-3 fw-bold border-2">
                                     <i class="bi bi-images me-2"></i> Gallery
                                 </button>
                             </div>
                             <div class="col-6">
                                 <input type="file" id="podCamera" accept="image/*" capture="environment" class="d-none" onchange="handlePodSelection(this)">
-                                <button type="button" onclick="document.getElementById('podCamera').click()" class="btn btn-outline-dark w-100 rounded-pill py-3">
+                                <button type="button" onclick="document.getElementById('podCamera').click()" class="btn btn-outline-secondary w-100 rounded-pill py-3 fw-bold border-2">
                                     <i class="bi bi-camera-fill me-2"></i> Camera
                                 </button>
                             </div>
                         </div>
-
-                        <div id="podPreviewContainer" class="text-center mb-3" style="display: none;">
-                            <img id="podImageDisplay" src="#" alt="Proof" class="rounded-3 border shadow-sm" style="max-width: 100%; max-height: 200px; object-fit: contain;">
-                        </div>
-                        
-                        <p id="podStatus" class="text-success small mt-2 d-none text-center fw-bold"><i class="bi bi-check-circle-fill"></i> Evidence Attached</p>
                     </div>
 
                     <div class="d-grid">
-                        <button type="submit" id="payoutSubmitBtn" class="btn btn-primary btn-lg rounded-pill fw-bold shadow-lg py-3">
+                        <button type="submit" id="payoutSubmitBtn" class="btn btn-dark btn-lg rounded-pill fw-bold shadow-lg py-3">
                             <span id="payoutLoadingSpinner" class="spinner-border spinner-border-sm d-none me-2"></span>
-                            <i class="bi bi-shield-check-fill me-2"></i> Request Payout
+                            <span id="btnText">Request Payout</span>
                         </button>
                     </div>
                 </form>
 
-                <div class="card border-0 bg-light p-4 rounded-4 text-center mt-5">
-                    <h6 class="fw-bold">Merchant Support</h6>
-                    <p class="small text-muted mb-3">We prioritise transparency. If you have an issue or a question our team is standing by.</p>
-                    <div class="d-grid">
-                        <a href="https://wa.me/233551681706?text=I%20need%20help%20with%20my%20payout" class="btn btn-dark btn-sm rounded-pill px-4 fw-bold py-2 shadow-sm">
-                            <i class="bi bi-chat-dots-fill me-2"></i> Chat with Support
-                        </a>
-                    </div>
+                <div class="text-center mt-5">
+                    <p class="small text-muted mb-3">Issues with verification?</p>
+                    <a href="https://wa.me/233551681706?text=I%20need%20help%20with%20my%20payout%20request" class="btn btn-outline-primary btn-sm rounded-pill px-4 fw-bold py-2 shadow-sm">
+                        <i class="bi bi-chat-dots-fill me-2"></i> Support Channel
+                    </a>
                 </div>
             </div>
         </div>
@@ -180,7 +141,7 @@
                 <i class="bi bi-check-circle-fill fs-1"></i>
             </div>
             <h4 class="fw-bold">Request Prepared</h4>
-            <p class="text-secondary small mb-4">Verification secured. Send this to our team to release your funds.</p>
+            <p class="text-secondary small mb-4">Verification secured. Send this to our compliance team to release your funds.</p>
             <a id="finalWhatsappLink" href="#" class="btn btn-success rounded-pill fw-bold py-3 w-100 shadow-sm">
                 <i class="bi bi-whatsapp me-2"></i> Send to Team
             </a>
@@ -188,159 +149,82 @@
     </div>
 </div>
 
-<!-- AUTO-LOGOUT WARNING MODAL -->
-<div class="modal fade" id="logoutWarningModal" tabindex="-1" data-bs-backdrop="static" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-sm">
-        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden p-4 text-center">
-            <div class="bg-warning-subtle text-warning rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 60px; height: 60px;">
-                <i class="bi bi-hourglass-split fs-2"></i>
-            </div>
-            <h6 class="fw-bold">Security Timeout</h6>
-            <p class="text-muted small mb-4">Logging out in <span id="logoutCountdown" class="fw-bold text-danger">10</span>s.</p>
-            <div class="d-grid gap-2">
-                <button type="button" onclick="staySignedIn()" class="btn btn-dark rounded-pill fw-bold btn-sm">Stay Active</button>
-                <button type="button" onclick="handleLogout()" class="btn btn-link text-muted text-decoration-none x-small">Logout</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
-    import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
-    import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
-
-    // 1. Initialization
-    const config = JSON.parse(__firebase_config);
-    const app = initializeApp(config);
-    const auth = getAuth(app);
-    const db = getFirestore(app);
-    const appId = __app_id;
-
-    // 2. Session Logic
-    let currentMerchant = localStorage.getItem('ledgehold_merchant_name');
+<script>
+    let currentMerchant = null;
     let selectedPodFile = null;
-    let logoutTimer, warningTimer, countdownInterval;
-    const SESSION_TIMEOUT = 120000;
 
-    function resetTimers() {
-        if (!currentMerchant) return;
-        clearTimeout(logoutTimer);
-        clearTimeout(warningTimer);
-        clearInterval(countdownInterval);
-        localStorage.setItem('ledgehold_last_active', Date.now());
-        warningTimer = setTimeout(showWarning, 110000);
-        logoutTimer = setTimeout(handleLogout, SESSION_TIMEOUT);
-    }
+    // 1. AUTHENTICATION CHECK (Redirect if not logged in)
+    function checkSession() {
+        const merchantName = localStorage.getItem('ledgehold_merchant_name');
+        
+        if (!merchantName) {
+            // Not authenticated, redirect to dashboard login
+            window.location.replace('/merchant_dashboard');
+            return;
+        }
 
-    function showWarning() {
-        const modal = new bootstrap.Modal(document.getElementById('logoutWarningModal'));
-        modal.show();
-        let countdownValue = 10;
-        document.getElementById('logoutCountdown').innerText = countdownValue;
-        countdownInterval = setInterval(() => {
-            countdownValue--;
-            document.getElementById('logoutCountdown').innerText = countdownValue;
-            if (countdownValue <= 0) {
-                clearInterval(countdownInterval);
-                handleLogout();
-            }
-        }, 1000);
-    }
-
-    window.staySignedIn = () => {
-        const inst = bootstrap.Modal.getInstance(document.getElementById('logoutWarningModal'));
-        if (inst) inst.hide();
-        resetTimers();
-    };
-
-    window.handleLogout = () => {
-        localStorage.removeItem('ledgehold_merchant_name');
-        localStorage.removeItem('ledgehold_last_active');
-        currentMerchant = null;
-        window.location.reload(); 
-    };
-
-    ['mousedown', 'keydown', 'scroll', 'touchstart'].forEach(e => window.addEventListener(e, resetTimers, true));
-
-    function refreshUI() {
-        const lastActive = localStorage.getItem('ledgehold_last_active');
+        currentMerchant = merchantName;
+        document.getElementById('activeMerchantName').innerText = merchantName;
+        
+        // Show Content
         document.getElementById('loadingView').classList.add('d-none');
-
-        if (lastActive && (Date.now() - lastActive > SESSION_TIMEOUT)) {
-            handleLogout(); return;
-        }
-
-        if (currentMerchant) {
-            document.getElementById('loginSection').classList.add('d-none');
-            document.getElementById('portalSection').classList.remove('d-none');
-            document.getElementById('activeMerchantName').innerText = currentMerchant;
-            resetTimers();
-        } else {
-            document.getElementById('loginSection').classList.remove('d-none');
-            document.getElementById('portalSection').classList.add('d-none');
-        }
+        document.getElementById('mainContent').classList.remove('d-none');
     }
 
-    // 3. DPA COMPLIANT HASHING
-    async function hashPin(pin) {
-        if (!window.crypto || !window.crypto.subtle) {
-            throw new Error("SECURE CONTEXT ERROR: Your browser is blocking encryption. Ensure you are using HTTPS.");
-        }
-        const msgUint8 = new TextEncoder().encode(pin);
-        const hashBuffer = await crypto.subtle.digest('SHA-256', msgUint8);
-        const hashArray = Array.from(new Uint8Array(hashBuffer));
-        return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    // 2. IMAGE COMPRESSION (Same engine as Onboarding)
+    async function compressImage(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = (event) => {
+                const img = new Image();
+                img.src = event.target.result;
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    let width = img.width;
+                    let height = img.height;
+                    const MAX_DIM = 1200;
+
+                    if (width > height) {
+                        if (width > MAX_DIM) { height *= MAX_DIM / width; width = MAX_DIM; }
+                    } else {
+                        if (height > MAX_DIM) { width *= MAX_DIM / height; height = MAX_DIM; }
+                    }
+
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+
+                    canvas.toBlob((blob) => { resolve(blob); }, 'image/jpeg', 0.7);
+                };
+                img.onerror = reject;
+            };
+            reader.onerror = reject;
+        });
     }
 
-    // 4. Login Gateway
-    window.handleLogin = async function() {
-        const name = document.getElementById('merchantNameInput').value.trim();
-        const pin = document.getElementById('merchantPinInput').value.trim();
-        const btn = document.getElementById('unlockBtn');
-        const err = document.getElementById('loginError');
-
-        if (!name || !pin) return;
-        btn.disabled = true;
-
-        try {
-            const inputHash = await hashPin(pin);
-            const merchantRef = doc(db, 'artifacts', appId, 'public', 'data', 'verified_merchants', name);
-            const docSnap = await getDoc(merchantRef);
-
-            if (docSnap.exists() && docSnap.data().pin === inputHash) {
-                localStorage.setItem('ledgehold_merchant_name', name);
-                localStorage.setItem('ledgehold_last_active', Date.now());
-                currentMerchant = name;
-                refreshUI();
-            } else {
-                throw new Error("Invalid Credentials.");
-            }
-        } catch (e) {
-            document.getElementById('errorMsg').innerText = e.message;
-            err.classList.remove('d-none');
-        } finally {
-            btn.disabled = false;
-        }
-    };
-
-    // 5. Portal Functionality
+    // 3. UI HANDLERS
     window.handlePodSelection = function(input) {
         if (input.files && input.files[0]) {
             selectedPodFile = input.files[0];
             const reader = new FileReader();
-            const container = document.getElementById('podPreviewContainer');
-            const img = document.getElementById('podImageDisplay');
-            const status = document.getElementById('podStatus');
-            
             reader.onload = (e) => {
-                img.src = e.target.result;
-                container.style.display = 'block';
-                status.classList.remove('d-none');
+                document.getElementById('podImageDisplay').src = e.target.result;
+                document.getElementById('podPreviewContainer').classList.remove('d-none');
+                document.getElementById('podButtons').classList.add('d-none');
             };
             reader.readAsDataURL(selectedPodFile);
             document.getElementById('portalErrorBox').classList.add('d-none');
         }
+    };
+
+    window.resetPod = function() {
+        selectedPodFile = null;
+        document.getElementById('podGallery').value = "";
+        document.getElementById('podCamera').value = "";
+        document.getElementById('podPreviewContainer').classList.add('d-none');
+        document.getElementById('podButtons').classList.remove('d-none');
     };
 
     window.calculateNetPayout = function() {
@@ -353,75 +237,95 @@
             const net = price - fee;
             display.innerHTML = `
                 <div class="d-flex justify-content-between mb-1 small text-muted"><span>Gross Sale:</span><span class="fw-bold text-dark">GHS ${price.toFixed(2)}</span></div>
-                <div class="d-flex justify-content-between mb-1 text-danger small"><span>Fee (5%):</span><span>- GHS ${fee.toFixed(2)}</span></div>
+                <div class="d-flex justify-content-between mb-1 text-danger small"><span>Service Fee (5%):</span><span>- GHS ${fee.toFixed(2)}</span></div>
                 <hr class="my-2">
-                <div class="d-flex justify-content-between text-primary fw-bold"><span>Estimated Payout:</span><span class="fs-5">GHS ${net.toFixed(2)}</span></div>`;
+                <div class="d-flex justify-content-between text-primary fw-bold"><span>Net Payout:</span><span class="fs-5">GHS ${net.toFixed(2)}</span></div>`;
         } else {
             display.innerHTML = '<p class="text-muted small mb-0 text-center">Enter price to see payout calculation.</p>';
         }
     };
 
+    // 4. SUBMISSION LOGIC
     window.submitPayoutRequest = async function(event) {
         event.preventDefault();
         const submitBtn = document.getElementById('payoutSubmitBtn');
-        const loadingSpinner = document.getElementById('payoutLoadingSpinner');
+        const spinner = document.getElementById('payoutLoadingSpinner');
+        const btnText = document.getElementById('btnText');
         
         if (!selectedPodFile) {
-            document.getElementById('portalErrorBox').innerText = "Proof of Delivery is mandatory.";
-            document.getElementById('portalErrorBox').classList.remove('d-none');
-            return;
-        }
-
-        if (!IMGBB_API_KEY) {
-            document.getElementById('portalErrorBox').innerText = "System Error: Storage key missing. Contact Admin.";
-            document.getElementById('portalErrorBox').classList.remove('d-none');
+            showError("Proof of Delivery is mandatory for audit.");
             return;
         }
 
         submitBtn.disabled = true;
-        loadingSpinner.classList.remove('d-none');
+        spinner.classList.remove('d-none');
+        btnText.innerText = "Securing Proof...";
 
         try {
+            // Compress
+            const compressedFile = await compressImage(selectedPodFile);
+            
+            // Upload to Cloudinary
             const formData = new FormData();
-            formData.append("image", selectedPodFile);
+            formData.append("file", compressedFile);
+            formData.append("upload_preset", UPLOAD_PRESET);
             
-            // FIXED: Used backticks for template literal interpolation of the API Key
-            const imgResp = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, { 
-                method: "POST", 
-                body: formData 
-            });
-            
+            const imgResp = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, { method: "POST", body: formData });
             const imgData = await imgResp.json();
-            if (!imgData.success) throw new Error("Verification image failed to upload.");
+            
+            if (!imgData.secure_url) throw new Error("Evidence upload failed. Please retry.");
 
-            const refId = document.getElementById('listingRefId').value;
+            // Prepare WhatsApp Link
+            const refId = document.getElementById('listingRefId').value.trim();
             const price = parseFloat(document.getElementById('itemSoldPrice').value).toFixed(2);
             const net = (price * 0.95).toFixed(2);
 
-            const message = `Hello DataExpress Business Team! %0A%0A*PAYOUT REQUEST*%0A*Ref ID:* ${refId}%0A*Merchant:* ${currentMerchant}%0A*Net Payout:* GHS ${net}%0A--------------------------%0A*POD:* ${imgData.data.url}%0A%0AI have provided verified proof of delivery for this sale.`;
+            const message = `Hello ProlyfiQ Team! %0A%0A` +
+                            `*PAYOUT REQUEST CERTIFICATE*%0A` + 
+                            `*Merchant:* ${currentMerchant}%0A` +
+                            `*Ref ID:* ${refId}%0A` +
+                            `*Net Payout:* GHS ${net}%0A` +
+                            `--------------------------%0A` +
+                            `*Digital POD:* ${imgData.secure_url}%0A%0A` +
+                            `I certify this delivery is complete according to the Gatekeeper Policy.`;
 
-            document.getElementById('finalWhatsappLink').href = `https://wa.me/233535333868?text=${message}`;
+            document.getElementById('finalWhatsappLink').href = `https://wa.me/233551681706?text=${message}`;
+            
+            // Log to Database (Optional Audit Trail)
+            await db.collection('artifacts').doc(__app_id).collection('public').doc('data').collection('payout_logs').add({
+                merchantId: currentMerchant,
+                refId: refId,
+                amount: parseFloat(net),
+                podUrl: imgData.secure_url,
+                timestamp: Date.now(),
+                status: 'pending'
+            });
+
             new bootstrap.Modal(document.getElementById('payoutSuccessModal')).show();
+
         } catch (e) {
-            document.getElementById('portalErrorBox').innerText = e.message;
-            document.getElementById('portalErrorBox').classList.remove('d-none');
+            showError(e.message);
         } finally {
             submitBtn.disabled = false;
-            loadingSpinner.classList.add('d-none');
+            spinner.classList.add('d-none');
+            btnText.innerText = "Request Payout";
         }
     };
 
-    onAuthStateChanged(auth, (user) => {
-        if (user) refreshUI();
-        else signInAnonymously(auth);
-    });
+    function showError(msg) {
+        const box = document.getElementById('portalErrorBox');
+        box.innerText = msg;
+        box.classList.remove('d-none');
+        window.scrollTo({top: 0, behavior: 'smooth'});
+    }
+
+    document.addEventListener('DOMContentLoaded', checkSession);
 </script>
 
 <style>
+    body { background-color: #f8fafc; }
     .bg-primary-subtle { background-color: #e0e7ff !important; }
     .bg-warning-subtle { background-color: #fffbeb !important; }
-    .bg-success-subtle { background-color: #dcfce7 !important; }
     .form-control:focus { border-color: #fbbf24; box-shadow: 0 0 0 0.25rem rgba(251, 191, 36, 0.1); }
-    .x-small { font-size: 0.65rem; }
 </style>
 {% endblock %}

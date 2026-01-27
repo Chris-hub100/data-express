@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Student Marketplace | DataExpress{% endblock %}
+{% block title %}Student Marketplace | ProlyfiQ{% endblock %}
 
 {% block content %}
 
@@ -659,7 +659,7 @@ if (officialItems.length > 0 && !merchantFilter) {
                     </div>
                     <div>
                         <h6 class="fw-bold text-white mb-0">Official Store</h6>
-                        <small class="text-white-50 x-small">DataExpress - UMaT Essikado</small>
+                        <small class="text-white-50 x-small">ProlyfiQ - UMaT Essikado</small>
                     </div>
                 </div>
                 <span class="badge bg-warning text-dark text-uppercase x-small">New</span>
@@ -781,16 +781,20 @@ function showItemDetail() {
     const d = currentItemData;
     const buyBtn = document.getElementById('detailBuyBtn');
     
+    const rawSeller = d.merchantId || d.seller;
+    
+    // Check if it's an official store
+    const isOfficialStore = rawSeller && rawSeller.includes(OFFICIAL_STORE_ID);
+    
+    // If it's official, show "ProlyfiQ Official". If regular, show cleaned merchant name
+    const cleanSeller = isOfficialStore ? "ProlyfiQ Official" : cleanMerchantName(rawSeller) || "Verified Merchant";
+
     document.getElementById('detailImage').src = d.imgUrl;
     document.getElementById('detailTitle').innerText = d.itemName;
     document.getElementById('detailCampus').innerText = d.university;
     document.getElementById('detailPrice').innerText = 'GHS ' + d.price.toFixed(2);
-    
-    // SHOW SELLER'S NAME (not anonymized)
-    const rawSeller = d.merchantId || d.seller;
-    const cleanSeller = cleanMerchantName(rawSeller) || "Verified Merchant";
     document.getElementById('detailSeller').innerText = cleanSeller;
-    document.getElementById('detailDescription').innerText = d.description || "Verified institutional listing.";
+    document.getElementById('detailDescription').innerText = d.description || "Verified listing.";
     document.getElementById('detailAvailability').innerText = d.availability || "Ready for Instant Pickup";
     document.getElementById('detailLandmark').innerText = d.landmark || "TBA at Campus";
 
@@ -798,12 +802,10 @@ function showItemDetail() {
     const scheduleDisplay = document.getElementById('scheduleDisplay');
     const detailSchedule = document.getElementById('detailSchedule');
 
+    scheduleDisplay.classList.remove('d-none');
     if (isInstant) {
-        scheduleDisplay.classList.remove('d-none');
         detailSchedule.innerText = d.schedule || "Verified Landmark Handoff";
     } else {
-        // Feature: Show instructional note instead of blank space
-        scheduleDisplay.classList.remove('d-none');
         detailSchedule.innerHTML = `<span class="text-primary fw-bold">Note:</span> Merchant will coordinate handover when ${d.availability.toLowerCase()}.`;
     }
 
@@ -812,13 +814,14 @@ function showItemDetail() {
     vContainer.innerHTML = "";
     document.getElementById('selectedVariety').value = "";
     
-    // FEATURE: Disable button if varieties exist
     const hasVarieties = d.varieties && Array.isArray(d.varieties) && d.varieties.length > 0;
 
     if (hasVarieties) {
         vSection.style.display = 'block';
         buyBtn.disabled = true;
-        buyBtn.innerHTML = '<i class="bi bi-list-check me-2"></i> Select Variety to Buy';
+        buyBtn.innerHTML = '<i class="bi bi-list-check me-2"></i> Select Option to Buy';
+        buyBtn.classList.add('btn-secondary');
+        buyBtn.classList.remove('btn-dark');
         
         d.varieties.forEach(v => {
             const btn = document.createElement('button');
@@ -828,9 +831,10 @@ function showItemDetail() {
                 document.querySelectorAll('.variety-btn').forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
                 document.getElementById('selectedVariety').value = v;
-                // Feature: Enable button on selection
                 buyBtn.disabled = false;
                 buyBtn.innerHTML = '<i class="bi bi-shield-lock-fill me-2"></i> Confirm & Buy';
+                buyBtn.classList.remove('btn-secondary');
+                buyBtn.classList.add('btn-dark');
             };
             vContainer.appendChild(btn);
         });
@@ -838,6 +842,7 @@ function showItemDetail() {
         vSection.style.display = 'none';
         buyBtn.disabled = false;
         buyBtn.innerHTML = '<i class="bi bi-shield-lock-fill me-2"></i> Confirm & Buy';
+        buyBtn.classList.add('btn-dark');
     }
 
     buyBtn.onclick = () => {

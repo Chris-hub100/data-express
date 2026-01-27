@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, redirect
 import requests
 import os
 import random
@@ -12,6 +12,22 @@ from dotenv import load_dotenv
 load_dotenv(override=True)
 
 app = Flask(__name__)
+@app.before_request
+def handle_branding_redirect():
+    # Capture the host the user is trying to reach
+    host = request.host.lower()
+    
+    # Check if they are using the legacy DataExpress address
+    # We include 'www' to cover all bases
+    legacy_domains = ['dataexpress.store', 'www.dataexpress.store']
+    
+    if host in legacy_domains:
+        # Construct the new ProlyfiQ URL while keeping the rest of the path
+        # (e.g., /marketplace or /login) intact
+        new_url = request.url.replace(request.host, 'prolyfiq.store', 1)
+        
+        # 301 is a 'Permanent Redirect' - best for SEO and trust
+        return redirect(new_url, code=301)
 
 # --- CONFIGURATION ---
 # Use 'os.environ.get' for safety in production
@@ -379,6 +395,10 @@ def intel():
 @app.route('/merch')
 def merch():
     return render_template('merch.html', **get_firebase_context())
+
+@app.route('/checkout')
+def checkout():
+    return render_template('checkout.html', **get_firebase_context())
 
 @app.route('/privacy')
 def privacy():
