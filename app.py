@@ -33,6 +33,11 @@ def handle_branding_redirect():
 # Use 'os.environ.get' for safety in production
 PAYSTACK_SECRET_KEY = "sk_test_205609e95584b8704c90e2c8c72b6f1dbcee60db"
 
+# --- SECURE CREDENTIALS (Set these in Render/Local .env) ---
+HUBTEL_CLIENT_ID = os.environ.get('HUBTEL_CLIENT_ID', '')
+HUBTEL_CLIENT_SECRET = os.environ.get('HUBTEL_CLIENT_SECRET', '')
+HUBTEL_SENDER_ID = os.environ.get('HUBTEL_SENDER_ID', '')
+
 # --- HUBTEL COMPLIANCE SWITCH ---
 # Set to TRUE while applying for Hubtel. 
 # Set to FALSE once approved to unlock Movies & Vouchers.
@@ -160,6 +165,51 @@ def admin_controls():
     2. Maintain the Ledgehold Security Standard.
     """
     return render_template('admin.html', **get_firebase_context())
+
+@app.route('/api/send-sms', methods=['POST'])
+def trigger_hubtel_sms():
+    """
+    Acts as an encrypted bridge between the Browser and Hubtel.
+    This prevents CORS errors and keeps your API keys hidden.
+    """
+    try:
+        data = request.json
+        phone = data.get('phone')
+        message = data.get('message')
+
+        if not phone or not message:
+            return jsonify({"success": False, "error": "Missing phone or message"}), 400
+
+        # Clean phone to 233 format
+        clean_phone = ''.join(filter(str.isdigit, phone))
+        target = '233' + clean_phone[1:] if clean_phone.startswith('0') else clean_phone
+        if not target.startswith('233'): target = '233' + target
+
+        # Hubtel v1 SMS Endpoint
+        url = "https://smsc.hubtel.com/v1/messages/send"
+        params = {
+            "clientid": HUBTEL_CLIENT_ID,
+            "clientsecret": HUBTEL_CLIENT_SECRET,
+            "from": HUBTEL_SENDER_ID,
+            "to": target,
+            "content": message
+        }
+
+        response = requests.get(url, params=params, timeout=10)
+        
+        # Hubtel returns 200/201 if credits are sufficient and request is valid
+        if response.status_code in [200, 201]:
+            return jsonify({"success": True}), 200
+        else:
+            # Return failure so the frontend can notify the admin
+            return jsonify({
+                "success": False, 
+                "error": "SMS Gateway Refused", 
+                "details": response.text
+            }), 200 # Return 200 to ensure the JSON is parsed, but with success: false
+
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
 
 @app.route('/api/marketplace/listings', methods=['GET'])
 def get_all_listings():
@@ -302,9 +352,9 @@ def food_run_page():
 
     return render_template('foodrun.html', state=state, menu=menu, today_name=today_name, today_idx=today_idx)
 
-@app.route('/quote')
-def quote_page():
-    return render_template('quote.html')
+#@app.route('/quote')
+#def quote_page():
+    #return render_template('quote.html')
 
 @app.route('/marketing_toolkit')
 def marketing():
@@ -348,9 +398,17 @@ def directory():
 def faq():
     return render_template('faq.html')
 
+@app.route('/westruck/tracking')
+def waybill():
+    return render_template('waybill.html', **get_firebase_context())
+
 @app.route('/handshake')
 def handshake():
     return render_template('handshake.html', **get_firebase_context())
+
+@app.route('/way_admin')
+def way_admin():
+    return render_template('way_admin.html', **get_firebase_context())
 
 @app.route('/cms')
 def admin():
@@ -372,9 +430,9 @@ def payout():
 def shop():
     return render_template('shop.html')
 
-@app.route('/chat')
-def chat():
-    return render_template('chat.html', **get_firebase_context())
+#@app.route('/chat')
+#def chat():
+    #return render_template('chat.html', **get_firebase_context())
 
 @app.route('/receipt_request')
 def receipt():
@@ -384,9 +442,9 @@ def receipt():
 def receipt_generator():
     return render_template('receipt_generator.html', **get_firebase_context())
 
-@app.route('/inbox')
-def inbox():
-    return render_template('inbox.html', **get_firebase_context())
+#@app.route('/inbox')
+#def inbox():
+    #return render_template('inbox.html', **get_firebase_context())
 
 @app.route('/intel')
 def intel():
@@ -512,10 +570,10 @@ def tv_page():
     return render_template('tv.html', videos=movies)
 
 # --- VOUCHERS (HIDDEN IN COMPLIANCE MODE) ---
-@app.route('/vouchers')
-def voucher_page():
-    if COMPLIANCE_MODE:
-        return render_template('maintenance.html', page_name="Voucher Mall")
+#@app.route('/vouchers')
+#def voucher_page():
+    #if COMPLIANCE_MODE:
+        #return render_template('maintenance.html', page_name="Voucher Mall")
 
     # From second code - complete voucher list
     items = [

@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Global Logistics Portal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    
+    <!-- Google Fonts: DM Sans -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&display=swap" rel="stylesheet">
+    
+    <!-- Firebase Compat SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/11.1.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.1.0/firebase-auth-compat.js"></script>
+
+    <style>
+        :root {
+            --brand-primary: #3b82f6; 
+            --brand-dark: #0f172a;
+            --surface-soft: #f8fafc;
+            --backmarket-green: #00FF85; 
+        }
+
+        body { 
+            font-family: 'DM Sans', sans-serif; 
+            background-color: #ffffff;
+            color: var(--brand-dark);
+            scroll-behavior: smooth;
+        }
+
+        /* Soft SaaS UI Tokens */
+        .squircle { border-radius: 2rem; }
+        .soft-shadow { box-shadow: 0 20px 40px -10px rgba(0,0,0,0.08); }
+        .deep-shadow { box-shadow: 0 30px 60px -12px rgba(15, 23, 42, 0.15); }
+
+        /* Floating Tracker Animations */
+        .tracker-container {
+            transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+            z-index: 1000;
+            border-width: 2px;
+        }
+
+        /* State: Expanded (Bottom Center) */
+        .tracker-expanded {
+            width: 90%;
+            max-width: 500px;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            border-radius: 100px;
+            background: white;
+            padding: 0.5rem;
+            border-color: var(--backmarket-green);
+        }
+
+        /* State: Folded (Side Circle) */
+        .tracker-folded {
+            width: 60px;
+            height: 60px;
+            bottom: 2rem;
+            left: calc(100% - 80px);
+            transform: translateX(0);
+            border-radius: 50%;
+            background: var(--brand-dark);
+            padding: 0;
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-color: var(--brand-dark);
+        }
+
+        .tracker-folded .search-content { opacity: 0; pointer-events: none; width: 0; display: none; }
+        .tracker-folded .qr-icon { 
+            opacity: 1; 
+            display: flex !important; 
+            width: 100%;
+            height: 100%;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .tracker-expanded .qr-icon { display: none !important; }
+
+        /* Loading Gradient Animation */
+        @keyframes loading-sweep {
+            0% { left: -100%; }
+            100% { left: 100%; }
+        }
+
+        .loader-bar {
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 3px;
+            width: 100%;
+            background: linear-gradient(90deg, transparent, var(--brand-primary), transparent);
+            animation: loading-sweep 1.5s infinite linear;
+            display: none;
+        }
+
+        .btn-brand {
+            background-color: var(--brand-dark);
+            color: white;
+            transition: all 0.3s ease;
+        }
+
+        .btn-brand:hover {
+            transform: scale(1.02);
+            filter: brightness(1.2);
+        }
+
+        @keyframes car-bob {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+        .car-anim { animation: car-bob 3s ease-in-out infinite; }
+
+        .backdrop-blur { backdrop-filter: blur(10px); }
+    </style>
+</head>
+<body class="overflow-x-hidden">
+
+    <!-- CONFIGURATION -->
+    <script>
+        const CONFIG = {
+            companyName: "Westruck Shipping",
+            
+            // --- THE NODE SLOT ---
+            // Insert the exact App ID of the firm's artifact folder here
+            targetNode: "westruck-logistics", 
+            
+            firebase: JSON.parse('{{ __firebase_config | safe if __firebase_config else "{}" }}')
+        };
+
+        // Initialize Firebase
+        if (!firebase.apps.length) firebase.initializeApp(CONFIG.firebase);
+        const db = firebase.firestore();
+        const auth = firebase.auth();
+    </script>
+
+    <!-- NAVIGATION -->
+    <nav class="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-100 py-4">
+        <div class="container mx-auto px-6 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <div id="brandLogo" class="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-blue-200">
+                    <i class="bi bi-box-seam-fill"></i>
+                </div>
+                <span id="navBrandName" class="font-extrabold text-xl tracking-tight text-slate-900">Westruck Shipping</span>
+            </div>
+            <div class="hidden md:flex gap-8 font-bold text-xs uppercase tracking-widest text-slate-500">
+                <a href="#about" class="hover:text-blue-600 transition-colors">Infrastructure</a>
+                <a href="#footer" class="hover:text-blue-600 transition-colors">Contact</a>
+            </div>
+            <button class="bg-slate-100 px-5 py-2 rounded-full text-xs font-bold uppercase tracking-widest hover:bg-slate-200 transition-all">
+                Support
+            </button>
+        </div>
+    </nav>
+
+    <!-- SECTION 1: POWERED BY PRECISION -->
+    <section class="h-screen relative overflow-hidden flex items-center justify-center" id="precision">
+        <div class="absolute inset-0">
+            <img src="https://images.unsplash.com/photo-1494412519320-aa613dfb7738?q=80&w=2000&auto=format&fit=crop" 
+                 class="w-full h-full object-cover grayscale" alt="Warehouse Flow">
+            <div class="absolute inset-0 bg-blue-900/40 mix-blend-multiply"></div>
+            <div class="absolute inset-0 bg-gradient-to-t from-white via-transparent to-transparent"></div>
+        </div>
+        
+        <div class="relative z-10 text-center px-6">
+            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur border border-white/20 text-white font-bold text-[10px] uppercase tracking-[3px] mb-8">
+                Westruck Shipping
+            </div>
+            <h3 class="text-6xl lg:text-9xl font-black text-white uppercase tracking-tighter mb-8 opacity-90">
+                Powered by <br/> <span class="text-blue-400">Precision.</span>
+            </h3>
+            <p class="text-white/70 max-w-xl mx-auto font-medium text-lg leading-relaxed">
+                Experience institutional-grade logistics where every handoff is verified and every coordinate is precise with Westruck Shipping.
+            </p>
+        </div>
+    </section>
+
+    <!-- SECTION 2: HERO -->
+    <header class="relative pt-24 pb-32 bg-white" id="about">
+        <div class="container mx-auto px-6">
+            <div class="flex flex-col lg:flex-row items-center gap-16">
+                <div class="lg:w-1/2 relative">
+                    <div class="rounded-[3rem] overflow-hidden soft-shadow border-[12px] border-white relative">
+                        <img src="https://th.bing.com/th?id=OIF.hs%2bXP0NaUBajrpgodnZvGQ&w=224&h=180&c=7&r=0&o=7&dpr=1.5&pid=1.7&rm=3" 
+                             class="w-full h-[500px] object-cover" alt="Logistics Network">
+                        <div class="absolute top-6 left-6 bg-white/90 backdrop-blur p-4 rounded-3xl soft-shadow border border-white/50">
+                            <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Client Satisfaction</p>
+                            <h4 class="text-2xl font-black text-blue-600">99.8%</h4>
+                        </div>
+                    </div>
+                </div>
+                <div class="lg:w-1/2">
+                    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 text-blue-600 font-bold text-[10px] uppercase tracking-widest mb-6 border border-blue-100">
+                        <i class="bi bi-globe-americas"></i> Global Distribution Standards
+                    </div>
+                    <h1 class="text-5xl lg:text-7xl font-black leading-[1.1] tracking-tight mb-8">
+                        The Future of <br/> <span class="text-blue-600">Movement.</span>
+                    </h1>
+                    <p class="text-xl font-medium text-slate-500 mb-10 leading-relaxed max-w-lg">
+                        Accelerate your supply chain with our proprietary waybill engine. Seamless integration, real-time tracking, and end-to-end transparency.
+                    </p>
+                    <div class="flex gap-4">
+                        <a href="#precision" class="btn-brand px-10 py-4 rounded-full font-bold shadow-2xl">
+                            Track Shipment
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- FOOTER -->
+    <footer class="bg-slate-950 text-white py-24 pb-48" id="footer">
+        <div class="container mx-auto px-6 text-center">
+            <h4 class="text-3xl font-black mb-6 uppercase tracking-tighter">Westruck Shipping</h4>
+            <p class="text-slate-400 max-w-sm mx-auto mb-12">Modernizing the movement of goods through high-fidelity digital infrastructure.</p>
+            <div class="flex justify-center gap-8 mb-16 grayscale opacity-50">
+                <i class="bi bi-linkedin fs-4"></i>
+                <i class="bi bi-twitter-x fs-4"></i>
+                <i class="bi bi-instagram fs-4"></i>
+            </div>
+            <hr class="border-white/5 my-12">
+            <p class="text-[10px] font-bold text-slate-700 uppercase tracking-[3px]">&copy; 2026. INFRASTRUCTURE POWERED BY LEDGEHOLD.</p>
+        </div>
+    </footer>
+
+    <!-- FLOATING TRACKER -->
+    <div id="tracker" class="fixed tracker-container tracker-expanded deep-shadow flex items-center overflow-hidden">
+        <div id="loaderBar" class="loader-bar"></div>
+        <div class="search-content flex items-center w-full px-4 gap-3">
+            <i class="bi bi-upc-scan text-slate-400 fs-5"></i>
+            <input type="text" id="waybillInput" placeholder="ENTER WAYBILL ID" 
+                   class="w-full bg-transparent border-none outline-none font-bold tracking-widest text-sm uppercase placeholder:text-slate-300">
+            <button id="trackBtn" onclick="handleTrack()" class="bg-blue-600 text-white px-6 py-2.5 rounded-full font-black text-[10px] uppercase tracking-widest hover:bg-blue-700 transition-all">
+                Track
+            </button>
+        </div>
+        <div class="qr-icon hidden w-full h-full">
+            <i class="bi bi-qr-code-scan fs-4"></i>
+        </div>
+    </div>
+
+    <!-- RESULT MODAL -->
+    <div id="resultModal" class="fixed inset-0 z-[2000] hidden flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm">
+        <div class="bg-white w-full max-w-lg squircle soft-shadow overflow-hidden">
+            <div class="relative h-48 bg-slate-200 overflow-hidden border-b border-slate-100">
+                <img src="https://th.bing.com/th?id=OIF.fw%2bgjxntecBTtA4w6M8C5g&w=320&h=180&c=7&r=0&o=7&dpr=1.5&pid=1.7&rm=3" 
+                     class="w-full h-full object-cover grayscale opacity-60 mix-blend-multiply" alt="Map">
+                <div class="absolute top-4 left-4 bg-white/90 backdrop-blur px-4 py-2 rounded-full shadow-md border border-white/50">
+                    <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Waybill Ref</p>
+                    <h5 class="font-black text-xs tracking-widest" id="resID">--</h5>
+                </div>
+                <button onclick="closeModal()" class="absolute top-4 right-4 w-10 h-10 bg-white/90 backdrop-blur rounded-full flex items-center justify-center hover:bg-white shadow-md">
+                    <i class="bi bi-x-lg text-slate-900"></i>
+                </button>
+            </div>
+
+            <div class="p-8 pt-6">
+                <div id="modalDataContainer">
+                    <div class="flex justify-between items-center mb-8">
+                        <div>
+                            <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Active Dispatch</p>
+                            <h4 class="text-2xl font-black text-slate-900" id="resStatus">In Transit</h4>
+                        </div>
+                        <div class="bg-blue-50 text-blue-600 px-4 py-1.5 rounded-full font-bold text-[11px] uppercase tracking-wider border border-blue-100">
+                            Live Tracking
+                        </div>
+                    </div>
+                    
+                    <div class="space-y-6 relative">
+                        <div class="absolute left-[19px] top-0 bottom-0 w-1 bg-slate-100 rounded-full"></div>
+                        <div id="step-1" class="flex gap-6 relative z-10 opacity-30">
+                            <div class="step-dot w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center text-slate-400"><i class="bi bi-check-lg"></i></div>
+                            <div><p class="font-bold text-sm">Package Received</p><p class="text-xs text-slate-400">Loading for dispatch</p></div>
+                        </div>
+                        <div id="step-2" class="flex gap-6 relative z-10 opacity-30">
+                            <div class="step-dot w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center text-slate-400"><i class="bi bi-truck"></i></div>
+                            <div><p class="font-bold text-sm">Vehicle Set Off</p><p class="text-xs text-slate-400">Departed hub</p></div>
+                        </div>
+                        <div id="step-3" class="flex gap-6 relative z-10 opacity-30">
+                            <div class="step-dot w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center text-slate-400"><i class="bi bi-geo-alt"></i></div>
+                            <div><p class="font-bold text-sm">In Transit</p><p class="text-xs text-slate-400">On-route to destination</p></div>
+                        </div>
+                        <div id="step-4" class="flex gap-6 relative z-10 opacity-30">
+                            <div class="step-dot w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600"><i class="bi bi-flag-fill"></i></div>
+                            <div><p class="font-bold text-sm text-emerald-800">Arrived</p><p class="text-xs text-emerald-600">At destination node</p></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="modalNotFound" class="hidden text-center py-10">
+                    <div class="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i class="bi bi-search fs-2"></i>
+                    </div>
+                    <h5 class="font-black text-slate-900">Waybill Not Found</h5>
+                    <p class="text-sm text-slate-400 mt-2">Check your ID and try again.</p>
+                </div>
+                
+                <button onclick="closeModal()" class="btn-brand py-4 rounded-full font-bold mt-10 w-full uppercase text-xs tracking-widest shadow-xl">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const tracker = document.getElementById('tracker');
+        let isFolded = false;
+
+        window.addEventListener('scroll', () => {
+            if (window.scrollY > 120 && !isFolded) {
+                tracker.classList.replace('tracker-expanded', 'tracker-folded');
+                isFolded = true;
+            } else if (window.scrollY <= 120 && isFolded) {
+                tracker.classList.replace('tracker-folded', 'tracker-expanded');
+                isFolded = false;
+            }
+        });
+
+        tracker.addEventListener('click', () => {
+            if(isFolded) { window.scrollTo({ top: 0, behavior: 'smooth' }); document.getElementById('waybillInput').focus(); }
+        });
+
+        /**
+         * SINGLE-NODE TRACKING ENGINE
+         * Points directly to the specified artifact's folder for precision scanning.
+         */
+        async function handleTrack() {
+            const waybillIdInput = document.getElementById('waybillInput').value.trim().toUpperCase();
+            if(!waybillIdInput) return;
+            
+            const btn = document.getElementById('trackBtn');
+            const loader = document.getElementById('loaderBar');
+            btn.disabled = true; btn.innerText = "..."; loader.style.display = 'block';
+
+            try {
+                await auth.signInAnonymously();
+                
+                // Targeting the exact artifact folder defined in CONFIG.targetNode
+                const pkgPath = `artifacts/${CONFIG.targetNode}/public/data/logistics_packages`;
+                const snapshot = await db.collection(pkgPath).where('waybillId', '==', waybillIdInput).get();
+
+                if (snapshot.empty) {
+                    showModalError();
+                } else {
+                    renderModalResult(waybillIdInput, snapshot.docs[0].data());
+                }
+
+            } catch (err) {
+                console.error("Tracking Query Error:", err);
+                showModalError();
+            } finally {
+                btn.disabled = false; btn.innerText = "Track"; loader.style.display = 'none';
+            }
+        }
+
+        function renderModalResult(id, data) {
+            document.getElementById('modalDataContainer').classList.remove('hidden');
+            document.getElementById('modalNotFound').classList.add('hidden');
+            document.getElementById('resID').innerText = id;
+            document.getElementById('resStatus').innerText = data.status || "Processing";
+            
+            const currentStatus = (data.status || "").toLowerCase();
+            let activeStep = 0;
+            if (currentStatus.includes('received')) activeStep = 1;
+            else if (currentStatus.includes('set off')) activeStep = 2;
+            else if (currentStatus.includes('transit')) activeStep = 3;
+            else if (currentStatus.includes('arrived')) activeStep = 4;
+
+            for(let i=1; i<=4; i++) {
+                const el = document.getElementById(`step-${i}`);
+                const dot = el.querySelector('.step-dot');
+                el.classList.toggle('opacity-30', i > activeStep);
+                if(i <= activeStep) {
+                    dot.classList.replace('bg-slate-200', 'bg-blue-600');
+                    dot.classList.replace('text-slate-400', 'text-white');
+                    dot.classList.add('shadow-lg', 'shadow-blue-200');
+                } else {
+                    dot.classList.replace('bg-blue-600', 'bg-slate-200');
+                    dot.classList.replace('text-white', 'text-slate-400');
+                    dot.classList.remove('shadow-lg', 'shadow-blue-200');
+                }
+            }
+            document.getElementById('resultModal').classList.remove('hidden');
+        }
+
+        function showModalError() {
+            document.getElementById('modalDataContainer').classList.add('hidden');
+            document.getElementById('modalNotFound').classList.remove('hidden');
+            document.getElementById('resultModal').classList.remove('hidden');
+        }
+
+        window.closeModal = () => document.getElementById('resultModal').classList.add('hidden');
+    </script>
+</body>
+</html>
