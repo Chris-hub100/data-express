@@ -217,8 +217,12 @@
 
     <!-- INSTITUTIONAL CONFIGURATION -->
     <script>
+        // ADDED URL PARAMETER SUPPORT
+        const params = new URLSearchParams(window.location.search);
+        const nodeParam = params.get('node');
+
         const INSTITUTION_CONFIG = {
-            clientId: "westruck-logistics", 
+            clientId: nodeParam || "swiftline-logistics", 
             firebase: JSON.parse('{{ __firebase_config | safe if __firebase_config else "{}" }}')
         };
 
@@ -318,9 +322,13 @@
                             <div>
                                 <input type="text" id="custName" placeholder="Recipient Name" class="w-full bg-slate-50 border border-slate-100 rounded-xl py-2.5 px-4 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all" required>
                             </div>
+                            
+                            <!-- UPDATED PHONE INPUT WITH VALIDATION -->
                             <div>
-                                <input type="tel" id="custPhone" placeholder="Recipient Phone" class="w-full bg-slate-50 border border-slate-100 rounded-xl py-2.5 px-4 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all" required>
+                                <input type="tel" id="custPhone" placeholder="Recipient Phone (024, 055, etc)" class="w-full bg-slate-50 border border-slate-100 rounded-xl py-2.5 px-4 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all" required>
+                                <p id="phoneError" class="text-[9px] text-red-500 font-bold mt-1 hidden uppercase tracking-wider">Invalid Ghana Number Format</p>
                             </div>
+
                             <div class="grid grid-cols-2 gap-3">
                                 <input type="text" id="origin" placeholder="Origin" class="w-full bg-slate-50 border border-slate-100 rounded-xl py-2.5 px-4 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all" required>
                                 <input type="text" id="destination" placeholder="Destination" class="w-full bg-slate-50 border border-slate-100 rounded-xl py-2.5 px-4 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all" required>
@@ -479,6 +487,15 @@
     <script>
         let allWaybills = [], allBatches = [], currentView = 'active', currentPage = 1, recordsPerPage = 20;
         let historySubView = 'individual'; // 'individual' or 'batch' - ADDED FROM SECOND CODE
+
+        /**
+         * VALIDATION ENGINE: Ghana Phone Number - ADDED FROM PROVIDED CODE
+         */
+        function validateGhanaPhone(phone) {
+            // Regex matches: +233 or 0, followed by 2, 3, or 5, and exactly 8 more digits.
+            const regex = /^(\+233|0)[235][0-9]{8}$/;
+            return regex.test(phone.trim());
+        }
 
         /**
          * SECURITY HANDHAKE - CHECKING is_locked IN artifacts/{appId}/public/data DOCUMENT
@@ -794,8 +811,46 @@
             }
         }
 
-        // REMOVED: toggleSelection, toggleAllSelections, updateBulkUI, openBulkUpdate functions
-        // REMOVED: selectedWaybills array and related multi-select logic
+        // --- CORE ACTIONS WITH ENHANCED ERROR HANDLING ---
+        window.createPackage = async (e) => {
+            e.preventDefault();
+            const phone = document.getElementById('custPhone').value;
+            const errorLabel = document.getElementById('phoneError');
+            const submitBtn = document.getElementById('submitBtn');
+            const phoneInput = document.getElementById('custPhone');
+
+            // Better Error Handling for Incorrect Phone Numbers - ADDED FROM PROVIDED CODE
+            if (!validateGhanaPhone(phone)) {
+                errorLabel.classList.remove('hidden');
+                phoneInput.classList.add('border-red-400', 'bg-red-50');
+                showToast("Identity Error: Phone Number Format Invalid", "warning");
+                return;
+            } else {
+                errorLabel.classList.add('hidden');
+                phoneInput.classList.remove('border-red-400', 'bg-red-50');
+            }
+
+            const waybillId = "WB-" + Math.floor(10000000 + Math.random() * 90000000);
+            submitBtn.disabled = true;
+            try {
+                await db.collection(`artifacts/${CONFIG.appId}/public/data/logistics_packages`).add({
+                    waybillId, 
+                    customerName: document.getElementById('custName').value.trim(),
+                    recipientPhone: phone.trim(),
+                    origin: document.getElementById('origin').value.trim(),
+                    destination: document.getElementById('destination').value.trim(),
+                    deliveryMode: document.getElementById('deliveryMode').value,
+                    status: 'Registered', 
+                    timestamp: Date.now()
+                });
+                showToast(`Waybill ${waybillId} Registered`, 'success');
+                document.getElementById('waybillForm').reset();
+            } catch (err) { 
+                showToast("Silo Storage Error", "warning");
+            } finally { 
+                submitBtn.disabled = false; 
+            }
+        };
 
         window.openBatchUpdate = (batchId) => {
             document.getElementById('modalHeader').innerText = "Update Batch Load";
@@ -847,7 +902,9 @@
                     sendInternalSMS(document.getElementById('activeUpdatePhone').value, newStatus, document.getElementById('activeWaybillId').value, document.getElementById('activeCustomerName').value, mode);
                 }
                 showToast("Ledger Updated Successfully", "success");
-            } catch(e) { alert(e.message); }
+            } catch(e) { 
+                showToast("Sync Failure", "warning");
+            }
         };
 
         // ENHANCED SMS FUNCTION WITH DELIVERY MODE SUPPORT - UPDATED FROM SECOND CODE
@@ -858,50 +915,28 @@
             const hubType = mode === 'Air' ? 'airport hub' : (mode === 'Sea' ? 'port terminal' : 'warehouse');
 
             if (s.includes("received")) {
-                message = `Hello ${name}, we have received your package (${waybill}). It is being prepared for ${mode.toLowerCase()} dispatch. Track live on our portal www.prolyfiq.store/westruck/tracking.`;
+                message = `Hello ${name}, we have received your package (${waybill}). It is being prepared for ${mode.toLowerCase()} dispatch. Track live on our portal.`;
             } else if (s.includes("set off")) {
-                message = `Hello ${name}, your package ${waybill} is on the move! The ${transportType} has set off from the ${hubType}. Track live on our portal www.prolyfiq.store/westruck/tracking.`;
+                message = `Hello ${name}, your package ${waybill} is on the move! The ${transportType} has set off from the ${hubType}. Track live on our portal.`;
             } else if (s.includes("transit")) {
-                message = `Hello ${name}, a quick update on waybill ${waybill}. Your package is currently in ${mode.toLowerCase()} transit to the destination. Track live on our portal www.prolyfiq.store/westruck/tracking.`;
+                message = `Hello ${name}, a quick update on waybill ${waybill}. Your package is currently in ${mode.toLowerCase()} transit to the destination. Track live on our portal.`;
             } else if (s.includes("arrived")) {
                 message = `Hello ${name}, great news! Your package (${waybill}) has arrived at the destination. Please be ready for pickup/delivery.`;
             } else {
-                message = `Hello ${name}, status updated for waybill ${waybill}: [${status}]. Track on our portal www.prolyfiq.store/westruck/tracking`;
+                message = `Hello ${name}, status updated for waybill ${waybill}: [${status}]. Track on our portal.`;
             }
             
             try {
                 const response = await fetch('/api/send-sms', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ phone, message }) });
                 if(!isBulk) {
                     const result = await response.json();
-                    showToast(result.success ? "Ledger Synced & SMS Sent" : "SMS failed (Low Credits)", result.success ? 'success' : 'warning');
+                    if(!result.success) showToast("SMS Gateway Rejected Number", "warning");
+                    else showToast("Ledger Synced & SMS Sent", 'success');
                 }
-            } catch (e) { if(!isBulk) showToast("SMS Offline", 'warning'); }
+            } catch (e) { 
+                if(!isBulk) showToast("SMS Offline", 'warning'); 
+            }
         }
-
-        // UPDATED TO INCLUDE DELIVERY MODE
-        window.createPackage = async (e) => {
-            e.preventDefault();
-            const btn = document.getElementById('submitBtn');
-            const waybillId = "WB-" + Math.floor(10000000 + Math.random() * 90000000);
-            
-            const payload = {
-                waybillId, 
-                customerName: document.getElementById('custName').value.trim(),
-                recipientPhone: document.getElementById('custPhone').value.trim(),
-                origin: document.getElementById('origin').value.trim(),
-                destination: document.getElementById('destination').value.trim(),
-                deliveryMode: document.getElementById('deliveryMode').value, // ADDED
-                status: 'Registered', 
-                timestamp: Date.now()
-            };
-
-            btn.disabled = true;
-            try {
-                await db.collection(`artifacts/${CONFIG.appId}/public/data/logistics_packages`).add(payload);
-                showToast(`Waybill ${waybillId} Registered`, 'success');
-                document.getElementById('waybillForm').reset();
-            } catch (err) { alert(err.message); } finally { btn.disabled = false; }
-        };
 
         function getStatusStyle(s) {
             const status = (s || "").toLowerCase();
@@ -921,10 +956,20 @@
         function showToast(msg, type) {
             const t = document.getElementById('toast'), tc = document.getElementById('toastContent'), ti = document.getElementById('toastIcon'), tm = document.getElementById('toastMsg');
             tm.innerText = msg;
-            if(type === 'warning') { tc.classList.replace('bg-slate-900', 'bg-amber-600'); ti.className = "bi bi-exclamation-triangle-fill text-white"; }
-            else if(type === 'info') { tc.classList.replace('bg-slate-900', 'bg-blue-600'); ti.className = "bi bi-info-circle-fill text-white"; }
-            else { tc.classList.replace('bg-amber-600', 'bg-slate-900'); ti.className = "bi bi-check2-circle text-emerald-400"; }
-            t.classList.remove('hidden'); setTimeout(() => t.classList.add('hidden'), 4000);
+            if(type === 'warning') { 
+                tc.className = 'bg-amber-600 text-white px-6 py-3 rounded-full font-bold text-sm shadow-2xl flex items-center gap-3 animate-fade';
+                ti.className = "bi bi-exclamation-triangle-fill text-white";
+            }
+            else if(type === 'info') { 
+                tc.className = 'bg-blue-600 text-white px-6 py-3 rounded-full font-bold text-sm shadow-2xl flex items-center gap-3 animate-fade';
+                ti.className = "bi bi-info-circle-fill text-white";
+            }
+            else { 
+                tc.className = 'bg-slate-900 text-white px-6 py-3 rounded-full font-bold text-sm shadow-2xl flex items-center gap-3 animate-fade';
+                ti.className = "bi bi-check2-circle text-emerald-400";
+            }
+            t.classList.remove('hidden'); 
+            setTimeout(() => t.classList.add('hidden'), 4000);
         }
 
         function updateStats() {
