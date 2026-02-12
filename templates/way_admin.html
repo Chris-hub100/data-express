@@ -915,15 +915,15 @@
             const hubType = mode === 'Air' ? 'airport hub' : (mode === 'Sea' ? 'port terminal' : 'warehouse');
 
             if (s.includes("received")) {
-                message = `Hello ${name}, we have received your package (${waybill}). It is being prepared for ${mode.toLowerCase()} dispatch. Track live on our portal.`;
+                message = `Hello ${name}, we have received your package (${waybill}). It is being prepared for ${mode.toLowerCase()} dispatch. Track live on our portal www.prolyfiq.store/tracking`;
             } else if (s.includes("set off")) {
-                message = `Hello ${name}, your package ${waybill} is on the move! The ${transportType} has set off from the ${hubType}. Track live on our portal.`;
+                message = `Hello ${name}, your package ${waybill} is on the move! The ${transportType} has set off from the ${hubType}. Track live on our portal www.prolyfiq.store/tracking`;
             } else if (s.includes("transit")) {
-                message = `Hello ${name}, a quick update on waybill ${waybill}. Your package is currently in ${mode.toLowerCase()} transit to the destination. Track live on our portal.`;
+                message = `Hello ${name}, a quick update on waybill ${waybill}. Your package is currently in ${mode.toLowerCase()} transit to the destination. Track live on our portal www.prolyfiq.store/tracking`;
             } else if (s.includes("arrived")) {
                 message = `Hello ${name}, great news! Your package (${waybill}) has arrived at the destination. Please be ready for pickup/delivery.`;
             } else {
-                message = `Hello ${name}, status updated for waybill ${waybill}: [${status}]. Track on our portal.`;
+                message = `Hello ${name}, status updated for waybill ${waybill}: [${status}]. Track on our portal www.prolyfiq.store/tracking`;
             }
             
             try {

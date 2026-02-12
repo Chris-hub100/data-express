@@ -398,7 +398,7 @@ def directory():
 def faq():
     return render_template('faq.html')
 
-@app.route('/westruck/tracking')
+@app.route('/tracking')
 def waybill():
     return render_template('waybill.html', **get_firebase_context())
 
