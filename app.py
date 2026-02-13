@@ -210,6 +210,141 @@ def trigger_hubtel_sms():
 
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
+    
+@app.route('/api/driver/session/start', methods=['POST'])
+def start_delivery_session():
+    """ 
+    Triggered when a driver selects a vehicle and presses 'Start' 
+    Path: artifacts/{appId}/public/data/delivery_sessions/{sessionId}
+    """
+    try:
+        data = request.json
+        app_id = data.get('appId')
+        vehicle_tag = data.get('vehicleTag')
+        driver_name = data.get('driverName', 'Verified Driver')
+        
+        if not app_id or not vehicle_tag:
+            return jsonify({"success": False, "error": "Incomplete Handshake"}), 400
+
+        session_id = f"SES-{int(firestore.SERVER_TIMESTAMP.timestamp() * 1000)}"
+        session_ref = db.collection('artifacts').document(app_id)\
+                        .collection('public').document('data')\
+                        .collection('delivery_sessions').document(session_id)
+
+        # 1. Create the session
+        session_ref.set({
+            "id": session_id,
+            "vehicleTag": vehicle_tag,
+            "driverName": driver_name,
+            "status": "ACTIVE",
+            "startTime": firestore.SERVER_TIMESTAMP,
+            "lastUpdated": firestore.SERVER_TIMESTAMP
+        })
+
+        # 2. Update Vehicle status in the Fleet Silo
+        fleet_ref = db.collection('artifacts').document(app_id)\
+                      .collection('public').document('data')\
+                      .collection('fleet_vehicles')
+        
+        vehicle_query = fleet_ref.where('tagName', '==', vehicle_tag).limit(1).get()
+        if vehicle_query:
+            vehicle_query[0].reference.update({"status": "IN-TRANSIT"})
+
+        return jsonify({"success": True, "sessionId": session_id}), 200
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+@app.route('/api/driver/telemetry', methods=['POST'])
+def stream_gps():
+    """ 
+    The background 'Pulse' of the native app. 
+    Logs coordinates every 3-5 mins into a sub-collection.
+    """
+    try:
+        data = request.json
+        app_id = data.get('appId')
+        session_id = data.get('sessionId')
+        lat = data.get('lat')
+        lng = data.get('lng')
+
+        if not all([app_id, session_id, lat, lng]):
+            return jsonify({"success": False, "error": "Incomplete Telemetry"}), 400
+
+        # Path: delivery_sessions/{id}/location_logs/{auto-id}
+        log_ref = db.collection('artifacts').document(app_id)\
+                    .collection('public').document('data')\
+                    .collection('delivery_sessions').document(session_id)\
+                    .collection('location_logs').document()
+
+        log_ref.set({
+            "lat": lat,
+            "lng": lng,
+            "timestamp": firestore.SERVER_TIMESTAMP
+        })
+
+        # Update heartbeat on parent session for 'Signal Available' logic
+        db.collection('artifacts').document(app_id)\
+          .collection('public').document('data')\
+          .collection('delivery_sessions').document(session_id)\
+          .update({"lastUpdated": firestore.SERVER_TIMESTAMP})
+
+        return jsonify({"success": True}), 200
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+@app.route('/api/driver/fault', methods=['POST'])
+def report_trip_fault():
+    """ Instantly flags the session as delayed/faulty """
+    try:
+        data = request.json
+        app_id = data.get('appId')
+        session_id = data.get('sessionId')
+        reason = data.get('reason', 'Mechanical Delay')
+
+        session_ref = db.collection('artifacts').document(app_id)\
+                        .collection('public').document('data')\
+                        .collection('delivery_sessions').document(session_id)
+
+        session_ref.update({
+            "status": "DELAY - FAULT",
+            "faultReason": reason,
+            "faultTimestamp": firestore.SERVER_TIMESTAMP
+        })
+
+        return jsonify({"success": True}), 200
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+@app.route('/api/driver/session/stop', methods=['POST'])
+def end_delivery_session():
+    """ Ends session and releases vehicle back to IDLE """
+    try:
+        data = request.json
+        app_id = data.get('appId')
+        session_id = data.get('sessionId')
+        vehicle_tag = data.get('vehicleTag')
+
+        # 1. Archive the Session
+        db.collection('artifacts').document(app_id)\
+          .collection('public').document('data')\
+          .collection('delivery_sessions').document(session_id)\
+          .update({
+              "status": "COMPLETED",
+              "endTime": firestore.SERVER_TIMESTAMP
+          })
+
+        # 2. Release Vehicle
+        vehicle_query = db.collection('artifacts').document(app_id)\
+                          .collection('public').document('data')\
+                          .collection('fleet_vehicles')\
+                          .where('tagName', '==', vehicle_tag).limit(1).get()
+        
+        if vehicle_query:
+            vehicle_query[0].reference.update({"status": "IDLE"})
+
+        return jsonify({"success": True}), 200
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
 
 @app.route('/api/marketplace/listings', methods=['GET'])
 def get_all_listings():
@@ -814,4 +949,4 @@ def verify_payment():
         return jsonify({"status": "error"})
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))

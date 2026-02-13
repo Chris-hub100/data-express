@@ -52,6 +52,12 @@
             box-shadow: 0 10px 20px -5px rgba(15, 23, 42, 0.15);
         }
 
+        .btn-brand:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
         .no-scrollbar::-webkit-scrollbar { display: none; }
         
         .status-badge {
@@ -83,7 +89,6 @@
             box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15);
         }
 
-        /* Sub-tab styling for History Section */
         .sub-tab-btn {
             font-size: 0.65rem;
             font-weight: 800;
@@ -122,7 +127,6 @@
             background: #f1f5f9;
         }
         
-        /* LOCK SCREEN STYLES - FROM FIRST CODE */
         #killSwitchOverlay {
             position: fixed; inset: 0; z-index: 9999; background: #0f172a;
             display: flex; align-items: center; justify-content: center; 
@@ -139,7 +143,6 @@
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .animate-fade { animation: fadeIn 0.4s ease-out forwards; }
 
-        /* Mobile responsive fixes */
         @media (max-width: 768px) {
             .mobile-center-container {
                 display: flex;
@@ -211,18 +214,36 @@
                 justify-content: center;
             }
         }
+
+        .phone-error {
+            color: #ef4444;
+            font-size: 9px;
+            font-weight: 700;
+            margin-top: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: none;
+        }
+        
+        .phone-error.visible {
+            display: block;
+        }
+        
+        .phone-input-error {
+            border-color: #ef4444 !important;
+            background-color: #fef2f2 !important;
+        }
     </style>
 </head>
 <body class="min-h-screen pb-20">
 
     <!-- INSTITUTIONAL CONFIGURATION -->
     <script>
-        // ADDED URL PARAMETER SUPPORT
         const params = new URLSearchParams(window.location.search);
         const nodeParam = params.get('node');
 
         const INSTITUTION_CONFIG = {
-            clientId: nodeParam || "westruck-logistics", 
+            clientId: nodeParam || "swiftline-logistics", 
             firebase: JSON.parse('{{ __firebase_config | safe if __firebase_config else "{}" }}')
         };
 
@@ -244,7 +265,7 @@
         }
     </script>
 
-    <!-- LOCK SCREEN / SECURITY HANDSHAKE - FROM FIRST CODE -->
+    <!-- LOCK SCREEN / SECURITY HANDSHAKE -->
     <div id="killSwitchOverlay">
         <div class="max-w-md w-full animate-fade">
             <div id="lockIconBox" class="w-16 h-16 bg-white/10 rounded-full flex items-center justify-center mx-auto mb-6 border border-white/20">
@@ -276,6 +297,11 @@
                     </div>
                 </div>
                 <div class="flex items-center gap-4">
+                    <!-- FLEET MANAGEMENT COMMAND -->
+                    <button onclick="openFleetModal()" class="bg-slate-100 text-slate-900 px-4 py-2 rounded-full font-bold text-[10px] uppercase tracking-widest hover:bg-blue-600 hover:text-white transition-all shadow-sm border border-slate-200">
+                        <i class="bi bi-truck me-2"></i> Manage Fleet
+                    </button>
+                    
                     <div class="hidden md:flex flex-col items-end">
                         <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Gateway Status</p>
                         <div class="flex items-center gap-2 text-emerald-500">
@@ -303,9 +329,10 @@
                     <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 text-truncate">History Count</p>
                     <h3 id="statDelivered" class="text-2xl lg:text-3xl font-black text-emerald-500">0</h3>
                 </div>
+                <!-- FLEET ASSETS CARD -->
                 <div class="soft-card p-4 lg:p-6 border-none bg-slate-900 text-white text-center lg:text-start">
-                    <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 text-truncate">Infrastructure</p>
-                    <h3 class="text-2xl lg:text-3xl font-black text-blue-400">100%</h3>
+                    <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 text-truncate">Fleet Assets</p>
+                    <h3 id="statFleet" class="text-2xl lg:text-3xl font-black text-blue-400">0</h3>
                 </div>
             </div>
 
@@ -323,25 +350,17 @@
                                 <input type="text" id="custName" placeholder="Recipient Name" class="w-full bg-slate-50 border border-slate-100 rounded-xl py-2.5 px-4 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all" required>
                             </div>
                             
-                            <!-- UPDATED PHONE INPUT WITH VALIDATION -->
+                            <!-- PHONE INPUT WITH VALIDATION -->
                             <div>
-                                <input type="tel" id="custPhone" placeholder="Recipient Phone (024, 055, etc)" class="w-full bg-slate-50 border border-slate-100 rounded-xl py-2.5 px-4 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all" required>
-                                <p id="phoneError" class="text-[9px] text-red-500 font-bold mt-1 hidden uppercase tracking-wider">Invalid Ghana Number Format</p>
+                                <input type="tel" id="custPhone" placeholder="Recipient Phone (024, 055, etc)" class="w-full bg-slate-50 border border-slate-100 rounded-xl py-2.5 px-4 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all" oninput="validatePhoneInput(this)" required>
+                                <div id="phoneError" class="phone-error">Invalid Ghana Number Format</div>
                             </div>
 
                             <div class="grid grid-cols-2 gap-3">
                                 <input type="text" id="origin" placeholder="Origin" class="w-full bg-slate-50 border border-slate-100 rounded-xl py-2.5 px-4 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all" required>
                                 <input type="text" id="destination" placeholder="Destination" class="w-full bg-slate-50 border border-slate-100 rounded-xl py-2.5 px-4 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all" required>
                             </div>
-                            <!-- MODE OF DELIVERY - ADDED FROM SECOND CODE -->
-                            <div>
-                                <label class="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Mode of Delivery</label>
-                                <select id="deliveryMode" class="w-full bg-slate-50 border border-slate-100 rounded-xl py-2.5 px-4 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all" required>
-                                    <option value="Land"><i class="bi bi-truck me-2"></i> Land Transport (Road)</option>
-                                    <option value="Air"><i class="bi bi-airplane me-2"></i> Air Freight (Express)</option>
-                                    <option value="Sea"><i class="bi bi-ship me-2"></i> Sea Logistics (Cargo)</option>
-                                </select>
-                            </div>
+                            
                             <button type="submit" id="submitBtn" class="btn-brand w-full py-4 rounded-xl font-black uppercase text-xs tracking-widest shadow-xl mt-2">
                                 Register Package
                             </button>
@@ -373,7 +392,7 @@
                                     <button onclick="setView('batches')" id="tabBatches" class="tab-btn mobile-tab-btn">Batches</button>
                                     <button onclick="setView('history')" id="tabHistory" class="tab-btn mobile-tab-btn">History</button>
                                 </div>
-                                <!-- Sub-tabs for History view - ADDED FROM SECOND CODE -->
+                                <!-- Sub-tabs for History view -->
                                 <div id="historySubNav" class="hidden flex gap-2 animate-fade px-2 mobile-subtab-container">
                                     <button onclick="setHistorySubView('individual')" id="subTabIndividual" class="sub-tab-btn active">Individual Items</button>
                                     <button onclick="setHistorySubView('batch')" id="subTabBatch" class="sub-tab-btn">Batch Archives</button>
@@ -406,28 +425,84 @@
                                 <button onclick="nextPage()" id="nextBtn" class="page-btn flex-1 md:flex-none text-slate-500 hover:text-slate-900" disabled>Next</button>
                             </div>
                         </div>
-
-                        <!-- BULK ACTION BAR - REMOVED SINCE NO MULTI-SELECT -->
                     </div>
                 </div>
             </div>
+
+            <!-- ACTIVE TRANSIT MONITOR SECTION -->
+            <section class="w-full mobile-center-container animate-fade mt-8 lg:mt-10">
+                <div class="soft-card p-6 lg:p-8 border-none bg-white">
+                    <div class="flex justify-between items-center mb-6">
+                        <div>
+                            <h4 class="text-xl font-black uppercase tracking-tight text-slate-900">Active Transit Monitor</h4>
+                            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Live Telemetry Corridor</p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="badge bg-emerald-100 text-emerald-600 rounded-pill px-3 py-1 font-black text-[9px] border border-emerald-200">LIVE OPS</span>
+                            <div class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left">
+                            <thead class="bg-slate-50 text-slate-500">
+                                <tr>
+                                    <th class="px-4 py-3 text-[10px] font-black uppercase tracking-wider">Vehicle Tag</th>
+                                    <th class="px-4 py-3 text-[10px] font-black uppercase tracking-wider text-center">Load Volume</th>
+                                    <th class="px-4 lg:px-6 py-4 text-[10px] font-black uppercase tracking-wider text-center">Status</th>
+                                    <th class="px-4 py-3 text-right text-[10px] font-black uppercase tracking-wider">Last Sync</th>
+                                </tr>
+                            </thead>
+                            <tbody id="transitMonitorBody" class="divide-y divide-slate-50">
+                                <tr><td colspan="4" class="text-center py-12 text-slate-400 x-small font-black uppercase tracking-widest italic">Initializing Telemetry Stream...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
         </main>
     </div>
 
-    <!-- BATCH CREATOR MODAL -->
+    <!-- FLEET MANAGEMENT MODAL -->
+    <div id="fleetModal" class="fixed inset-0 z-[1000] hidden flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md">
+        <div class="bg-white w-full max-w-lg rounded-[2rem] p-6 lg:p-8 animate-fade shadow-2xl max-h-[90vh] flex flex-col">
+            <div class="flex justify-between items-center mb-6">
+                <h4 class="text-xl font-black uppercase tracking-tighter">Fleet Management</h4>
+                <button onclick="closeFleetModal()" class="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center hover:bg-slate-200 transition-colors"><i class="bi bi-x-lg"></i></button>
+            </div>
+            <form id="vehicleForm" onsubmit="registerVehicle(event)" class="space-y-4 mb-6">
+                <div>
+                    <label class="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Register New Vehicle (Tag)</label>
+                    <div class="flex gap-2">
+                        <input type="text" id="vehicleTag" placeholder="e.g. TRUCK-01" class="flex-1 bg-slate-50 border border-slate-100 rounded-xl py-2.5 px-4 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all font-bold" required>
+                        <button type="submit" id="vehicleSubmitBtn" class="btn-brand px-4 rounded-xl font-black uppercase text-[10px] tracking-widest shadow-md">Add</button>
+                    </div>
+                </div>
+            </form>
+            <div class="flex-1 overflow-y-auto no-scrollbar border border-slate-100 rounded-2xl p-2 bg-slate-50">
+                <div id="fleetList" class="space-y-2"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- BATCH CREATOR MODAL - UPDATED: FLEET-TIED BATCHING -->
     <div id="batchModal" class="fixed inset-0 z-[1000] hidden flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md">
         <div class="bg-white w-full max-w-2xl rounded-[2rem] p-6 lg:p-8 animate-fade shadow-2xl max-h-[90vh] flex flex-col">
             <div class="flex justify-between items-center mb-6">
                 <div>
                     <h4 class="text-xl font-black uppercase tracking-tighter">Package Batching</h4>
-                    <p class="text-slate-400 text-xs font-bold uppercase tracking-widest">Group shipments for transport</p>
+                    <p class="text-slate-400 text-xs font-bold uppercase tracking-widest">Assign load to fleet vehicle</p>
                 </div>
                 <button onclick="closeBatchModal()" class="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center hover:bg-slate-200 transition-colors"><i class="bi bi-x-lg"></i></button>
             </div>
             
             <div class="mb-4">
-                <label class="text-[10px] font-black text-slate-400 uppercase mb-2 block">Batch Identification Name</label>
-                <input type="text" id="batchNameInput" placeholder="e.g. Truck 04 - Kumasi Route" class="w-full bg-slate-50 border border-slate-100 rounded-xl py-3 px-4 outline-none font-bold focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 transition-all">
+                <label class="text-[10px] font-black text-slate-400 uppercase mb-2 block">Select Vehicle</label>
+                <select id="batchVehicleSelect" class="w-full bg-slate-50 border border-slate-100 rounded-xl py-3 px-4 outline-none font-bold focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 transition-all" required>
+                    <option value="">-- Choose a vehicle --</option>
+                    <!-- Populated dynamically from fleet -->
+                </select>
+                <p class="text-[9px] text-slate-400 mt-2">The batch will be named after the selected vehicle</p>
             </div>
 
             <div class="flex-1 overflow-y-auto mb-6 no-scrollbar border border-slate-100 rounded-2xl p-2 bg-slate-50">
@@ -436,40 +511,36 @@
 
             <div class="d-grid">
                 <button onclick="commitBatchCreation()" id="commitBatchBtn" class="btn-brand w-full py-4 rounded-xl font-black uppercase text-xs tracking-widest shadow-xl">
-                    Create Batch
+                    Create Batch & Assign to Vehicle
                 </button>
             </div>
         </div>
     </div>
 
-    <!-- STATUS UPDATE MODAL -->
+    <!-- STATUS UPDATE MODAL - 2-STAGE FLOW -->
     <div id="statusModal" class="fixed inset-0 z-[1000] hidden flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md">
-        <div class="bg-white w-full max-w-md rounded-[2rem] p-6 lg:p-8 animate-fade shadow-2xl max-h-[90vh] overflow-y-auto no-scrollbar">
+        <div class="bg-white w-full max-w-md rounded-[2rem] p-6 lg:p-8 animate-fade shadow-2xl">
             <div class="flex justify-between items-center mb-6">
                 <h4 class="text-xl font-black uppercase tracking-tighter" id="modalHeader">Update State</h4>
                 <button onclick="closeModal()" class="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center hover:bg-slate-200 transition-colors"><i class="bi bi-x-lg"></i></button>
             </div>
-            <!-- ADDED ACTIVE DELIVERY MODE HIDDEN INPUT -->
             <input type="hidden" id="activeUpdateId"><input type="hidden" id="activeUpdateType">
             <input type="hidden" id="activeUpdatePhone"><input type="hidden" id="activeWaybillId">
-            <input type="hidden" id="activeCustomerName"><input type="hidden" id="activeDeliveryMode">
+            <input type="hidden" id="activeCustomerName">
+            <input type="hidden" id="activeNotifiedTransit"> 
+            <input type="hidden" id="activeNotifiedArrived"> 
 
-            <div class="space-y-3">
-                <button onclick="confirmStatus('Package received and being loaded for dispatch')" class="w-full text-left p-4 rounded-xl border border-slate-100 bg-white hover:bg-amber-50 hover:border-amber-200 transition-all group shadow-sm">
-                    <p class="text-[10px] font-black text-amber-500 uppercase mb-1">Step 1</p><span class="font-bold text-sm text-slate-700">Package Received & Loading</span>
+            <div class="space-y-3" id="statusButtonContainer">
+                <!-- 2-STAGE FLOW -->
+                <button id="rankBtn-1" onclick="confirmStatus('In transit')" class="status-btn w-full text-left p-4 rounded-xl border border-slate-100 bg-white hover:bg-indigo-50 transition-all shadow-sm">
+                    <p class="text-[10px] font-black text-indigo-500 uppercase mb-1">Stage 1</p><span class="font-bold text-sm text-slate-700">Mark as In Transit</span>
                 </button>
-                <button onclick="confirmStatus('Delivery vehicle set off')" class="w-full text-left p-4 rounded-xl border border-slate-100 bg-white hover:bg-blue-50 hover:border-blue-200 transition-all group shadow-sm">
-                    <p class="text-[10px] font-black text-blue-500 uppercase mb-1">Step 2</p><span class="font-bold text-sm text-slate-700">Set Off (Departed Hub)</span>
-                </button>
-                <button onclick="confirmStatus('In transit')" class="w-full text-left p-4 rounded-xl border border-slate-100 bg-white hover:bg-indigo-50 hover:border-indigo-200 transition-all group shadow-sm">
-                    <p class="text-[10px] font-black text-indigo-500 uppercase mb-1">Step 3</p><span class="font-bold text-sm text-slate-700">In Transit</span>
-                </button>
-                <button onclick="confirmStatus('Has arrived at destination')" class="w-full text-left p-4 rounded-xl border border-slate-100 bg-white hover:bg-emerald-50 hover:border-emerald-200 transition-all group shadow-sm">
-                    <p class="text-[10px] font-black text-emerald-500 uppercase mb-1">Final Step</p><span class="font-bold text-sm text-slate-700">Arrived at Destination</span>
+                <button id="rankBtn-2" onclick="confirmStatus('Has arrived at destination')" class="status-btn w-full text-left p-4 rounded-xl border border-slate-100 bg-white hover:bg-emerald-50 transition-all shadow-sm">
+                    <p class="text-[10px] font-black text-emerald-500 uppercase mb-1">Final Stage</p><span class="font-bold text-sm text-slate-700">Mark as Arrived</span>
                 </button>
             </div>
             <div class="mt-6 p-4 bg-slate-50 rounded-2xl border border-dashed border-slate-200 text-center">
-                <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest flex items-center justify-center gap-2">
+                <p id="smsStatusText" class="text-[10px] text-slate-400 font-bold uppercase tracking-widest flex items-center justify-center gap-2">
                     <i class="bi bi-broadcast"></i> Triggers SMS to Recipient
                 </p>
             </div>
@@ -485,21 +556,39 @@
     </div>
 
     <script>
-        let allWaybills = [], allBatches = [], currentView = 'active', currentPage = 1, recordsPerPage = 20;
-        let historySubView = 'individual'; // 'individual' or 'batch' - ADDED FROM SECOND CODE
+        let allWaybills = [], allBatches = [], allVehicles = [], activeSessions = [], currentView = 'active', currentPage = 1, recordsPerPage = 20;
+        let historySubView = 'individual';
 
-        /**
-         * VALIDATION ENGINE: Ghana Phone Number - ADDED FROM PROVIDED CODE
-         */
+        // --- VALIDATION ENGINE: Ghana Phone Number ---
         function validateGhanaPhone(phone) {
             // Regex matches: +233 or 0, followed by 2, 3, or 5, and exactly 8 more digits.
             const regex = /^(\+233|0)[235][0-9]{8}$/;
             return regex.test(phone.trim());
         }
 
-        /**
-         * SECURITY HANDHAKE - CHECKING is_locked IN artifacts/{appId}/public/data DOCUMENT
-         */
+        // Real-time phone validation
+        window.validatePhoneInput = function(input) {
+            const errorDiv = document.getElementById('phoneError');
+            const phone = input.value;
+            
+            if (phone.length > 0 && !validateGhanaPhone(phone)) {
+                errorDiv.classList.add('visible');
+                input.classList.add('phone-input-error');
+            } else {
+                errorDiv.classList.remove('visible');
+                input.classList.remove('phone-input-error');
+            }
+        };
+
+        // --- LOGIC: DIRECTIONAL LOCK ---
+        function getStatusRank(status) {
+            const s = (status || "").toLowerCase();
+            if (s.includes('arrived')) return 2;
+            if (s.includes('transit')) return 1;
+            return 0; // Registered / Idle
+        }
+
+        // --- SECURITY HANDHAKE ---
         async function runSecurityHandshake() {
             logDiagnostic("Identity", "ok", CONFIG.appId);
             const dataPath = `artifacts/${CONFIG.appId}/public/data`;
@@ -509,7 +598,6 @@
                 logDiagnostic("Auth", "ok", "Session Initialized");
             } catch(e) { logDiagnostic("Auth", "wait", "Domain Authorization Pending"); }
 
-            // CHECK THE DOCUMENT DIRECTLY: artifacts/{appId}/public/data
             db.doc(dataPath).onSnapshot(doc => {
                 if (!doc.exists) {
                     logDiagnostic("Vault", "fail", "Data Document Not Found");
@@ -562,14 +650,58 @@
               .orderBy('timestamp', 'desc').onSnapshot(snap => {
                 allBatches = [];
                 snap.forEach(doc => allBatches.push({id: doc.id, ...doc.data()}));
-                renderLedger(); // Always re-render when batches change
+                renderLedger(); 
+                renderTransitMonitor();
+            });
+
+            // FLEET COLLECTION
+            db.collection(`artifacts/${CONFIG.appId}/public/data/fleet_vehicles`)
+              .orderBy('timestamp', 'desc').onSnapshot(snap => {
+                allVehicles = [];
+                snap.forEach(doc => allVehicles.push({id: doc.id, ...doc.data()}));
+                renderFleetList(); 
+                updateBatchVehicleSelect(); 
+                updateStats();
+            });
+
+            // DELIVERY SESSIONS
+            db.collection(`artifacts/${CONFIG.appId}/public/data/delivery_sessions`).onSnapshot(snap => {
+                const sessions = [];
+                snap.forEach(doc => sessions.push(doc.data()));
+                activeSessions = sessions.filter(s => s.status !== 'COMPLETED');
+                renderTransitMonitor();
             });
         }
 
-        // --- BATCHING LOGIC - PRESERVING ALL ORIGINAL FEATURES ---
+        // --- TRANSIT MONITOR ---
+        function renderTransitMonitor() {
+            const body = document.getElementById('transitMonitorBody');
+            if (!body) return;
+            
+            if (activeSessions.length === 0) {
+                body.innerHTML = `<tr><td colspan="4" class="text-center py-12 text-slate-400 x-small font-black uppercase italic tracking-widest">No active transit nodes</td></tr>`;
+                return;
+            }
+            
+            body.innerHTML = activeSessions.map(session => {
+                const batch = allBatches.find(b => b.vehicleTag === session.vehicleTag && !b.status?.toLowerCase().includes('arrived'));
+                const loadCount = batch ? batch.packageIds.length : '0';
+                const lastSeen = session.lastUpdated ? new Date(session.lastUpdated).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Syncing...';
+                
+                return `
+                    <tr class="animate-fade border-b border-slate-50">
+                        <td class="px-4 py-5"><div class="flex items-center gap-2"><div class="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></div><p class="font-black text-sm text-slate-900 mb-0 tracking-tighter">${session.vehicleTag}</p></div></td>
+                        <td class="px-4 py-5 text-center"><span class="bg-slate-100 text-slate-600 rounded-pill px-3 py-1 font-black text-[9px] border border-slate-200">${loadCount} WAYBILLS</span></td>
+                        <td class="px-4 lg:px-6 py-5 text-center"><span class="status-badge ${session.status === 'ACTIVE' ? 'bg-blue-50 text-blue-600' : 'bg-amber-100 text-amber-700'}">${session.status === 'ACTIVE' ? 'IN TRANSIT' : 'FAULT REPORTED'}</span></td>
+                        <td class="px-4 py-5 text-right"><p class="text-[10px] font-black text-slate-400 uppercase mb-0">${lastSeen}</p></td>
+                    </tr>`;
+            }).join('');
+        }
+
+        // --- UPDATED: FLEET-TIED BATCHING LOGIC ---
         window.openBatchCreator = () => {
             const list = document.getElementById('availablePackagesList');
-            const unbatched = allWaybills.filter(w => !w.status.toLowerCase().includes('arrived') && !w.batchId);
+            const unbatched = allWaybills.filter(w => !w.status?.toLowerCase().includes('arrived') && !w.batchId);
             
             list.innerHTML = unbatched.length === 0 ? 
                 '<div class="text-center py-12 text-slate-400 font-bold text-xs uppercase"><i class="bi bi-inbox fs-1 block mb-2 opacity-50"></i>No eligible packages</div>' :
@@ -579,9 +711,6 @@
                     <div class="flex-1">
                         <p class="font-black text-xs tracking-widest uppercase text-slate-900">${w.waybillId}</p>
                         <p class="font-bold text-sm text-slate-500">${w.customerName}</p>
-                        <p class="text-[10px] text-blue-500 font-bold uppercase mt-1">
-                            <i class="bi ${getDeliveryModeIcon(w.deliveryMode)} me-1" style="font-size: 8px;"></i>${w.deliveryMode || 'Land'}
-                        </p>
                     </div>
                     <div class="text-right">
                         <p class="text-[10px] font-black text-blue-600 uppercase tracking-widest leading-none mb-1">${w.origin || 'N/A'}</p>
@@ -590,15 +719,29 @@
                     </div>
                 </label>`).join('');
             
+            // Update vehicle dropdown with current fleet
+            updateBatchVehicleSelect();
             document.getElementById('batchModal').classList.remove('hidden');
         };
 
+        // Function to update vehicle dropdown in batch modal
+        function updateBatchVehicleSelect() {
+            const select = document.getElementById('batchVehicleSelect');
+            if (!select) return;
+            
+            // Filter to only show IDLE vehicles (not currently on a trip)
+            const idleVehicles = allVehicles.filter(v => v.status === 'IDLE' || !v.status);
+            
+            select.innerHTML = '<option value="">-- Choose a vehicle --</option>' + 
+                idleVehicles.map(v => `<option value="${v.tagName}">${v.tagName} (IDLE)</option>`).join('');
+        }
+
         window.commitBatchCreation = async () => {
-            const name = document.getElementById('batchNameInput').value.trim();
+            const vehicleTag = document.getElementById('batchVehicleSelect').value;
             const checkboxes = document.querySelectorAll('input[name="batchItems"]:checked');
             const selectedIds = Array.from(checkboxes).map(cb => cb.value);
 
-            if (!name) return showToast("Enter a Batch Name", "warning");
+            if (!vehicleTag) return showToast("Select a vehicle from fleet", "warning");
             if (selectedIds.length === 0) return showToast("Select at least 1 item", "warning");
 
             const btn = document.getElementById('commitBatchBtn');
@@ -608,25 +751,51 @@
                 const batchId = "BATCH-" + Date.now().toString().slice(-6);
                 const dbBatch = db.batch();
                 
+                // Create batch with vehicle tag as name
                 const batchRef = db.collection(`artifacts/${CONFIG.appId}/public/data/logistics_batches`).doc(batchId);
                 dbBatch.set(batchRef, {
-                    name, batchId, packageIds: selectedIds, 
-                    timestamp: Date.now(), status: 'Batch Created'
+                    name: vehicleTag,  // Use vehicle tag as batch name
+                    vehicleTag: vehicleTag, // Store vehicle association
+                    batchId: batchId,
+                    packageIds: selectedIds, 
+                    timestamp: Date.now(),
+                    status: 'Batch Created',
+                    notified_transit: false,
+                    notified_arrived: false
                 });
 
+                // Update vehicle status to ASSIGNED
+                const vehicleRef = db.collection(`artifacts/${CONFIG.appId}/public/data/fleet_vehicles`).doc(
+                    allVehicles.find(v => v.tagName === vehicleTag)?.id
+                );
+                if (vehicleRef) {
+                    dbBatch.update(vehicleRef, { 
+                        status: 'ASSIGNED',
+                        currentBatchId: batchId,
+                        lastAssigned: Date.now()
+                    });
+                }
+
+                // Update packages with batch ID
                 selectedIds.forEach(id => {
                     const pkgRef = db.collection(`artifacts/${CONFIG.appId}/public/data/logistics_packages`).doc(id);
-                    dbBatch.update(pkgRef, { batchId: batchId });
+                    dbBatch.update(pkgRef, { 
+                        batchId: batchId,
+                        assignedVehicle: vehicleTag 
+                    });
                 });
 
                 await dbBatch.commit();
-                showToast("Batch Created Successfully", "success");
+                showToast(`Load assigned to ${vehicleTag}`, "success");
                 closeBatchModal();
-            } catch(e) { alert(e.message); }
+            } catch(e) { 
+                showToast("Registry Error", "warning");
+                console.error(e);
+            }
             finally { btn.disabled = false; }
         };
 
-        // --- ENHANCED RENDER LOGIC WITH MOBILE RESPONSIVENESS ---
+        // --- RENDER LOGIC - RESTORED FROM FIRST CODE WITH BATCH HISTORY ---
         window.setView = (v) => { 
             currentView = v; 
             currentPage = 1; 
@@ -636,7 +805,7 @@
             document.getElementById('tabBatches').className = `tab-btn mobile-tab-btn ${v === 'batches' ? 'active' : 'text-slate-500'}`;
             document.getElementById('tabHistory').className = `tab-btn mobile-tab-btn ${v === 'history' ? 'active' : 'text-slate-500'}`;
             
-            // Toggle history sub-nav - ADDED FROM SECOND CODE
+            // Toggle history sub-nav
             const subNav = document.getElementById('historySubNav');
             if (v === 'history') {
                 subNav.classList.remove('hidden');
@@ -647,7 +816,6 @@
             renderLedger();
         };
 
-        // SET HISTORY SUB-VIEW - ADDED FROM SECOND CODE
         window.setHistorySubView = (sv) => {
             historySubView = sv;
             currentPage = 1;
@@ -661,18 +829,18 @@
             const header = document.getElementById('tableHeaderRow');
             const query = document.getElementById('searchInput').value.toUpperCase();
 
-            // BATCH VIEW - ENHANCED WITH AUTO-ARCHIVING LOGIC
+            // BATCH VIEW - UPDATED to show vehicle tags
             if (currentView === 'batches') {
                 header.innerHTML = `
-                    <th class="px-4 lg:px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-wider mobile-table-header">Batch Name</th>
+                    <th class="px-4 lg:px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-wider mobile-table-header">Vehicle / Batch</th>
                     <th class="px-4 lg:px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-wider mobile-table-header">Load Count</th>
                     <th class="px-4 lg:px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-wider mobile-table-header text-center">Status</th>
                     <th class="px-4 lg:px-6 py-4 text-right text-[10px] font-black text-slate-400 uppercase tracking-wider mobile-table-header">Action</th>
                 `;
                 
-                // Filter: Show only active batches (not arrived) AND match search query
-                const activeBatches = allBatches.filter(b => !b.status.toLowerCase().includes('arrived'));
-                const filteredBatches = activeBatches.filter(b => b.name.toUpperCase().includes(query) || b.batchId.includes(query));
+                // Filter: Show only active batches (not arrived)
+                const activeBatches = allBatches.filter(b => !b.status?.toLowerCase().includes('arrived'));
+                const filteredBatches = activeBatches.filter(b => b.name?.toUpperCase().includes(query) || b.batchId?.includes(query));
                 const totalPages = Math.ceil(filteredBatches.length / recordsPerPage) || 1;
                 const paginated = filteredBatches.slice((currentPage - 1) * recordsPerPage, currentPage * recordsPerPage);
 
@@ -681,11 +849,11 @@
                     <tr class="border-b border-slate-50 hover:bg-slate-50 transition-colors animate-fade">
                         <td class="px-4 lg:px-6 py-5 mobile-table-cell">
                             <div class="flex items-center gap-3">
-                                <div class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center"><i class="bi bi-box-seam-fill"></i></div>
+                                <div class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center"><i class="bi bi-truck-front-fill"></i></div>
                                 <div><p class="font-black text-sm text-slate-900 uppercase tracking-tighter">${b.name}</p><p class="text-[10px] text-slate-400 hidden lg:block">${b.batchId}</p></div>
                             </div>
                         </td>
-                        <td class="px-4 lg:px-6 py-5 mobile-table-cell"><span class="bg-slate-100 text-slate-600 rounded-full px-3 py-1 font-black text-[10px] border border-slate-200">${b.packageIds.length} ITEMS</span></td>
+                        <td class="px-4 lg:px-6 py-5 mobile-table-cell"><span class="bg-slate-100 text-slate-600 rounded-full px-3 py-1 font-black text-[10px] border border-slate-200">${b.packageIds?.length || 0} ITEMS</span></td>
                         <td class="px-4 lg:px-6 py-5 mobile-table-cell text-center">
                             <span class="status-badge mobile-status-badge ${getStatusStyle(b.status)} lg:hidden cursor-pointer" onclick="showToast('${b.status}', 'info')">VIEW</span>
                             <span class="status-badge mobile-status-badge ${getStatusStyle(b.status)} hidden lg:inline-flex">${b.status}</span>
@@ -697,13 +865,13 @@
                 return;
             }
 
-            // HISTORY VIEW - ENHANCED WITH SUB-TABS - UPDATED FROM SECOND CODE
+            // HISTORY VIEW - RESTORED FROM FIRST CODE
             else if (currentView === 'history') {
                 if (historySubView === 'batch') {
                     // Render Batch History
-                    const arrivedBatches = allBatches.filter(b => b.status && b.status.toLowerCase().includes('arrived') && (b.name.toUpperCase().includes(query) || b.batchId.toUpperCase().includes(query)));
+                    const arrivedBatches = allBatches.filter(b => b.status && b.status.toLowerCase().includes('arrived') && (b.name?.toUpperCase().includes(query) || b.batchId?.toUpperCase().includes(query)));
                     header.innerHTML = `
-                        <th class="px-4 lg:px-6 py-4 text-[10px] font-black uppercase tracking-wider mobile-table-header">Batch Record</th>
+                        <th class="px-4 lg:px-6 py-4 text-[10px] font-black uppercase tracking-wider mobile-table-header">Vehicle / Batch</th>
                         <th class="px-4 lg:px-6 py-4 text-[10px] font-black uppercase tracking-wider mobile-table-header">Type</th>
                         <th class="px-4 lg:px-6 py-4 text-[10px] font-black uppercase tracking-wider mobile-table-header">Completed</th>
                         <th class="px-4 lg:px-6 py-4 text-right text-[10px] font-black uppercase tracking-wider mobile-table-header">Action</th>`;
@@ -720,7 +888,7 @@
                     updatePagination(1);
                 } else {
                     // Render Individual History
-                    const deliveredWaybills = allWaybills.filter(item => item.status && item.status.toLowerCase().includes('arrived') && (item.waybillId.includes(query) || item.customerName.toUpperCase().includes(query)));
+                    const deliveredWaybills = allWaybills.filter(item => item.status && item.status.toLowerCase().includes('arrived') && (item.waybillId?.includes(query) || item.customerName?.toUpperCase().includes(query)));
                     header.innerHTML = `
                         <th class="px-4 lg:px-6 py-4 text-[10px] font-black uppercase tracking-wider mobile-table-header">Waybill Ref</th>
                         <th class="px-4 lg:px-6 py-4 text-[10px] font-black uppercase tracking-wider mobile-table-header">Recipient</th>
@@ -733,9 +901,6 @@
                         <tr class="border-b border-slate-50 opacity-75">
                             <td class="px-4 lg:px-6 py-4 align-top mobile-table-cell">
                                 <p class="font-black text-sm uppercase text-slate-900 mb-0">${item.waybillId}</p>
-                                <p class="text-[9px] text-blue-500 font-bold uppercase mt-1">
-                                    <i class="bi ${getDeliveryModeIcon(item.deliveryMode)} me-1" style="font-size: 8px;"></i>${item.deliveryMode || 'Land'}
-                                </p>
                             </td>
                             <td class="px-4 lg:px-6 py-4 mobile-table-cell"><p class="font-bold text-sm text-slate-700 m-0">${item.customerName}</p></td>
                             <td class="px-4 lg:px-6 py-4 font-bold text-xs text-slate-400 mobile-table-cell">${item.deliveredAt ? new Date(item.deliveredAt).toLocaleDateString() : 'Historical'}</td>
@@ -747,7 +912,7 @@
                 return;
             }
 
-            // ACTIVE LEDGER VIEW - REMOVED MULTI-SELECT CHECKBOXES
+            // ACTIVE LEDGER VIEW - RESTORED FROM FIRST CODE
             header.innerHTML = `
                 <th class="px-4 lg:px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-wider mobile-table-header">Waybill ID</th>
                 <th class="px-4 lg:px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-wider mobile-table-header">Recipient</th>
@@ -757,7 +922,7 @@
 
             const filteredData = allWaybills.filter(item => {
                 const isHistory = item.status && item.status.toLowerCase().includes('arrived');
-                const matchesView = (currentView === 'history') ? isHistory : !isHistory;
+                const matchesView = !isHistory;
                 const matchesQuery = (item.waybillId || "").includes(query) || (item.customerName || "").toUpperCase().includes(query);
                 return matchesView && matchesQuery;
             });
@@ -771,9 +936,6 @@
                 <tr class="border-b border-slate-50 hover:bg-slate-50 transition-colors animate-fade">
                     <td class="px-4 lg:px-6 py-5 align-top mobile-table-cell">
                         <p class="font-black text-sm tracking-widest uppercase text-slate-900 mb-0">${item.waybillId}</p>
-                        <p class="text-[9px] text-blue-500 font-bold uppercase mt-1">
-                            <i class="bi ${getDeliveryModeIcon(item.deliveryMode)} me-1" style="font-size: 8px;"></i>${item.deliveryMode || 'Land'}
-                        </p>
                     </td>
                     <td class="px-4 lg:px-6 py-5 align-middle mobile-table-cell"><p class="font-bold text-sm text-slate-700">${item.customerName}</p><p class="text-[10px] text-slate-400 m-0 font-mono hidden lg:block">${item.recipientPhone}</p></td>
                     <td class="px-4 lg:px-6 py-5 align-middle mobile-table-cell text-center">
@@ -781,7 +943,7 @@
                         <span class="status-badge mobile-status-badge ${getStatusStyle(item.status)} hidden lg:inline-flex">${item.status}</span>
                     </td>
                     <td class="px-4 lg:px-6 py-5 align-middle mobile-table-cell text-right">
-                        <button onclick="openSingleUpdate('${item.id}', '${item.recipientPhone}', '${item.waybillId}', '${item.customerName}', '${item.deliveryMode || 'Land'}')" class="text-blue-600 font-black text-[10px] uppercase tracking-widest bg-blue-50 px-4 py-2 rounded-full hover:bg-blue-100 transition-colors mobile-action-button">Update</button>
+                        <button onclick="openSingleUpdate('${item.id}', '${item.recipientPhone}', '${item.waybillId}', '${item.customerName}', '${item.status}', ${item.notified_transit || false}, ${item.notified_arrived || false})" class="text-blue-600 font-black text-[10px] uppercase tracking-widest bg-blue-50 px-4 py-2 rounded-full hover:bg-blue-100 transition-colors mobile-action-button">Update</button>
                     </td>
                 </tr>`).join('');
             
@@ -802,81 +964,84 @@
             next.style.opacity = (currentPage >= total || total === 0) ? '0.5' : '1';
         }
 
-        // DELIVERY MODE ICON HELPER FUNCTION
-        function getDeliveryModeIcon(mode) {
-            switch(mode) {
-                case 'Air': return 'bi-airplane';
-                case 'Sea': return 'bi-ship';
-                default: return 'bi-truck';
-            }
-        }
-
-        // --- CORE ACTIONS WITH ENHANCED ERROR HANDLING ---
-        window.createPackage = async (e) => {
-            e.preventDefault();
-            const phone = document.getElementById('custPhone').value;
-            const errorLabel = document.getElementById('phoneError');
-            const submitBtn = document.getElementById('submitBtn');
-            const phoneInput = document.getElementById('custPhone');
-
-            // Better Error Handling for Incorrect Phone Numbers - ADDED FROM PROVIDED CODE
-            if (!validateGhanaPhone(phone)) {
-                errorLabel.classList.remove('hidden');
-                phoneInput.classList.add('border-red-400', 'bg-red-50');
-                showToast("Identity Error: Phone Number Format Invalid", "warning");
-                return;
-            } else {
-                errorLabel.classList.add('hidden');
-                phoneInput.classList.remove('border-red-400', 'bg-red-50');
-            }
-
-            const waybillId = "WB-" + Math.floor(10000000 + Math.random() * 90000000);
-            submitBtn.disabled = true;
-            try {
-                await db.collection(`artifacts/${CONFIG.appId}/public/data/logistics_packages`).add({
-                    waybillId, 
-                    customerName: document.getElementById('custName').value.trim(),
-                    recipientPhone: phone.trim(),
-                    origin: document.getElementById('origin').value.trim(),
-                    destination: document.getElementById('destination').value.trim(),
-                    deliveryMode: document.getElementById('deliveryMode').value,
-                    status: 'Registered', 
-                    timestamp: Date.now()
-                });
-                showToast(`Waybill ${waybillId} Registered`, 'success');
-                document.getElementById('waybillForm').reset();
-            } catch (err) { 
-                showToast("Silo Storage Error", "warning");
-            } finally { 
-                submitBtn.disabled = false; 
-            }
-        };
-
-        window.openBatchUpdate = (batchId) => {
-            document.getElementById('modalHeader').innerText = "Update Batch Load";
-            document.getElementById('activeUpdateId').value = batchId;
-            document.getElementById('activeUpdateType').value = "batch";
-            document.getElementById('statusModal').classList.remove('hidden');
-        };
-
-        // UPDATED TO INCLUDE DELIVERY MODE
-        window.openSingleUpdate = (id, phone, waybill, name, mode) => {
+        // --- STATUS MODAL LOGIC WITH 2-STAGE FLOW ---
+        window.openSingleUpdate = (id, phone, waybill, name, currentStatus, notifiedT, notifiedA) => {
             document.getElementById('modalHeader').innerText = "Update Waybill";
             document.getElementById('activeUpdateId').value = id;
-            document.getElementById('activeUpdateType').value = "single";
+            document.getElementById('activeUpdateType').value = 'single';
             document.getElementById('activeUpdatePhone').value = phone;
             document.getElementById('activeWaybillId').value = waybill;
             document.getElementById('activeCustomerName').value = name;
-            document.getElementById('activeDeliveryMode').value = mode || 'Land';
+            document.getElementById('activeNotifiedTransit').value = notifiedT;
+            document.getElementById('activeNotifiedArrived').value = notifiedA;
+
+            const currentRank = getStatusRank(currentStatus);
+            const smsIndicator = document.getElementById('smsStatusText');
+            
+            // Re-map buttons for 2-stage flow
+            for (let i = 1; i <= 2; i++) {
+                const btn = document.getElementById(`rankBtn-${i}`);
+                if (i <= currentRank) {
+                    btn.disabled = true;
+                    btn.style.opacity = '0.3';
+                    btn.classList.add('cursor-not-allowed');
+                } else {
+                    btn.disabled = false;
+                    btn.style.opacity = '1';
+                    btn.classList.remove('cursor-not-allowed');
+                }
+            }
+
+            // Show relevant notification state
+            if (currentRank === 0) {
+                smsIndicator.innerHTML = '<i class="bi bi-broadcast"></i> Triggers SMS when marked In Transit';
+            } else if (currentRank === 1) {
+                smsIndicator.innerHTML = notifiedT ? 
+                    '<i class="bi bi-check-circle-fill text-indigo-500"></i> Transit Notification Sent' : 
+                    '<i class="bi bi-broadcast"></i> Mark arrival to notify client';
+            } else {
+                smsIndicator.innerHTML = '<i class="bi bi-check-all text-emerald-500"></i> All Notifications Delivered';
+            }
+
             document.getElementById('statusModal').classList.remove('hidden');
         };
 
-        // --- UPDATE LOGIC - ENHANCED WITH BATCH AUTO-ARCHIVING & DELIVERY MODE SMS ---
+        window.openBatchUpdate = (id) => {
+            document.getElementById('modalHeader').innerText = "Update Batch Load";
+            document.getElementById('activeUpdateId').value = id;
+            document.getElementById('activeUpdateType').value = 'batch';
+            document.getElementById('statusModal').classList.remove('hidden');
+        };
+
         window.confirmStatus = async (newStatus) => {
             const id = document.getElementById('activeUpdateId').value;
             const type = document.getElementById('activeUpdateType').value;
-            const updateData = { status: newStatus };
-            if(newStatus.toLowerCase().includes('arrived')) updateData.deliveredAt = Date.now();
+            const notifiedT = document.getElementById('activeNotifiedTransit').value === 'true';
+            const notifiedA = document.getElementById('activeNotifiedArrived').value === 'true';
+            
+            const updateData = { 
+                status: newStatus,
+                notified_transit: notifiedT,
+                notified_arrived: notifiedA
+            }; 
+            
+            let shouldSendSms = false;
+            const s = newStatus.toLowerCase();
+
+            // Stage 1 Logic: In Transit
+            if (s.includes('transit') && !notifiedT) {
+                updateData.notified_transit = true;
+                shouldSendSms = true;
+            }
+            
+            // Final Stage Logic: Arrived
+            if (s.includes('arrived')) {
+                updateData.deliveredAt = Date.now();
+                if (!notifiedA) {
+                    updateData.notified_arrived = true;
+                    shouldSendSms = true;
+                }
+            }
 
             closeModal();
             showToast("Syncing Database...", "success");
@@ -888,56 +1053,193 @@
                     const dbBatch = db.batch();
                     dbBatch.update(batchRef, updateData);
 
-                    batchRecord.packageIds.forEach(pkgId => {
-                        const pkgRef = db.collection(`artifacts/${CONFIG.appId}/public/data/logistics_packages`).doc(pkgId);
-                        dbBatch.update(pkgRef, updateData);
-                        const pkg = allWaybills.find(w => w.id === pkgId);
-                        if(pkg) sendInternalSMS(pkg.recipientPhone, newStatus, pkg.waybillId, pkg.customerName, pkg.deliveryMode || 'Land', true);
-                    });
+                    // If marking as arrived, update vehicle status back to IDLE
+                    if (s.includes('arrived') && batchRecord?.vehicleTag) {
+                        const vehicle = allVehicles.find(v => v.tagName === batchRecord.vehicleTag);
+                        if (vehicle) {
+                            const vehicleRef = db.collection(`artifacts/${CONFIG.appId}/public/data/fleet_vehicles`).doc(vehicle.id);
+                            dbBatch.update(vehicleRef, { 
+                                status: 'IDLE',
+                                currentBatchId: null,
+                                lastCompleted: Date.now()
+                            });
+                        }
+                    }
+
+                    if (batchRecord?.packageIds) {
+                        batchRecord.packageIds.forEach(pkgId => {
+                            const pkg = allWaybills.find(w => w.id === pkgId);
+                            if(pkg) {
+                                const pkgUpdate = { status: newStatus };
+                                let pkgSms = false;
+                                
+                                if (s.includes('transit') && !pkg.notified_transit) {
+                                    pkgUpdate.notified_transit = true;
+                                    pkgSms = true;
+                                }
+                                if (s.includes('arrived')) {
+                                    pkgUpdate.deliveredAt = Date.now();
+                                    if (!pkg.notified_arrived) {
+                                        pkgUpdate.notified_arrived = true;
+                                        pkgSms = true;
+                                    }
+                                }
+                                
+                                if (pkgSms) {
+                                    sendInternalSMS(pkg.recipientPhone, newStatus, pkg.waybillId, pkg.customerName, true);
+                                }
+                                
+                                const pkgRef = db.collection(`artifacts/${CONFIG.appId}/public/data/logistics_packages`).doc(pkgId);
+                                dbBatch.update(pkgRef, pkgUpdate);
+                            }
+                        });
+                    }
                     await dbBatch.commit();
 
                 } else {
                     await db.collection(`artifacts/${CONFIG.appId}/public/data/logistics_packages`).doc(id).update(updateData);
-                    const mode = document.getElementById('activeDeliveryMode').value;
-                    sendInternalSMS(document.getElementById('activeUpdatePhone').value, newStatus, document.getElementById('activeWaybillId').value, document.getElementById('activeCustomerName').value, mode);
+                    if (shouldSendSms) {
+                        sendInternalSMS(
+                            document.getElementById('activeUpdatePhone').value, 
+                            newStatus, 
+                            document.getElementById('activeWaybillId').value, 
+                            document.getElementById('activeCustomerName').value
+                        );
+                    }
                 }
                 showToast("Ledger Updated Successfully", "success");
             } catch(e) { 
                 showToast("Sync Failure", "warning");
+                console.error(e);
             }
         };
 
-        // ENHANCED SMS FUNCTION WITH DELIVERY MODE SUPPORT - UPDATED FROM SECOND CODE
-        async function sendInternalSMS(phone, status, waybill, name, mode, isBulk = false) {
+        // --- SMS FUNCTION ---
+        async function sendInternalSMS(phone, status, waybill, name, isBulk = false) {
             let message = ""; 
             const s = status.toLowerCase();
-            const transportType = mode === 'Air' ? 'cargo aircraft' : (mode === 'Sea' ? 'shipping vessel' : 'delivery vehicle');
-            const hubType = mode === 'Air' ? 'airport hub' : (mode === 'Sea' ? 'port terminal' : 'warehouse');
-
-            if (s.includes("received")) {
-                message = `Hello ${name}, we have received your package (${waybill}). It is being prepared for ${mode.toLowerCase()} dispatch. Track live on our portal www.prolyfiq.store/tracking`;
-            } else if (s.includes("set off")) {
-                message = `Hello ${name}, your package ${waybill} is on the move! The ${transportType} has set off from the ${hubType}. Track live on our portal www.prolyfiq.store/tracking`;
-            } else if (s.includes("transit")) {
-                message = `Hello ${name}, a quick update on waybill ${waybill}. Your package is currently in ${mode.toLowerCase()} transit to the destination. Track live on our portal www.prolyfiq.store/tracking`;
+            
+            if (s.includes("transit")) {
+                message = `Hello ${name}, your package (${waybill}) is officially in transit! Our delivery vehicle is on-route to your destination. Track live on our portal.`;
             } else if (s.includes("arrived")) {
-                message = `Hello ${name}, great news! Your package (${waybill}) has arrived at the destination. Please be ready for pickup/delivery.`;
+                message = `Hello ${name}, great news! Your package (${waybill}) has arrived at the destination node. Please be ready for pickup or local delivery.`;
+            } else if (s.includes("received")) {
+                message = `Hello ${name}, we have received your package (${waybill}). It is being prepared for dispatch. Track live on our portal.`;
             } else {
-                message = `Hello ${name}, status updated for waybill ${waybill}: [${status}]. Track on our portal www.prolyfiq.store/tracking`;
+                message = `Hello ${name}, waybill ${waybill} update: ${status}. Track on our portal.`;
             }
             
             try {
-                const response = await fetch('/api/send-sms', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ phone, message }) });
+                const response = await fetch('/api/send-sms', { 
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'application/json' }, 
+                    body: JSON.stringify({ phone, message }) 
+                });
                 if(!isBulk) {
                     const result = await response.json();
                     if(!result.success) showToast("SMS Gateway Rejected Number", "warning");
-                    else showToast("Ledger Synced & SMS Sent", 'success');
                 }
             } catch (e) { 
-                if(!isBulk) showToast("SMS Offline", 'warning'); 
+                if(!isBulk) showToast("SMS Gateway Offline", 'warning'); 
             }
         }
 
+        // --- CORE ACTIONS ---
+        window.createPackage = async (e) => {
+            e.preventDefault();
+            const phone = document.getElementById('custPhone').value;
+            const errorLabel = document.getElementById('phoneError');
+            const submitBtn = document.getElementById('submitBtn');
+            const phoneInput = document.getElementById('custPhone');
+
+            // Validate phone before submission
+            if (!validateGhanaPhone(phone)) {
+                errorLabel.classList.add('visible');
+                phoneInput.classList.add('phone-input-error');
+                showToast("Identity Error: Phone Number Format Invalid", "warning");
+                return;
+            }
+
+            const waybillId = "WB-" + Math.floor(10000000 + Math.random() * 90000000);
+            submitBtn.disabled = true;
+            try {
+                await db.collection(`artifacts/${CONFIG.appId}/public/data/logistics_packages`).add({
+                    waybillId, 
+                    customerName: document.getElementById('custName').value.trim(),
+                    recipientPhone: phone.trim(),
+                    origin: document.getElementById('origin').value.trim(),
+                    destination: document.getElementById('destination').value.trim(),
+                    status: 'Registered', 
+                    timestamp: Date.now(),
+                    notified_transit: false,
+                    notified_arrived: false
+                });
+                showToast(`Waybill ${waybillId} Registered`, 'success');
+                document.getElementById('waybillForm').reset();
+                errorLabel.classList.remove('visible');
+                phoneInput.classList.remove('phone-input-error');
+            } catch (err) { 
+                showToast("Silo Storage Error", "warning");
+                console.error(err);
+            } finally { 
+                submitBtn.disabled = false; 
+            }
+        };
+
+        // --- FLEET MANAGEMENT FUNCTIONS ---
+        window.openFleetModal = () => document.getElementById('fleetModal').classList.remove('hidden');
+        window.closeFleetModal = () => document.getElementById('fleetModal').classList.add('hidden');
+        
+        window.registerVehicle = async (e) => {
+            e.preventDefault();
+            const tag = document.getElementById('vehicleTag').value.trim().toUpperCase();
+            const btn = document.getElementById('vehicleSubmitBtn');
+            
+            if (!tag) return showToast("Enter vehicle tag", "warning");
+            
+            btn.disabled = true;
+            try { 
+                await db.collection(`artifacts/${CONFIG.appId}/public/data/fleet_vehicles`).add({ 
+                    tagName: tag, 
+                    timestamp: Date.now(), 
+                    status: 'IDLE' 
+                }); 
+                showToast(`Vehicle ${tag} registered`, 'success'); 
+                document.getElementById('vehicleForm').reset(); 
+            } 
+            catch(e) { 
+                showToast("Fleet access denied", "warning"); 
+                console.error(e);
+            } 
+            finally { 
+                btn.disabled = false; 
+            }
+        };
+
+        function renderFleetList() {
+            const list = document.getElementById('fleetList');
+            if (!list) return;
+            
+            if (allVehicles.length === 0) { 
+                list.innerHTML = '<p class="text-[10px] text-slate-400 text-center uppercase font-bold py-8 tracking-widest italic">Empty fleet silo</p>'; 
+                return; 
+            }
+            
+            list.innerHTML = allVehicles.map(v => {
+                // Determine status badge color
+                let statusColor = 'bg-slate-100';
+                if (v.status === 'ASSIGNED') statusColor = 'bg-blue-50 text-blue-600';
+                if (v.status === 'IN_TRANSIT') statusColor = 'bg-indigo-50 text-indigo-600';
+                
+                return `
+                <div class="flex justify-between items-center bg-white p-3 rounded-xl border shadow-sm">
+                    <p class="font-black text-xs text-slate-900 mb-0">${v.tagName}</p>
+                    <span class="badge ${statusColor} rounded-pill text-[9px] font-black px-3 py-1 border">${v.status || 'IDLE'}</span>
+                </div>`;
+            }).join('');
+        }
+
+        // --- HELPERS ---
         function getStatusStyle(s) {
             const status = (s || "").toLowerCase();
             if(status.includes('arrived')) return 'bg-emerald-100 text-emerald-700';
@@ -947,7 +1249,7 @@
         }
 
         window.prevPage = () => { if(currentPage > 1) { currentPage--; renderLedger(); } };
-        window.nextPage = () => { if(currentPage < Math.ceil(allWaybills.length/recordsPerPage)) { currentPage++; renderLedger(); } };
+        window.nextPage = () => { currentPage++; renderLedger(); };
         window.handleFilter = () => { currentPage = 1; renderLedger(); };
         window.closeModal = () => document.getElementById('statusModal').classList.add('hidden');
         window.closeBatchModal = () => document.getElementById('batchModal').classList.add('hidden');
@@ -973,9 +1275,10 @@
         }
 
         function updateStats() {
-            document.getElementById('statActive').innerText = allWaybills.filter(w => !w.status.toLowerCase().includes('arrived')).length;
-            document.getElementById('statTransit').innerText = allWaybills.filter(w => w.status.toLowerCase().includes('transit')).length;
-            document.getElementById('statDelivered').innerText = allWaybills.filter(w => w.status.toLowerCase().includes('arrived')).length;
+            document.getElementById('statActive').innerText = allWaybills.filter(w => !w.status?.toLowerCase().includes('arrived')).length;
+            document.getElementById('statTransit').innerText = allWaybills.filter(w => w.status?.toLowerCase().includes('transit')).length;
+            document.getElementById('statDelivered').innerText = allWaybills.filter(w => w.status?.toLowerCase().includes('arrived')).length;
+            document.getElementById('statFleet').innerText = allVehicles.length;
         }
 
         window.onload = runSecurityHandshake;
