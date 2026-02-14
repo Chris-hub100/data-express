@@ -2,6 +2,7 @@ from flask import Flask, render_template, request, jsonify, redirect
 import requests
 import os
 import random
+import time 
 import json
 import datetime
 import firebase_admin
@@ -215,7 +216,7 @@ def trigger_hubtel_sms():
 def start_delivery_session():
     """ 
     Triggered when a driver selects a vehicle and presses 'Start' 
-    Path: artifacts/{appId}/public/data/delivery_sessions/{sessionId}
+    FIX: Replaced firestore.SERVER_TIMESTAMP ID generation with native time.time()
     """
     try:
         data = request.json
@@ -226,12 +227,16 @@ def start_delivery_session():
         if not app_id or not vehicle_tag:
             return jsonify({"success": False, "error": "Incomplete Handshake"}), 400
 
-        session_id = f"SES-{int(firestore.SERVER_TIMESTAMP.timestamp() * 1000)}"
+        # NATIVE RESOLUTION: Use server time for immediate ID generation
+        session_id = f"SES-{int(time.time() * 1000)}"
+        
+        print(f"[Handshake] Node: {app_id} | Initializing Session: {session_id} for Asset: {vehicle_tag}")
+
         session_ref = db.collection('artifacts').document(app_id)\
                         .collection('public').document('data')\
                         .collection('delivery_sessions').document(session_id)
 
-        # 1. Create the session
+        # 1. Create the session (Sentinel used ONLY for DB values, not IDs)
         session_ref.set({
             "id": session_id,
             "vehicleTag": vehicle_tag,
@@ -252,14 +257,12 @@ def start_delivery_session():
 
         return jsonify({"success": True, "sessionId": session_id}), 200
     except Exception as e:
+        print(f"[CRITICAL ERROR] session/start crash: {str(e)}")
         return jsonify({"success": False, "error": str(e)}), 500
 
 @app.route('/api/driver/telemetry', methods=['POST'])
 def stream_gps():
-    """ 
-    The background 'Pulse' of the native app. 
-    Logs coordinates every 3-5 mins into a sub-collection.
-    """
+    """ Logs coordinates into a sub-collection for the Live Map """
     try:
         data = request.json
         app_id = data.get('appId')
@@ -270,7 +273,6 @@ def stream_gps():
         if not all([app_id, session_id, lat, lng]):
             return jsonify({"success": False, "error": "Incomplete Telemetry"}), 400
 
-        # Path: delivery_sessions/{id}/location_logs/{auto-id}
         log_ref = db.collection('artifacts').document(app_id)\
                     .collection('public').document('data')\
                     .collection('delivery_sessions').document(session_id)\
@@ -282,7 +284,7 @@ def stream_gps():
             "timestamp": firestore.SERVER_TIMESTAMP
         })
 
-        # Update heartbeat on parent session for 'Signal Available' logic
+        # Keep parent heartbeat updated
         db.collection('artifacts').document(app_id)\
           .collection('public').document('data')\
           .collection('delivery_sessions').document(session_id)\
@@ -294,7 +296,7 @@ def stream_gps():
 
 @app.route('/api/driver/fault', methods=['POST'])
 def report_trip_fault():
-    """ Instantly flags the session as delayed/faulty """
+    """ Flags a session for immediate Admin attention """
     try:
         data = request.json
         app_id = data.get('appId')
@@ -317,14 +319,13 @@ def report_trip_fault():
 
 @app.route('/api/driver/session/stop', methods=['POST'])
 def end_delivery_session():
-    """ Ends session and releases vehicle back to IDLE """
+    """ Archives the session and releases the vehicle back to IDLE """
     try:
         data = request.json
         app_id = data.get('appId')
         session_id = data.get('sessionId')
         vehicle_tag = data.get('vehicleTag')
 
-        # 1. Archive the Session
         db.collection('artifacts').document(app_id)\
           .collection('public').document('data')\
           .collection('delivery_sessions').document(session_id)\
@@ -333,7 +334,6 @@ def end_delivery_session():
               "endTime": firestore.SERVER_TIMESTAMP
           })
 
-        # 2. Release Vehicle
         vehicle_query = db.collection('artifacts').document(app_id)\
                           .collection('public').document('data')\
                           .collection('fleet_vehicles')\
