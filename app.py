@@ -11,184 +11,81 @@ from firebase_admin import credentials, firestore, initialize_app
 from datetime import date, timedelta
 from dotenv import load_dotenv
 
+# Load environment variables
 load_dotenv(override=True)
 
 app = Flask(__name__)
+
+# --- BRANDING REDIRECT ENGINE ---
 @app.before_request
 def handle_branding_redirect():
-    # Capture the host the user is trying to reach
     host = request.host.lower()
-    
-    # Check if they are using the legacy DataExpress address
-    # We include 'www' to cover all bases
     legacy_domains = ['dataexpress.store', 'www.dataexpress.store']
-    
     if host in legacy_domains:
-        # Construct the new ProlyfiQ URL while keeping the rest of the path
-        # (e.g., /marketplace or /login) intact
         new_url = request.url.replace(request.host, 'prolyfiq.store', 1)
-        
-        # 301 is a 'Permanent Redirect' - best for SEO and trust
         return redirect(new_url, code=301)
 
-# --- CONFIGURATION ---
-# Use 'os.environ.get' for safety in production
+# --- SECURE CREDENTIALS & CONFIGURATION ---
+# Restored: Paystack Secret Key
 PAYSTACK_SECRET_KEY = "sk_test_205609e95584b8704c90e2c8c72b6f1dbcee60db"
 
-# --- SECURE CREDENTIALS (Set these in Render/Local .env) ---
+# Hubtel Infrastructure
 HUBTEL_CLIENT_ID = os.environ.get('HUBTEL_CLIENT_ID', '')
 HUBTEL_CLIENT_SECRET = os.environ.get('HUBTEL_CLIENT_SECRET', '')
-HUBTEL_SENDER_ID = os.environ.get('HUBTEL_SENDER_ID', '')
+HUBTEL_SENDER_ID = os.environ.get('HUBTEL_SENDER_ID', 'Ledgehold')
 
-# --- HUBTEL COMPLIANCE SWITCH ---
-# Set to TRUE while applying for Hubtel. 
-# Set to FALSE once approved to unlock Movies & Vouchers.
-COMPLIANCE_MODE = False
-
-def get_firebase_context():
-    return {
-        "__app_id": os.environ.get("__app_id", "ledgehold-ghana"),
-        "__firebase_config": os.environ.get("__firebase_config", "{}")
-    }
-
-# --- SECURE ADMIN CREDENTIALS ---
-# Pulled directly from your .env file
-# Logic: Use environment variables, with no unsafe fallbacks.
+# Admin Access
 ADMIN_ID = os.environ.get("ADMIN_ID")
 ADMIN_PIN = os.environ.get("ADMIN_PIN")
 
+# Compliance & Entity Logic
+COMPLIANCE_MODE = False
+# Restored: Global APP_ID definition
+APP_ID = os.getenv('__app_id', 'ledgehold-ghana')
+
+# --- FIREBASE INFRASTRUCTURE HANDSHAKE ---
 def get_firebase_context():
-    """Retrieves standard Ledgehold context from .env"""
+    """Consolidated context provider for frontend templates"""
     return {
-        "__app_id": os.environ.get("__app_id", "ledgehold-ghana"),
+        "__app_id": APP_ID,
         "__firebase_config": os.environ.get("__firebase_config", "{}"),
-        "IMGBB_API_KEY": os.environ.get("IMGBB_API_KEY", "")
+        "IMGBB_API_KEY": os.environ.get("IMGBB_API_KEY", ""),
+        "compliance_mode": COMPLIANCE_MODE
     }
 
-# LEDGEHOLD SECURITY PATHS
-# 1. Production Path (Render Secret File)
-prod_cred_path = "/etc/secrets/service-account.json"
-# 2. Local Path (Your computer)
-local_cred_path = "service-account.json"
-
-if os.path.exists(prod_cred_path):
-    # We are on the Render Server
-    cred = credentials.Certificate(prod_cred_path)
-    print("Security Protocol: Loaded Production Credentials")
-elif os.path.exists(local_cred_path):
-    # We are on Localhost
-    cred = credentials.Certificate(local_cred_path)
-    print("Security Protocol: Loaded Local Credentials")
-else:
-    raise FileNotFoundError("Critical Security Error: Firebase Credentials not found.")
-
-initialize_app(cred)
-
+# Initialization Safety Guard (Rule: Do not initialize multiple apps)
 if not firebase_admin._apps:
-    try:
-        # Ensure 'service-account.json' is in your folder and named in .env
-        key_path = os.getenv('SERVICE_ACCOUNT_PATH', 'service-account.json')
-        
-        if os.path.exists(key_path):
-            cred = credentials.Certificate(key_path)
-            firebase_admin.initialize_app(cred)
-            print(f"Ledgehold System: Backend Node Secure via {key_path}")
-        else:
-            # Fallback for production or default environments
-            firebase_admin.initialize_app()
-            print("Ledgehold System: Backend Node Secure via Default credentials")
-    except Exception as e:
-        print(f"CRITICAL AUTH ERROR: {e}")
+    prod_cred_path = "/etc/secrets/service-account.json"
+    local_cred_path = "service-account.json"
 
-# Database Hook
+    if os.path.exists(prod_cred_path):
+        cred = credentials.Certificate(prod_cred_path)
+        print("Security Protocol: Production Node Active")
+    elif os.path.exists(local_cred_path):
+        cred = credentials.Certificate(local_cred_path)
+        print("Security Protocol: Local Node Active")
+    else:
+        cred = None
+        print("Warning: No service-account.json found. Database operations will use default/environment creds.")
+
+    if cred:
+        initialize_app(cred)
+    else:
+        initialize_app()
+
 db = firestore.client()
-# Get the app_id from your .env (e.g., ledgehold_)
-APP_ID = os.getenv('__app_id', 'ledgehold-essikado-v1')
 
-# --- CONTEXT PROCESSOR (NEW ADDITION FROM SECOND CODE) ---
-# This makes 'compliance_mode' available in ALL templates automatically
-# Now you can use {{ compliance_mode }} in any template without passing it manually
+# --- CONTEXT PROCESSOR ---
 @app.context_processor
-def inject_compliance_status():
+def inject_globals():
     return dict(compliance_mode=COMPLIANCE_MODE)
 
-
-@app.route('/')
-def home():
-    # 1. Existing QR Code Logic
-    source = request.args.get('ref')
-    welcome_msg = None
-    welcome_type = "info"
-
-    if source == 'front':
-        welcome_msg = "You just wasted your time and your data scanning this. Anyway, to help cover for your loss check out some of our amazing deals."
-        welcome_type = "success"
-    elif source == 'back':
-        welcome_msg = "Nice catch! They say curiosity kills the cat but this time it rewards it. Go explore your rewards."
-        welcome_type = "primary"
-    elif source == 'tshirt':
-        welcome_msg = "Hey Scholar! 👋 Check out our Student Specials below."
-        welcome_type = "primary"
-
-    # 2. Food Run Logic (Pass this to home.html if you want a 'Live' badge)
-    today_idx = datetime.datetime.now().weekday() # 0=Mon, 4=Fri, 6=Sun
-    food_is_active = today_idx >= 4
-
-    return render_template('home.html', 
-                         welcome_msg=welcome_msg, 
-                         welcome_type=welcome_type,
-                         food_active=food_is_active) # You can use {{ food_active }} in home.html now
-
-@app.route('/healthz')
-def health_check():
-    return "OK", 200
-
-@app.route('/admin-auth', methods=['POST'])
-def admin_auth():
-    """DPA COMPLIANT SERVER-SIDE HANDSHAKE"""
-    data = request.json
-    client_id = data.get('id')
-    client_pin = data.get('pin')
-
-    if not ADMIN_ID or not ADMIN_PIN:
-        return jsonify({"success": False, "message": "System Error: Admin credentials not configured"}), 500
-
-    if client_id == ADMIN_ID and client_pin == ADMIN_PIN:
-        return jsonify({"success": True})
-    else:
-        return jsonify({"success": False, "message": "Invalid Command Credentials"}), 401
-
-@app.route('/admin_controls')
-def admin_controls():
-    """
-    The Command Center Entry Point.
-    We pass the Firebase context so the Tabbed Dashboard can:
-    1. Synchronize with the Firestore DPA Registry (for Revocations).
-    2. Maintain the Ledgehold Security Standard.
-    """
-    return render_template('admin.html', **get_firebase_context())
-
-@app.route('/api/send-sms', methods=['POST'])
-def trigger_hubtel_sms():
-    """
-    Acts as an encrypted bridge between the Browser and Hubtel.
-    This prevents CORS errors and keeps your API keys hidden.
-    """
+# --- UTILITIES ---
+def trigger_internal_sms(phone, message):
+    """Encapsulated SMS Relay logic for backend use"""
+    if not phone or not message: return
     try:
-        data = request.json
-        phone = data.get('phone')
-        message = data.get('message')
-
-        if not phone or not message:
-            return jsonify({"success": False, "error": "Missing phone or message"}), 400
-
-        # Clean phone to 233 format
-        clean_phone = ''.join(filter(str.isdigit, phone))
-        target = '233' + clean_phone[1:] if clean_phone.startswith('0') else clean_phone
-        if not target.startswith('233'): target = '233' + target
-
-        # Hubtel v1 SMS Endpoint
-        url = "https://smsc.hubtel.com/v1/messages/send"
+        target = '233' + re.sub(r'\D', '', str(phone))[-9:]
         params = {
             "clientid": HUBTEL_CLIENT_ID,
             "clientsecret": HUBTEL_CLIENT_SECRET,
@@ -196,63 +93,67 @@ def trigger_hubtel_sms():
             "to": target,
             "content": message
         }
-
-        response = requests.get(url, params=params, timeout=10)
-        
-        # Hubtel returns 200/201 if credits are sufficient and request is valid
-        if response.status_code in [200, 201]:
-            return jsonify({"success": True}), 200
-        else:
-            # Return failure so the frontend can notify the admin
-            return jsonify({
-                "success": False, 
-                "error": "SMS Gateway Refused", 
-                "details": response.text
-            }), 200 # Return 200 to ensure the JSON is parsed, but with success: false
-
-    except Exception as e:
-        return jsonify({"success": False, "error": str(e)}), 500
-    
-def trigger_internal_sms(phone, message):
-    try:
-        payload = {"phone": phone, "message": message}
-        # In internal logic, we call our own endpoint or use the direct logic
-        # For simplicity in this relay, we assume the environment has HUBTEL keys
-        params = {
-            "clientid": os.environ.get('HUBTEL_CLIENT_ID'),
-            "clientsecret": os.environ.get('HUBTEL_CLIENT_SECRET'),
-            "from": "Ledgehold",
-            "to": '233' + re.sub(r'\D', '', str(phone))[-9:],
-            "content": message
-        }
         requests.get("https://smsc.hubtel.com/v1/messages/send", params=params, timeout=5)
-    except:
-        print(f"[SMS SILENT FAIL] Could not notify {phone}")
+    except Exception as e:
+        print(f"[SMS FAIL] {phone}: {str(e)}")
+
+# --- ROUTES ---
+
+@app.route('/')
+def home():
+    source = request.args.get('ref')
+    welcome_msg = None
+    welcome_type = "info"
+
+    if source == 'front':
+        welcome_msg = "Curiosity rewarded! Explore our student specials."
+        welcome_type = "success"
+    elif source == 'back' or source == 'tshirt':
+        welcome_msg = "Hey Scholar! 👋 Check out our Student Specials below."
+        welcome_type = "primary"
+
+    food_is_active = datetime.datetime.now().weekday() >= 4
+    return render_template('home.html', 
+                         welcome_msg=welcome_msg, 
+                         welcome_type=welcome_type,
+                         food_active=food_is_active)
+
+@app.route('/healthz')
+def health_check():
+    return "OK", 200
+
+@app.route('/admin-auth', methods=['POST'])
+def admin_auth():
+    data = request.json
+    if data.get('id') == ADMIN_ID and data.get('pin') == ADMIN_PIN:
+        return jsonify({"success": True})
+    return jsonify({"success": False, "message": "Unauthorized"}), 401
+
+@app.route('/admin_controls')
+def admin_controls():
+    return render_template('admin.html', **get_firebase_context())
+
+@app.route('/api/send-sms', methods=['POST'])
+def api_send_sms():
+    data = request.json
+    trigger_internal_sms(data.get('phone'), data.get('message'))
+    return jsonify({"success": True}), 200
 
 # --- DRIVER INTERFACE API ---
 
 @app.route('/api/driver/session/start', methods=['POST'])
 def start_delivery_session():
-    """ 
-    STATION 1: INITIALIZE TRANSIT
-    FIX: Now cascades status to Batch and all individual Waybills.
-    """
+    """STAGE 1: INITIALIZE TRANSIT & CASCADE STATUS"""
     try:
         data = request.json
-        app_id = data.get('appId')
-        vehicle_tag = data.get('vehicleTag')
-        
+        app_id, vehicle_tag = data.get('appId'), data.get('vehicleTag')
         session_id = f"SES-{int(time.time() * 1000)}"
         
-        # 1. Create Telemetry Session
-        db.collection('artifacts').document(app_id)\
-          .collection('public').document('data')\
+        # 1. Create Session
+        db.collection('artifacts').document(app_id).collection('public').document('data')\
           .collection('delivery_sessions').document(session_id).set({
-            "id": session_id,
-            "vehicleTag": vehicle_tag,
-            "status": "ACTIVE",
-            "startTime": firestore.SERVER_TIMESTAMP,
-            "lastUpdated": firestore.SERVER_TIMESTAMP
+            "id": session_id, "vehicleTag": vehicle_tag, "status": "ACTIVE",
+            "startTime": firestore.SERVER_TIMESTAMP, "lastUpdated": firestore.SERVER_TIMESTAMP
         })
 
         # 2. Lock Vehicle
@@ -261,29 +162,23 @@ def start_delivery_session():
         if veh_snap:
             veh_snap[0].reference.update({"status": "IN-TRANSIT"})
 
-        # 3. CASCADING UPDATE: Find Batch & Waybills
+        # 3. CASCADE: Update Batch & Waybills
         batch_ref = db.collection('artifacts').document(app_id).collection('public').document('data').collection('logistics_batches')
-        # Look for the batch currently assigned to this vehicle that hasn't started yet
         batch_snap = batch_ref.where('vehicleTag', '==', vehicle_tag).where('status', '==', 'Batch Created').limit(1).get()
         
         if batch_snap:
             batch_doc = batch_snap[0]
-            pkg_ids = batch_doc.data().get('packageIds', [])
-            
-            # Update Batch to "In Transit" (Updates Ops Admin 'Batches' Tab)
+            pkg_ids = batch_doc.to_dict().get('packageIds', [])
             batch_doc.reference.update({"status": "In Transit"})
             
-            # Update every Waybill in the Batch (Updates Ops Admin 'Live Ledger' Tab)
             for p_id in pkg_ids:
                 pkg_ref = db.collection('artifacts').document(app_id).collection('public').document('data').collection('logistics_packages').document(p_id)
-                pkg_data = pkg_ref.get().data()
-                
-                pkg_ref.update({"status": "In transit"})
-                
-                # Trigger Transit SMS
-                if pkg_data:
-                    msg = f"Hello {pkg_data.get('customerName')}, your package {pkg_data.get('waybillId')} is now in transit! Our vehicle is on-route. Track live on our portal."
-                    trigger_internal_sms(pkg_data.get('recipientPhone'), msg)
+                pkg_snap = pkg_ref.get()
+                if pkg_snap.exists:
+                    p_data = pkg_snap.to_dict()
+                    pkg_ref.update({"status": "In transit"})
+                    msg = f"Hello {p_data.get('customerName')}, your package {p_data.get('waybillId')} is now in transit!"
+                    trigger_internal_sms(p_data.get('recipientPhone'), msg)
 
         return jsonify({"success": True, "sessionId": session_id}), 200
     except Exception as e:
@@ -291,111 +186,68 @@ def start_delivery_session():
 
 @app.route('/api/driver/session/stop', methods=['POST'])
 def end_delivery_session():
-    """ 
-    STATION 2: CONFIRM ARRIVAL
-    FIX: Now cascades "Arrived" status to Batch and all Waybills, clearing waybills for re-assignment.
-    """
+    """STAGE 2: CONFIRM ARRIVAL & ARCHIVE"""
     try:
         data = request.json
-        app_id = data.get('appId')
-        session_id = data.get('sessionId')
-        vehicle_tag = data.get('vehicleTag')
+        app_id, s_id, vehicle_tag = data.get('appId'), data.get('sessionId'), data.get('vehicleTag')
 
         # 1. Archive Session
-        db.collection('artifacts').document(app_id)\
-          .collection('public').document('data')\
-          .collection('delivery_sessions').document(session_id)\
-          .update({"status": "COMPLETED", "endTime": firestore.SERVER_TIMESTAMP})
+        db.collection('artifacts').document(app_id).collection('public').document('data')\
+          .collection('delivery_sessions').document(s_id).update({
+              "status": "COMPLETED", "endTime": firestore.SERVER_TIMESTAMP
+          })
 
-        # 2. Release Vehicle back to IDLE
+        # 2. Release Vehicle
         fleet_ref = db.collection('artifacts').document(app_id).collection('public').document('data').collection('fleet_vehicles')
         veh_snap = fleet_ref.where('tagName', '==', vehicle_tag).limit(1).get()
         if veh_snap:
             veh_snap[0].reference.update({"status": "IDLE", "currentBatchId": None})
 
-        # 3. CASCADING UPDATE: Neutralize Batch & Waybills
+        # 3. CASCADE: Finalize Batch & Waybills
         batch_ref = db.collection('artifacts').document(app_id).collection('public').document('data').collection('logistics_batches')
         batch_snap = batch_ref.where('vehicleTag', '==', vehicle_tag).where('status', '==', 'In Transit').limit(1).get()
         
         if batch_snap:
             batch_doc = batch_snap[0]
-            pkg_ids = batch_doc.data().get('packageIds', [])
-            
-            # Mark Batch as Arrived
             batch_doc.reference.update({"status": "Has arrived at destination"})
-            
-            # Mark all Waybills as Arrived
-            for p_id in pkg_ids:
+            for p_id in batch_doc.to_dict().get('packageIds', []):
                 pkg_ref = db.collection('artifacts').document(app_id).collection('public').document('data').collection('logistics_packages').document(p_id)
-                pkg_data = pkg_ref.get().to_dict()
-                
-                pkg_ref.update({
-                    "status": "Has arrived at destination",
-                    "deliveredAt": int(time.time() * 1000)
-                    # Note: We keep batchId on the package for audit history, 
-                    # but the Ops Admin 'Active' view filters by status != 'arrived'
-                })
-                
-                # Trigger Arrival SMS
-                if pkg_data:
-                    msg = f"Hello {pkg_data.get('customerName')}, great news! Your package {pkg_data.get('waybillId')} has arrived at the destination node. Ready for pickup!"
-                    trigger_internal_sms(pkg_data.get('recipientPhone'), msg)
+                pkg_snap = pkg_ref.get()
+                if pkg_snap.exists:
+                    p_data = pkg_snap.to_dict()
+                    pkg_ref.update({"status": "Has arrived at destination", "deliveredAt": int(time.time() * 1000)})
+                    msg = f"Hello {p_data.get('customerName')}, your package {p_data.get('waybillId')} has arrived!"
+                    trigger_internal_sms(p_data.get('recipientPhone'), msg)
 
         return jsonify({"success": True}), 200
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
+
+@app.route('/api/driver/telemetry', methods=['POST'])
+def stream_gps():
+    try:
+        data = request.json
+        app_id, s_id, lat, lng = data.get('appId'), data.get('sessionId'), data.get('lat'), data.get('lng')
+        db.collection('artifacts').document(app_id).collection('public').document('data')\
+          .collection('delivery_sessions').document(s_id).collection('location_logs').document().set({
+            "lat": lat, "lng": lng, "timestamp": firestore.SERVER_TIMESTAMP
+        })
+        db.collection('artifacts').document(app_id).collection('public').document('data')\
+          .collection('delivery_sessions').document(s_id).update({"lastUpdated": firestore.SERVER_TIMESTAMP})
+        return jsonify({"success": True}), 200
+    except Exception as e: return jsonify({"success": False, "error": str(e)}), 500
 
 @app.route('/api/driver/fault', methods=['POST'])
 def report_trip_fault():
-    """ Flags a session for immediate Admin attention """
     try:
         data = request.json
-        app_id = data.get('appId')
-        session_id = data.get('sessionId')
-        reason = data.get('reason', 'Mechanical Delay')
-
-        session_ref = db.collection('artifacts').document(app_id)\
-                        .collection('public').document('data')\
-                        .collection('delivery_sessions').document(session_id)
-
-        session_ref.update({
-            "status": "DELAY - FAULT",
-            "faultReason": reason,
+        db.collection('artifacts').document(data.get('appId')).collection('public').document('data')\
+          .collection('delivery_sessions').document(data.get('sessionId')).update({
+            "status": "DELAY - FAULT", "faultReason": data.get('reason', 'Mechanical Delay'),
             "faultTimestamp": firestore.SERVER_TIMESTAMP
         })
-
         return jsonify({"success": True}), 200
-    except Exception as e:
-        return jsonify({"success": False, "error": str(e)}), 500
-
-@app.route('/api/driver/session/stop', methods=['POST'])
-def end_delivery_session():
-    """ Archives the session and releases the vehicle back to IDLE """
-    try:
-        data = request.json
-        app_id = data.get('appId')
-        session_id = data.get('sessionId')
-        vehicle_tag = data.get('vehicleTag')
-
-        db.collection('artifacts').document(app_id)\
-          .collection('public').document('data')\
-          .collection('delivery_sessions').document(session_id)\
-          .update({
-              "status": "COMPLETED",
-              "endTime": firestore.SERVER_TIMESTAMP
-          })
-
-        vehicle_query = db.collection('artifacts').document(app_id)\
-                          .collection('public').document('data')\
-                          .collection('fleet_vehicles')\
-                          .where('tagName', '==', vehicle_tag).limit(1).get()
-        
-        if vehicle_query:
-            vehicle_query[0].reference.update({"status": "IDLE"})
-
-        return jsonify({"success": True}), 200
-    except Exception as e:
-        return jsonify({"success": False, "error": str(e)}), 500
+    except Exception as e: return jsonify({"success": False, "error": str(e)}), 500
 
 @app.route('/api/marketplace/listings', methods=['GET'])
 def get_all_listings():
