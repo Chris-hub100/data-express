@@ -177,7 +177,7 @@ def start_delivery_session():
                 if pkg_snap.exists:
                     p_data = pkg_snap.to_dict()
                     pkg_ref.update({"status": "In transit"})
-                    msg = f"Hello {p_data.get('customerName')}, your package {p_data.get('waybillId')} is now in transit!"
+                    msg = f"Hello {p_data.get('customerName')}, your package ({p_data.get('waybillId')}) is now in transit!. Track live on our portal https://prolyfiq.store/tracking"
                     trigger_internal_sms(p_data.get('recipientPhone'), msg)
 
         return jsonify({"success": True, "sessionId": session_id}), 200
@@ -216,7 +216,7 @@ def end_delivery_session():
                 if pkg_snap.exists:
                     p_data = pkg_snap.to_dict()
                     pkg_ref.update({"status": "Has arrived at destination", "deliveredAt": int(time.time() * 1000)})
-                    msg = f"Hello {p_data.get('customerName')}, your package {p_data.get('waybillId')} has arrived!"
+                    msg = f"Hello {p_data.get('customerName')}, your package {p_data.get('waybillId')} has arrived at the destination!"
                     trigger_internal_sms(p_data.get('recipientPhone'), msg)
 
         return jsonify({"success": True}), 200
