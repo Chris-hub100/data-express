@@ -3,6 +3,7 @@ import requests
 import os
 import random
 import time 
+import re
 import json
 import datetime
 import firebase_admin
@@ -212,19 +213,41 @@ def trigger_hubtel_sms():
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
     
+def trigger_internal_sms(phone, message):
+    try:
+        payload = {"phone": phone, "message": message}
+        # In internal logic, we call our own endpoint or use the direct logic
+        # For simplicity in this relay, we assume the environment has HUBTEL keys
+        params = {
+            "clientid": os.environ.get('HUBTEL_CLIENT_ID'),
+            "clientsecret": os.environ.get('HUBTEL_CLIENT_SECRET'),
+            "from": "Ledgehold",
+            "to": '233' + re.sub(r'\D', '', str(phone))[-9:],
+            "content": message
+        }
+        requests.get("https://smsc.hubtel.com/v1/messages/send", params=params, timeout=5)
+    except:
+        print(f"[SMS SILENT FAIL] Could not notify {phone}")
+
+# --- DRIVER INTERFACE API ---
+
 @app.route('/api/driver/session/start', methods=['POST'])
 def start_delivery_session():
+    """ 
+    STATION 1: INITIALIZE TRANSIT
+    FIX: Now cascades status to Batch and all individual Waybills.
+    """
     try:
         data = request.json
         app_id = data.get('appId')
         vehicle_tag = data.get('vehicleTag')
         
-        # 1. CREATE SESSION
         session_id = f"SES-{int(time.time() * 1000)}"
-        session_ref = db.collection('artifacts').document(app_id)\
-                        .collection('public').document('data')\
-                        .collection('delivery_sessions').document(session_id)
-        session_ref.set({
+        
+        # 1. Create Telemetry Session
+        db.collection('artifacts').document(app_id)\
+          .collection('public').document('data')\
+          .collection('delivery_sessions').document(session_id).set({
             "id": session_id,
             "vehicleTag": vehicle_tag,
             "status": "ACTIVE",
@@ -232,81 +255,91 @@ def start_delivery_session():
             "lastUpdated": firestore.SERVER_TIMESTAMP
         })
 
-        # 2. UPDATE VEHICLE STATUS
+        # 2. Lock Vehicle
         fleet_ref = db.collection('artifacts').document(app_id).collection('public').document('data').collection('fleet_vehicles')
-        vehicle_query = fleet_ref.where('tagName', '==', vehicle_tag).limit(1).get()
+        veh_snap = fleet_ref.where('tagName', '==', vehicle_tag).limit(1).get()
+        if veh_snap:
+            veh_snap[0].reference.update({"status": "IN-TRANSIT"})
+
+        # 3. CASCADING UPDATE: Find Batch & Waybills
+        batch_ref = db.collection('artifacts').document(app_id).collection('public').document('data').collection('logistics_batches')
+        # Look for the batch currently assigned to this vehicle that hasn't started yet
+        batch_snap = batch_ref.where('vehicleTag', '==', vehicle_tag).where('status', '==', 'Batch Created').limit(1).get()
         
-        if vehicle_query:
-            vehicle_query[0].reference.update({"status": "IN-TRANSIT"})
-
-        # 3. AUTOMATED SMS HANDSHAKE
-        # Find the active batch for this vehicle to notify customers
-        batch_query = db.collection('artifacts').document(app_id)\
-                        .collection('public').document('data')\
-                        .collection('logistics_batches')\
-                        .where('vehicleTag', '==', vehicle_tag)\
-                        .where('status', '==', 'Batch Created').limit(1).get()
-
-        if batch_query:
-            batch_doc = batch_query[0]
-            package_ids = batch_doc.data().get('packageIds', [])
+        if batch_snap:
+            batch_doc = batch_snap[0]
+            pkg_ids = batch_doc.data().get('packageIds', [])
             
-            # Update Batch Status
+            # Update Batch to "In Transit" (Updates Ops Admin 'Batches' Tab)
             batch_doc.reference.update({"status": "In Transit"})
-
-            # Notify all associated customers
-            for pkg_id in package_ids:
-                pkg_doc = db.collection('artifacts').document(app_id)\
-                            .collection('public').document('data')\
-                            .collection('logistics_packages').document(pkg_id).get()
-                if pkg_doc.exists:
-                    p_data = pkg_doc.data()
-                    phone = p_data.get('recipientPhone')
-                    name = p_data.get('customerName')
-                    wb_id = p_data.get('waybillId')
-                    
-                    # Construct Message
-                    msg = f"Hello {name}, your package ({wb_id}) is officially in transit! Our vehicle has set off. Track live on our portal."
-                    
-                    # Relay to Hubtel
-                    requests.post(f"{request.url_root}api/send-sms", json={"phone": phone, "message": msg})
-                    
-                    # Update Package Status
-                    pkg_doc.reference.update({"status": "In transit"})
+            
+            # Update every Waybill in the Batch (Updates Ops Admin 'Live Ledger' Tab)
+            for p_id in pkg_ids:
+                pkg_ref = db.collection('artifacts').document(app_id).collection('public').document('data').collection('logistics_packages').document(p_id)
+                pkg_data = pkg_ref.get().data()
+                
+                pkg_ref.update({"status": "In transit"})
+                
+                # Trigger Transit SMS
+                if pkg_data:
+                    msg = f"Hello {pkg_data.get('customerName')}, your package {pkg_data.get('waybillId')} is now in transit! Our vehicle is on-route. Track live on our portal."
+                    trigger_internal_sms(pkg_data.get('recipientPhone'), msg)
 
         return jsonify({"success": True, "sessionId": session_id}), 200
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 
-@app.route('/api/driver/telemetry', methods=['POST'])
-def stream_gps():
-    """ Logs coordinates into a sub-collection for the Live Map """
+@app.route('/api/driver/session/stop', methods=['POST'])
+def end_delivery_session():
+    """ 
+    STATION 2: CONFIRM ARRIVAL
+    FIX: Now cascades "Arrived" status to Batch and all Waybills, clearing waybills for re-assignment.
+    """
     try:
         data = request.json
         app_id = data.get('appId')
         session_id = data.get('sessionId')
-        lat = data.get('lat')
-        lng = data.get('lng')
+        vehicle_tag = data.get('vehicleTag')
 
-        if not all([app_id, session_id, lat, lng]):
-            return jsonify({"success": False, "error": "Incomplete Telemetry"}), 400
-
-        log_ref = db.collection('artifacts').document(app_id)\
-                    .collection('public').document('data')\
-                    .collection('delivery_sessions').document(session_id)\
-                    .collection('location_logs').document()
-
-        log_ref.set({
-            "lat": lat,
-            "lng": lng,
-            "timestamp": firestore.SERVER_TIMESTAMP
-        })
-
-        # Keep parent heartbeat updated
+        # 1. Archive Session
         db.collection('artifacts').document(app_id)\
           .collection('public').document('data')\
           .collection('delivery_sessions').document(session_id)\
-          .update({"lastUpdated": firestore.SERVER_TIMESTAMP})
+          .update({"status": "COMPLETED", "endTime": firestore.SERVER_TIMESTAMP})
+
+        # 2. Release Vehicle back to IDLE
+        fleet_ref = db.collection('artifacts').document(app_id).collection('public').document('data').collection('fleet_vehicles')
+        veh_snap = fleet_ref.where('tagName', '==', vehicle_tag).limit(1).get()
+        if veh_snap:
+            veh_snap[0].reference.update({"status": "IDLE", "currentBatchId": None})
+
+        # 3. CASCADING UPDATE: Neutralize Batch & Waybills
+        batch_ref = db.collection('artifacts').document(app_id).collection('public').document('data').collection('logistics_batches')
+        batch_snap = batch_ref.where('vehicleTag', '==', vehicle_tag).where('status', '==', 'In Transit').limit(1).get()
+        
+        if batch_snap:
+            batch_doc = batch_snap[0]
+            pkg_ids = batch_doc.data().get('packageIds', [])
+            
+            # Mark Batch as Arrived
+            batch_doc.reference.update({"status": "Has arrived at destination"})
+            
+            # Mark all Waybills as Arrived
+            for p_id in pkg_ids:
+                pkg_ref = db.collection('artifacts').document(app_id).collection('public').document('data').collection('logistics_packages').document(p_id)
+                pkg_data = pkg_ref.get().to_dict()
+                
+                pkg_ref.update({
+                    "status": "Has arrived at destination",
+                    "deliveredAt": int(time.time() * 1000)
+                    # Note: We keep batchId on the package for audit history, 
+                    # but the Ops Admin 'Active' view filters by status != 'arrived'
+                })
+                
+                # Trigger Arrival SMS
+                if pkg_data:
+                    msg = f"Hello {pkg_data.get('customerName')}, great news! Your package {pkg_data.get('waybillId')} has arrived at the destination node. Ready for pickup!"
+                    trigger_internal_sms(pkg_data.get('recipientPhone'), msg)
 
         return jsonify({"success": True}), 200
     except Exception as e:
