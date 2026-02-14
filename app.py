@@ -214,50 +214,68 @@ def trigger_hubtel_sms():
     
 @app.route('/api/driver/session/start', methods=['POST'])
 def start_delivery_session():
-    """ 
-    Triggered when a driver selects a vehicle and presses 'Start' 
-    FIX: Replaced firestore.SERVER_TIMESTAMP ID generation with native time.time()
-    """
     try:
         data = request.json
         app_id = data.get('appId')
         vehicle_tag = data.get('vehicleTag')
-        driver_name = data.get('driverName', 'Verified Driver')
         
-        if not app_id or not vehicle_tag:
-            return jsonify({"success": False, "error": "Incomplete Handshake"}), 400
-
-        # NATIVE RESOLUTION: Use server time for immediate ID generation
+        # 1. CREATE SESSION
         session_id = f"SES-{int(time.time() * 1000)}"
-        
-        print(f"[Handshake] Node: {app_id} | Initializing Session: {session_id} for Asset: {vehicle_tag}")
-
         session_ref = db.collection('artifacts').document(app_id)\
                         .collection('public').document('data')\
                         .collection('delivery_sessions').document(session_id)
-
-        # 1. Create the session (Sentinel used ONLY for DB values, not IDs)
         session_ref.set({
             "id": session_id,
             "vehicleTag": vehicle_tag,
-            "driverName": driver_name,
             "status": "ACTIVE",
             "startTime": firestore.SERVER_TIMESTAMP,
             "lastUpdated": firestore.SERVER_TIMESTAMP
         })
 
-        # 2. Update Vehicle status in the Fleet Silo
-        fleet_ref = db.collection('artifacts').document(app_id)\
-                      .collection('public').document('data')\
-                      .collection('fleet_vehicles')
-        
+        # 2. UPDATE VEHICLE STATUS
+        fleet_ref = db.collection('artifacts').document(app_id).collection('public').document('data').collection('fleet_vehicles')
         vehicle_query = fleet_ref.where('tagName', '==', vehicle_tag).limit(1).get()
+        
         if vehicle_query:
             vehicle_query[0].reference.update({"status": "IN-TRANSIT"})
 
+        # 3. AUTOMATED SMS HANDSHAKE
+        # Find the active batch for this vehicle to notify customers
+        batch_query = db.collection('artifacts').document(app_id)\
+                        .collection('public').document('data')\
+                        .collection('logistics_batches')\
+                        .where('vehicleTag', '==', vehicle_tag)\
+                        .where('status', '==', 'Batch Created').limit(1).get()
+
+        if batch_query:
+            batch_doc = batch_query[0]
+            package_ids = batch_doc.data().get('packageIds', [])
+            
+            # Update Batch Status
+            batch_doc.reference.update({"status": "In Transit"})
+
+            # Notify all associated customers
+            for pkg_id in package_ids:
+                pkg_doc = db.collection('artifacts').document(app_id)\
+                            .collection('public').document('data')\
+                            .collection('logistics_packages').document(pkg_id).get()
+                if pkg_doc.exists:
+                    p_data = pkg_doc.data()
+                    phone = p_data.get('recipientPhone')
+                    name = p_data.get('customerName')
+                    wb_id = p_data.get('waybillId')
+                    
+                    # Construct Message
+                    msg = f"Hello {name}, your package ({wb_id}) is officially in transit! Our vehicle has set off. Track live on our portal."
+                    
+                    # Relay to Hubtel
+                    requests.post(f"{request.url_root}api/send-sms", json={"phone": phone, "message": msg})
+                    
+                    # Update Package Status
+                    pkg_doc.reference.update({"status": "In transit"})
+
         return jsonify({"success": True, "sessionId": session_id}), 200
     except Exception as e:
-        print(f"[CRITICAL ERROR] session/start crash: {str(e)}")
         return jsonify({"success": False, "error": str(e)}), 500
 
 @app.route('/api/driver/telemetry', methods=['POST'])
