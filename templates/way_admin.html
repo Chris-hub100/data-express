@@ -528,7 +528,8 @@
             <input type="hidden" id="activeUpdatePhone"><input type="hidden" id="activeWaybillId">
             <input type="hidden" id="activeCustomerName">
             <input type="hidden" id="activeNotifiedTransit"> 
-            <input type="hidden" id="activeNotifiedArrived"> 
+            <input type="hidden" id="activeNotifiedArrived">
+            <input type="hidden" id="activeBatchId"> <!-- Capture batch context -->
 
             <div class="space-y-3" id="statusButtonContainer">
                 <!-- 2-STAGE FLOW -->
@@ -858,7 +859,7 @@
                             <span class="status-badge mobile-status-badge ${getStatusStyle(b.status)} lg:hidden cursor-pointer" onclick="showToast('${b.status}', 'info')">VIEW</span>
                             <span class="status-badge mobile-status-badge ${getStatusStyle(b.status)} hidden lg:inline-flex">${b.status}</span>
                         </td>
-                        <td class="px-4 lg:px-6 py-5 mobile-table-cell text-right"><button onclick="openBatchUpdate('${b.id}')" class="text-blue-600 font-black text-[10px] uppercase bg-blue-50 px-4 py-2 rounded-full hover:bg-blue-100 transition-colors mobile-action-button">Update Load</button></td>
+                        <td class="px-4 lg:px-6 py-5 mobile-table-cell text-right"><button onclick="openBatchUpdate('${b.id}', '${b.batchId}')" class="text-blue-600 font-black text-[10px] uppercase bg-blue-50 px-4 py-2 rounded-full hover:bg-blue-100 transition-colors mobile-action-button">Update Load</button></td>
                     </tr>`).join('');
                 
                 updatePagination(totalPages);
@@ -943,7 +944,7 @@
                         <span class="status-badge mobile-status-badge ${getStatusStyle(item.status)} hidden lg:inline-flex">${item.status}</span>
                     </td>
                     <td class="px-4 lg:px-6 py-5 align-middle mobile-table-cell text-right">
-                        <button onclick="openSingleUpdate('${item.id}', '${item.recipientPhone}', '${item.waybillId}', '${item.customerName}', '${item.status}', ${item.notified_transit || false}, ${item.notified_arrived || false})" class="text-blue-600 font-black text-[10px] uppercase tracking-widest bg-blue-50 px-4 py-2 rounded-full hover:bg-blue-100 transition-colors mobile-action-button">Update</button>
+                        <button onclick="openSingleUpdate('${item.id}', '${item.recipientPhone}', '${item.waybillId}', '${item.customerName}', '${item.status}', ${item.notified_transit || false}, ${item.notified_arrived || false}, '${item.batchId || ''}')" class="text-blue-600 font-black text-[10px] uppercase tracking-widest bg-blue-50 px-4 py-2 rounded-full hover:bg-blue-100 transition-colors mobile-action-button">Update</button>
                     </td>
                 </tr>`).join('');
             
@@ -965,7 +966,7 @@
         }
 
         // --- STATUS MODAL LOGIC WITH 2-STAGE FLOW ---
-        window.openSingleUpdate = (id, phone, waybill, name, currentStatus, notifiedT, notifiedA) => {
+        window.openSingleUpdate = (id, phone, waybill, name, currentStatus, notifiedT, notifiedA, batchId = '') => {
             document.getElementById('modalHeader').innerText = "Update Waybill";
             document.getElementById('activeUpdateId').value = id;
             document.getElementById('activeUpdateType').value = 'single';
@@ -974,6 +975,7 @@
             document.getElementById('activeCustomerName').value = name;
             document.getElementById('activeNotifiedTransit').value = notifiedT;
             document.getElementById('activeNotifiedArrived').value = notifiedA;
+            document.getElementById('activeBatchId').value = batchId;
 
             const currentRank = getStatusRank(currentStatus);
             const smsIndicator = document.getElementById('smsStatusText');
@@ -1006,16 +1008,22 @@
             document.getElementById('statusModal').classList.remove('hidden');
         };
 
-        window.openBatchUpdate = (id) => {
+        window.openBatchUpdate = (id, batchId) => {
             document.getElementById('modalHeader').innerText = "Update Batch Load";
             document.getElementById('activeUpdateId').value = id;
             document.getElementById('activeUpdateType').value = 'batch';
+            document.getElementById('activeBatchId').value = batchId;
             document.getElementById('statusModal').classList.remove('hidden');
         };
 
+        /**
+         * UPDATED: confirmStatus - THE INSTITUTIONAL CASCADE
+         * Enhanced with batch and vehicle management logic from second code
+         */
         window.confirmStatus = async (newStatus) => {
             const id = document.getElementById('activeUpdateId').value;
             const type = document.getElementById('activeUpdateType').value;
+            const batchId = document.getElementById('activeBatchId').value;
             const notifiedT = document.getElementById('activeNotifiedTransit').value === 'true';
             const notifiedA = document.getElementById('activeNotifiedArrived').value === 'true';
             
@@ -1027,6 +1035,7 @@
             
             let shouldSendSms = false;
             const s = newStatus.toLowerCase();
+            const isArrived = s.includes('arrived');
 
             // Stage 1 Logic: In Transit
             if (s.includes('transit') && !notifiedT) {
@@ -1035,7 +1044,7 @@
             }
             
             // Final Stage Logic: Arrived
-            if (s.includes('arrived')) {
+            if (isArrived) {
                 updateData.deliveredAt = Date.now();
                 if (!notifiedA) {
                     updateData.notified_arrived = true;
@@ -1047,14 +1056,15 @@
             showToast("Syncing Database...", "success");
 
             try {
+                const dbBatch = db.batch();
+                
                 if (type === 'batch') {
                     const batchRecord = allBatches.find(b => b.id === id);
                     const batchRef = db.collection(`artifacts/${CONFIG.appId}/public/data/logistics_batches`).doc(id);
-                    const dbBatch = db.batch();
                     dbBatch.update(batchRef, updateData);
 
-                    // If marking as arrived, update vehicle status back to IDLE
-                    if (s.includes('arrived') && batchRecord?.vehicleTag) {
+                    // Enhanced cascade: If marking as arrived, update vehicle status back to IDLE
+                    if (isArrived && batchRecord?.vehicleTag) {
                         const vehicle = allVehicles.find(v => v.tagName === batchRecord.vehicleTag);
                         if (vehicle) {
                             const vehicleRef = db.collection(`artifacts/${CONFIG.appId}/public/data/fleet_vehicles`).doc(vehicle.id);
@@ -1063,6 +1073,18 @@
                                 currentBatchId: null,
                                 lastCompleted: Date.now()
                             });
+
+                            // Close Active Session if it exists
+                            const sessionSnap = await db.collection(`artifacts/${CONFIG.appId}/public/data/delivery_sessions`)
+                                                        .where('vehicleTag', '==', batchRecord.vehicleTag)
+                                                        .where('status', '==', 'ACTIVE').limit(1).get();
+                            
+                            if (!sessionSnap.empty) {
+                                dbBatch.update(sessionSnap.docs[0].ref, { 
+                                    status: "COMPLETED", 
+                                    endTime: Date.now() 
+                                });
+                            }
                         }
                     }
 
@@ -1077,7 +1099,7 @@
                                     pkgUpdate.notified_transit = true;
                                     pkgSms = true;
                                 }
-                                if (s.includes('arrived')) {
+                                if (isArrived) {
                                     pkgUpdate.deliveredAt = Date.now();
                                     if (!pkg.notified_arrived) {
                                         pkgUpdate.notified_arrived = true;
@@ -1094,19 +1116,63 @@
                             }
                         });
                     }
-                    await dbBatch.commit();
-
+                    
                 } else {
-                    await db.collection(`artifacts/${CONFIG.appId}/public/data/logistics_packages`).doc(id).update(updateData);
-                    if (shouldSendSms) {
-                        sendInternalSMS(
-                            document.getElementById('activeUpdatePhone').value, 
-                            newStatus, 
-                            document.getElementById('activeWaybillId').value, 
-                            document.getElementById('activeCustomerName').value
-                        );
+                    // Single package update
+                    const pkgRef = db.collection(`artifacts/${CONFIG.appId}/public/data/logistics_packages`).doc(id);
+                    dbBatch.update(pkgRef, updateData);
+
+                    // Enhanced cascade for single package if it's part of a batch and marking as arrived
+                    if (isArrived && batchId) {
+                        const batchRef = db.collection(`artifacts/${CONFIG.appId}/public/data/logistics_batches`).doc(batchId);
+                        const batchDoc = await batchRef.get();
+                        
+                        if (batchDoc.exists) {
+                            const bData = batchDoc.data();
+                            dbBatch.update(batchRef, { status: newStatus });
+
+                            // Check if all packages in batch are arrived, then release vehicle
+                            const batchPackages = allWaybills.filter(w => w.batchId === batchId);
+                            const allArrived = batchPackages.every(p => p.status?.toLowerCase().includes('arrived') || p.id === id);
+                            
+                            if (allArrived && bData.vehicleTag) {
+                                const vehicle = allVehicles.find(v => v.tagName === bData.vehicleTag);
+                                if (vehicle) {
+                                    const vehicleRef = db.collection(`artifacts/${CONFIG.appId}/public/data/fleet_vehicles`).doc(vehicle.id);
+                                    dbBatch.update(vehicleRef, { 
+                                        status: 'IDLE',
+                                        currentBatchId: null,
+                                        lastCompleted: Date.now()
+                                    });
+
+                                    // Close Active Session
+                                    const sessionSnap = await db.collection(`artifacts/${CONFIG.appId}/public/data/delivery_sessions`)
+                                                                .where('vehicleTag', '==', bData.vehicleTag)
+                                                                .where('status', '==', 'ACTIVE').limit(1).get();
+                                    
+                                    if (!sessionSnap.empty) {
+                                        dbBatch.update(sessionSnap.docs[0].ref, { 
+                                            status: "COMPLETED", 
+                                            endTime: Date.now() 
+                                        });
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
+
+                await dbBatch.commit();
+                
+                if (shouldSendSms && type === 'single') {
+                    sendInternalSMS(
+                        document.getElementById('activeUpdatePhone').value, 
+                        newStatus, 
+                        document.getElementById('activeWaybillId').value, 
+                        document.getElementById('activeCustomerName').value
+                    );
+                }
+                
                 showToast("Ledger Updated Successfully", "success");
             } catch(e) { 
                 showToast("Sync Failure", "warning");
