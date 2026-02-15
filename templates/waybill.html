@@ -25,7 +25,6 @@
         :root {
             --brand-primary: #3b82f6; 
             --brand-dark: #0f172a;
-            --surface-soft: #f8fafc;
             --backmarket-green: #00FF85; 
         }
 
@@ -35,10 +34,6 @@
             color: var(--brand-dark);
             scroll-behavior: smooth;
         }
-
-        .squircle { border-radius: 2rem; }
-        .soft-shadow { box-shadow: 0 20px 40px -10px rgba(0,0,0,0.08); }
-        .deep-shadow { box-shadow: 0 30px 60px -12px rgba(15, 23, 42, 0.15); }
 
         .tracker-container {
             transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
@@ -85,54 +80,21 @@
             display: none;
         }
 
-        #liveMap {
-            height: 100%;
-            width: 100%;
-            background: #f1f5f9;
-        }
+        #liveMap { height: 100%; width: 100%; background: #f1f5f9; }
 
-        .btn-brand {
-            background-color: var(--brand-dark);
-            color: white;
-            transition: all 0.3s ease;
-        }
-
-        .btn-brand:hover {
-            transform: scale(1.02);
-            filter: brightness(1.2);
-        }
-
+        .btn-brand { background-color: var(--brand-dark); color: white; transition: all 0.3s ease; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
 
-        /* MOBILE BOTTOM SHEET / SLIDER */
         @media (max-width: 1024px) {
             .info-sheet {
-                position: absolute;
-                bottom: 0;
-                left: 0;
-                right: 0;
-                background: #f8fafc; /* Slate 50 for depth */
-                border-top-left-radius: 2.5rem;
-                border-top-right-radius: 2.5rem;
-                z-index: 2000;
-                transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
-                box-shadow: 0 -10px 40px rgba(0,0,0,0.15);
-                max-height: 85vh;
-                overflow-y: auto;
+                position: absolute; bottom: 0; left: 0; right: 0;
+                background: #f8fafc; border-top-left-radius: 2.5rem; border-top-right-radius: 2.5rem;
+                z-index: 2000; transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+                box-shadow: 0 -10px 40px rgba(0,0,0,0.15); max-height: 85vh; overflow-y: auto;
             }
-            .info-sheet.minimized {
-                transform: translateY(calc(100% - 115px)); 
-            }
-            .info-sheet.expanded {
-                transform: translateY(0);
-            }
-            .sheet-handle {
-                width: 40px;
-                height: 5px;
-                background: #cbd5e1;
-                border-radius: 10px;
-                margin: 15px auto 5px auto;
-            }
+            .info-sheet.minimized { transform: translateY(calc(100% - 115px)); }
+            .info-sheet.expanded { transform: translateY(0); }
+            .sheet-handle { width: 40px; height: 5px; background: #cbd5e1; border-radius: 10px; margin: 15px auto 5px auto; }
         }
     </style>
 </head>
@@ -140,9 +102,11 @@
 
     <!-- CONFIGURATION -->
     <script>
+        const params = new URLSearchParams(window.location.search);
+        const nodeParam = params.get('node');
+
         const CONFIG = {
-            companyName: "Westruck Shipping",
-            targetNode: "swiftline-logistics", 
+            targetNode: nodeParam || "swiftline-logistics", 
             firebase: JSON.parse('{{ __firebase_config | safe if __firebase_config else "{}" }}')
         };
 
@@ -159,139 +123,106 @@
     <nav class="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-100 py-4">
         <div class="container mx-auto px-6 flex justify-between items-center">
             <div class="flex items-center gap-3">
-                <div id="brandLogo" class="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-blue-200">
+                <div class="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white shadow-lg">
                     <i class="bi bi-box-seam-fill"></i>
                 </div>
-                <span id="navBrandName" class="font-extrabold text-xl tracking-tight text-slate-900">Westruck Shipping</span>
+                <span class="font-extrabold text-xl tracking-tight text-slate-900 uppercase" id="navBrandName">Tracking Portal</span>
             </div>
-            <button class="bg-slate-100 px-5 py-2 rounded-full text-xs font-bold uppercase tracking-widest hover:bg-slate-200 transition-all">Support</button>
+            <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest" id="nodeIdentity">Node: ---</p>
         </div>
     </nav>
 
     <!-- HERO -->
-    <section class="h-screen relative overflow-hidden flex items-center justify-center" id="precision">
+    <section class="h-[60vh] lg:h-screen relative overflow-hidden flex items-center justify-center">
         <div class="absolute inset-0">
-            <img src="https://images.unsplash.com/photo-1494412519320-aa613dfb7738?q=80&w=2000&auto=format&fit=crop" class="w-full h-full object-cover grayscale" alt="Warehouse Flow">
+            <img src="https://images.unsplash.com/photo-1494412519320-aa613dfb7738?q=80&w=2000&auto=format&fit=crop" class="w-full h-full object-cover grayscale" alt="Warehouse">
             <div class="absolute inset-0 bg-blue-900/40 mix-blend-multiply"></div>
             <div class="absolute inset-0 bg-gradient-to-t from-white via-transparent to-transparent"></div>
         </div>
         <div class="relative z-10 text-center px-6">
-            <h3 class="text-6xl lg:text-9xl font-black text-white uppercase tracking-tighter mb-8 opacity-90">
-                Powered by <br/> <span class="text-blue-400">Precision.</span>
+            <h3 class="text-5xl lg:text-9xl font-black text-white uppercase tracking-tighter mb-8 opacity-90">
+                Live <span class="text-blue-400">Telemetry.</span>
             </h3>
-            <p class="text-white/70 max-w-xl mx-auto font-medium text-lg leading-relaxed">Experience institutional-grade logistics where every handoff is verified and every coordinate is precise.</p>
+            <p class="text-white/70 max-w-xl mx-auto font-medium text-lg leading-relaxed">Enter your waybill reference below to open the institutional visibility corridor.</p>
         </div>
     </section>
 
     <!-- FLOATING TRACKER -->
-    <div id="tracker" class="fixed tracker-container tracker-expanded deep-shadow flex items-center overflow-hidden">
+    <div id="tracker" class="fixed tracker-container tracker-expanded shadow-2xl flex items-center overflow-hidden">
         <div id="loaderBar" class="loader-bar"></div>
         <div class="search-content flex items-center w-full px-4 gap-3">
             <i class="bi bi-upc-scan text-slate-400 fs-5"></i>
-            <input type="text" id="waybillInput" placeholder="ENTER WAYBILL ID" class="w-full bg-transparent border-none outline-none font-bold tracking-widest text-sm uppercase placeholder:text-slate-300">
+            <input type="text" id="waybillInput" placeholder="ENTER WAYBILL ID" class="w-full bg-transparent border-none outline-none font-bold tracking-widest text-sm uppercase">
             <button id="trackBtn" onclick="handleTrack()" class="bg-blue-600 text-white px-6 py-2.5 rounded-full font-black text-[10px] uppercase tracking-widest hover:bg-blue-700 transition-all">Track</button>
         </div>
     </div>
 
-    <!-- LARGE IMMERSIVE RESULT MODAL -->
+    <!-- RESULT MODAL -->
     <div id="resultModal" class="fixed inset-0 z-[2000] hidden flex items-center justify-center p-2 lg:p-6 bg-slate-950/80 backdrop-blur-md">
         <div class="bg-white w-full max-w-[98vw] h-[95vh] lg:max-w-7xl lg:h-[85vh] rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col lg:flex-row relative">
             
-            <!-- CLOSE COMMANDS -->
-            <button onclick="closeModal()" class="absolute top-6 right-6 z-[3000] w-12 h-12 bg-white/90 backdrop-blur rounded-full flex items-center justify-center hover:bg-white shadow-xl hidden lg:flex">
+            <button onclick="closeModal()" class="absolute top-6 right-6 z-[3000] w-12 h-12 bg-white/90 backdrop-blur rounded-full items-center justify-center hover:bg-white shadow-xl hidden lg:flex">
                 <i class="bi bi-x-lg text-slate-900 fs-5"></i>
             </button>
 
-            <!-- LEFT SIDEBAR: WAYBILL INFO -->
+            <!-- LEFT: INFO -->
             <div id="infoPane" class="info-sheet lg:w-[380px] lg:h-full lg:bg-slate-50 border-r border-slate-100 flex flex-col p-6 lg:p-10 minimized">
-                
-                <!-- MOBILE SHEET HEADER -->
                 <div class="lg:hidden">
                     <div class="sheet-handle"></div>
                     <div class="flex items-center justify-between mb-4 px-2">
-                        <!-- MASKED ID BADGE: Hidden when sheet expanded -->
-                        <div id="mobileIdBadge" class="bg-white px-4 py-2 rounded-full border border-slate-200 transition-opacity duration-300">
-                             <p class="text-[8px] font-black text-slate-400 uppercase leading-none mb-1">Waybill Identification</p>
+                        <div id="mobileIdBadge" class="bg-white px-4 py-2 rounded-full border border-slate-200">
                              <h6 class="font-black text-xs tracking-widest text-slate-900" id="minimizedResID">--</h6>
                         </div>
                         <button onclick="toggleMobileSheet()" class="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-sm border">
-                            <i id="sheetToggleIcon" class="bi bi-chevron-up text-slate-400"></i>
+                            <i id="sheetToggleIcon" class="bi bi-chevron-up"></i>
                         </button>
                     </div>
                 </div>
 
                 <div id="modalDataContainer" class="flex-1 flex flex-col h-full">
                     <div class="mb-8">
-                        <div class="flex justify-between items-start mb-4">
-                            <div class="bg-blue-50 text-blue-600 px-3 py-1 rounded-full font-black text-[9px] uppercase tracking-widest border border-blue-100">Waybill Verified</div>
-                            <button onclick="closeModal()" class="lg:hidden w-8 h-8 bg-white border rounded-full flex items-center justify-center"><i class="bi bi-x"></i></button>
-                        </div>
-                        <h5 class="text-[10px] font-black text-slate-400 uppercase tracking-[3px] mb-1">Waybill Reference</h5>
+                        <div class="bg-blue-50 text-blue-600 px-3 py-1 rounded-full font-black text-[9px] uppercase tracking-widest border border-blue-100 mb-4 inline-block">Waybill Verified</div>
+                        <h5 class="text-[10px] font-black text-slate-400 uppercase tracking-[3px] mb-1">Reference</h5>
                         <h2 class="text-3xl font-black text-slate-900 tracking-tighter" id="resID">--</h2>
                     </div>
 
                     <div class="bg-white p-5 rounded-3xl border border-slate-200 shadow-sm mb-8">
-                        <div class="flex items-center justify-between mb-4">
-                            <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Live Status</p>
-                            <div id="liveBadge" class="bg-emerald-50 text-emerald-600 px-3 py-1 rounded-full font-bold text-[9px] uppercase tracking-wider border border-emerald-100 hidden animate-pulse">
-                                <i class="bi bi-broadcast me-1"></i> Live Stream
+                        <div class="flex items-center justify-between mb-2">
+                            <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</p>
+                            <div id="liveBadge" class="bg-emerald-50 text-emerald-600 px-3 py-1 rounded-full font-bold text-[9px] uppercase tracking-wider hidden animate-pulse">
+                                <i class="bi bi-broadcast"></i> Live
                             </div>
                         </div>
-                        <h4 class="text-2xl font-black text-slate-900" id="resStatus">Connecting...</h4>
+                        <h4 class="text-xl font-black text-slate-900" id="resStatus">Connecting...</h4>
                     </div>
                     
-                    <div class="space-y-8 relative flex-1 no-scrollbar overflow-y-auto pr-2 pb-10">
-                        <div class="absolute left-[19px] top-0 bottom-10 w-1 bg-slate-200 rounded-full opacity-50"></div>
-                        
-                        <div id="step-1" class="flex gap-6 relative z-10 opacity-30">
-                            <div class="step-dot w-10 h-10 rounded-full bg-slate-200 border-4 border-white flex items-center justify-center text-slate-400 shadow-sm transition-all"><i class="bi bi-check-lg"></i></div>
-                            <div><p class="font-black text-sm uppercase tracking-tight">Package Received</p><p class="text-[11px] text-slate-400 font-bold">Logistics node confirmed</p></div>
-                        </div>
-                        
-                        <div id="step-2" class="flex gap-6 relative z-10 opacity-30">
-                            <div class="step-dot w-10 h-10 rounded-full bg-slate-200 border-4 border-white flex items-center justify-center text-slate-400 shadow-sm transition-all"><i class="bi bi-truck"></i></div>
-                            <div><p class="font-black text-sm uppercase tracking-tight">In Transit</p><p class="text-[11px] text-slate-400 font-bold" id="modeDisplay">Distribution corridor</p></div>
-                        </div>
-                        
-                        <div id="step-3" class="flex gap-6 relative z-10 opacity-30">
-                            <div class="step-dot w-10 h-10 rounded-full bg-emerald-100 border-4 border-white flex items-center justify-center text-emerald-600 shadow-sm transition-all"><i class="bi bi-flag-fill"></i></div>
-                            <div><p class="font-black text-sm uppercase tracking-tight">Arrived</p><p class="text-[11px] text-emerald-600 font-bold">Destination hub reached</p></div>
-                        </div>
-                    </div>
-
-                    <div class="mt-auto pt-6 border-t border-slate-200 hidden lg:block">
-                        <button onclick="closeModal()" class="w-full btn-brand py-4 rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl">Dismiss</button>
+                    <div class="space-y-8 relative flex-1 no-scrollbar overflow-y-auto">
+                        <div id="step-1" class="flex gap-6 opacity-30"><div class="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center text-slate-400"><i class="bi bi-check-lg"></i></div><div><p class="font-black text-sm uppercase">Registered</p></div></div>
+                        <div id="step-2" class="flex gap-6 opacity-30"><div class="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center text-slate-400"><i class="bi bi-truck"></i></div><div><p class="font-black text-sm uppercase">In Transit</p></div></div>
+                        <div id="step-3" class="flex gap-6 opacity-30"><div class="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center text-slate-400"><i class="bi bi-flag-fill"></i></div><div><p class="font-black text-sm uppercase">Arrived</p></div></div>
                     </div>
                 </div>
 
                 <div id="modalNotFound" class="hidden text-center py-20">
-                    <div class="w-20 h-20 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-6"><i class="bi bi-search fs-1"></i></div>
-                    <h4 class="font-black text-slate-900 uppercase tracking-tighter">Waybill Missing</h4>
-                    <p class="text-sm text-slate-400 mt-2 font-bold px-4">The reference provided does not match any verified shipment.</p>
+                    <h4 class="font-black text-slate-900 uppercase">Not Found</h4>
+                    <p class="text-sm text-slate-400 mt-2 font-bold">Check your reference ID.</p>
                 </div>
             </div>
 
-            <!-- RIGHT SIDE: IMMERSIVE TELEMETRY -->
+            <!-- RIGHT: MAP -->
             <div class="flex-1 h-full relative">
-                <!-- MOBILE SPECIFIC CLOSE (Top Left) -->
-                <button onclick="closeModal()" class="absolute top-6 left-6 z-[3000] w-12 h-12 bg-white/90 backdrop-blur rounded-full flex items-center justify-center hover:bg-white shadow-xl border lg:hidden">
-                    <i class="bi bi-x-lg text-slate-900 fs-5"></i>
-                </button>
-
+                <button onclick="closeModal()" class="absolute top-6 left-6 z-[3000] w-12 h-12 bg-white/90 backdrop-blur rounded-full flex items-center justify-center shadow-xl border lg:hidden"><i class="bi bi-x-lg"></i></button>
                 <div id="liveMap"></div>
-                
-                <!-- Overlay Indicator -->
-                <div class="absolute bottom-32 lg:bottom-6 right-6 z-[1000] flex flex-col gap-2 animate-fade">
-                    <div class="bg-white/90 backdrop-blur p-4 rounded-3xl shadow-2xl border border-white/50 w-48 lg:w-64">
-                        <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Telemetry Status</p>
-                        <div class="flex items-center gap-3">
-                            <div class="w-3 h-3 rounded-full bg-emerald-500 animate-pulse"></div>
-                            <span class="font-black text-[10px] lg:text-sm text-slate-900 uppercase" id="signalStatus">Satellite Active</span>
+                <div class="absolute bottom-32 lg:bottom-6 right-6 z-[1000]">
+                    <div class="bg-white/90 backdrop-blur p-4 rounded-3xl shadow-2xl border border-white/50 w-48">
+                        <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Signal Status</p>
+                        <div class="flex items-center gap-2">
+                            <div class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+                            <span class="font-black text-[10px] text-slate-900 uppercase" id="signalStatus">Satellite Locked</span>
                         </div>
                     </div>
                 </div>
             </div>
-
         </div>
     </div>
 
@@ -300,176 +231,113 @@
         let isFolded = false;
         let sheetExpanded = false;
 
-        window.addEventListener('scroll', () => {
-            if (window.scrollY > 120 && !isFolded) {
-                tracker.classList.replace('tracker-expanded', 'tracker-folded');
-                isFolded = true;
-            } else if (window.scrollY <= 120 && isFolded) {
-                tracker.classList.replace('tracker-folded', 'tracker-expanded');
-                isFolded = false;
-            }
-        });
+        document.getElementById('nodeIdentity').innerText = "Node: " + CONFIG.targetNode.toUpperCase();
 
-        tracker.addEventListener('click', () => {
-            if(isFolded) { window.scrollTo({ top: 0, behavior: 'smooth' }); document.getElementById('waybillInput').focus(); }
-        });
-
-        /**
-         * MOBILE SHEET TOGGLE: Contextual ID Badge management
-         */
         function toggleMobileSheet() {
             const pane = document.getElementById('infoPane');
-            const icon = document.getElementById('sheetToggleIcon');
-            const mobileBadge = document.getElementById('mobileIdBadge');
-            
             sheetExpanded = !sheetExpanded;
-            
-            if(sheetExpanded) {
-                pane.classList.replace('minimized', 'expanded');
-                icon.classList.replace('bi-chevron-up', 'bi-chevron-down');
-                mobileBadge.style.opacity = '0'; // Disappear to prevent duplicates
-                mobileBadge.style.pointerEvents = 'none';
-            } else {
-                pane.classList.replace('expanded', 'minimized');
-                icon.classList.replace('bi-chevron-down', 'bi-chevron-up');
-                mobileBadge.style.opacity = '1'; // Show in minimized state
-                mobileBadge.style.pointerEvents = 'auto';
-            }
+            if(sheetExpanded) pane.classList.replace('minimized', 'expanded');
+            else pane.classList.replace('expanded', 'minimized');
         }
 
-        /**
-         * MAP ENGINE: Zero-OpEx Leaflet with Premium SaaS tiles
-         */
         function initMap(lat, lng) {
             if (currentMap) currentMap.remove();
-            
-            currentMap = L.map('liveMap', { zoomControl: false, attributionControl: false }).setView([lat, lng], 14);
-            
+            currentMap = L.map('liveMap', { zoomControl: false, attributionControl: false }).setView([lat, lng], 15);
             L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png').addTo(currentMap);
-
-            const customIcon = L.divIcon({
-                className: 'car-icon',
-                html: `<div style="background-color: #3b82f6; width: 18px; height: 18px; border-radius: 50%; border: 4px solid white; box-shadow: 0 0 30px rgba(59, 130, 246, 0.9);"></div>`,
-                iconSize: [18, 18],
-                iconAnchor: [9, 9]
+            const icon = L.divIcon({
+                html: `<div style="background-color: #3b82f6; width: 18px; height: 18px; border-radius: 50%; border: 4px solid white; box-shadow: 0 0 20px rgba(59, 130, 246, 0.5);"></div>`,
+                iconSize: [18, 18], iconAnchor: [9, 9]
             });
-
-            mapMarker = L.marker([lat, lng], { icon: customIcon }).addTo(currentMap);
-            setTimeout(() => currentMap.invalidateSize(), 500);
+            mapMarker = L.marker([lat, lng], { icon }).addTo(currentMap);
         }
 
         async function handleTrack() {
             const id = document.getElementById('waybillInput').value.trim().toUpperCase();
             if(!id) return;
             
-            const btn = document.getElementById('trackBtn');
-            const loader = document.getElementById('loaderBar');
-            btn.disabled = true; btn.innerText = "..."; loader.style.display = 'block';
-
+            document.getElementById('loaderBar').style.display = 'block';
             try {
                 await auth.signInAnonymously();
-                const pkgPath = `artifacts/${CONFIG.targetNode}/public/data/logistics_packages`;
-                const snapshot = await db.collection(pkgPath).where('waybillId', '==', id).get();
+                // RULE 2 COMPLIANCE: Fetch all and filter in JS memory
+                const snap = await db.collection(`artifacts/${CONFIG.targetNode}/public/data/logistics_packages`).get();
+                const pkgDoc = snap.docs.find(d => d.data().waybillId === id);
 
-                if (snapshot.empty) {
+                if (!pkgDoc) {
                     showModalError();
                 } else {
-                    const data = snapshot.docs[0].data();
+                    const data = pkgDoc.data();
                     renderModalResult(id, data);
                     if (data.batchId) syncTelemetry(data.batchId);
                 }
-            } catch (err) {
-                showModalError();
-            } finally {
-                btn.disabled = false; btn.innerText = "Track"; loader.style.display = 'none';
-            }
+            } catch (err) { console.error(err); showModalError(); }
+            finally { document.getElementById('loaderBar').style.display = 'none'; }
         }
 
         function syncTelemetry(batchId) {
-            db.collection(`artifacts/${CONFIG.targetNode}/public/data/logistics_batches`)
-              .doc(batchId).get().then(doc => {
-                  if (doc.exists) {
-                      const vehicleTag = doc.data().vehicleTag;
-                      const sessionQuery = db.collection(`artifacts/${CONFIG.targetNode}/public/data/delivery_sessions`)
-                                             .where('vehicleTag', '==', vehicleTag)
-                                             .where('status', '==', 'ACTIVE');
-                      
-                      sessionQuery.onSnapshot(snap => {
-                          if (!snap.empty) {
-                              const session = snap.docs[0].data();
-                              if (telemetryUnsubscribe) telemetryUnsubscribe();
-                              telemetryUnsubscribe = db.collection(`artifacts/${CONFIG.targetNode}/public/data/delivery_sessions`)
-                                                       .doc(session.id).collection('location_logs')
-                                                       .orderBy('timestamp', 'desc').limit(1)
-                                                       .onSnapshot(logSnap => {
-                                                           if (!logSnap.empty) {
-                                                               const latest = logSnap.docs[0].data();
-                                                               updateMap(latest.lat, latest.lng);
-                                                               document.getElementById('liveBadge').classList.remove('hidden');
-                                                               if(document.getElementById('signalStatus')) document.getElementById('signalStatus').innerText = "Signal: Optimal";
-                                                           }
-                                                       });
-                          }
-                      });
-                  }
-              });
+            // 1. Find the vehicle tag from the batch
+            db.collection(`artifacts/${CONFIG.targetNode}/public/data/logistics_batches`).doc(batchId).get().then(doc => {
+                if (!doc.exists) return;
+                const vehicleTag = doc.data().vehicleTag;
+
+                // 2. Find the ACTIVE session for this vehicle
+                db.collection(`artifacts/${CONFIG.targetNode}/public/data/delivery_sessions`).onSnapshot(snap => {
+                    const activeSession = snap.docs.find(d => d.data().vehicleTag === vehicleTag && d.data().status === 'ACTIVE');
+                    
+                    if (activeSession) {
+                        if (telemetryUnsubscribe) telemetryUnsubscribe();
+                        // 3. Stream logs for that session
+                        telemetryUnsubscribe = db.collection(`artifacts/${CONFIG.targetNode}/public/data/delivery_sessions`)
+                            .doc(activeSession.id).collection('location_logs').onSnapshot(logSnap => {
+                                const logs = logSnap.docs.map(l => l.data()).sort((a, b) => b.timestamp - a.timestamp);
+                                if (logs.length > 0) {
+                                    const latest = logs[0];
+                                    updateMap(latest.lat, latest.lng);
+                                    document.getElementById('liveBadge').classList.remove('hidden');
+                                    document.getElementById('signalStatus').innerText = "Telemetry: Optimal";
+                                }
+                            });
+                    }
+                });
+            });
         }
 
         function updateMap(lat, lng) {
-            const newPos = [lat, lng];
-            if (!currentMap) { initMap(lat, lng); } 
-            else { mapMarker.setLatLng(newPos); currentMap.panTo(newPos, { animate: true }); }
+            if (!currentMap) initMap(lat, lng);
+            else { mapMarker.setLatLng([lat, lng]); currentMap.panTo([lat, lng]); }
         }
 
         function renderModalResult(id, data) {
             document.getElementById('resultModal').classList.remove('hidden');
             document.getElementById('modalNotFound').classList.add('hidden');
             document.getElementById('modalDataContainer').classList.remove('hidden');
-            
-            // Sync IDs across states
             document.getElementById('resID').innerText = id;
             document.getElementById('minimizedResID').innerText = id;
-            
             document.getElementById('resStatus').innerText = data.status || "In Transit";
-            document.getElementById('modeDisplay').innerText = `${data.deliveryMode || 'Land'} freight corridor`;
             
-            const currentStatus = (data.status || "").toLowerCase();
-            let activeStep = 0;
-            if (currentStatus.includes('registered')) activeStep = 1;
-            if (currentStatus.includes('transit')) activeStep = 2;
-            if (currentStatus.includes('arrived')) activeStep = 3;
+            const status = (data.status || "").toLowerCase();
+            let step = 0;
+            if (status.includes('registered')) step = 1;
+            if (status.includes('transit')) step = 2;
+            if (status.includes('arrived')) step = 3;
 
             for(let i=1; i<=3; i++) {
                 const el = document.getElementById(`step-${i}`);
-                const dot = el.querySelector('.step-dot');
-                el.classList.toggle('opacity-30', i > activeStep);
-                if(i <= activeStep) {
-                    dot.classList.add('bg-blue-600', 'text-white', 'scale-110');
-                    dot.classList.remove('bg-slate-200', 'text-slate-400');
-                    if(i === 3) dot.classList.replace('bg-blue-600', 'bg-emerald-500');
-                }
+                el.classList.toggle('opacity-30', i > step);
+                if (i <= step) el.querySelector('div').classList.add('bg-blue-600', 'text-white');
             }
-            
-            if(!currentMap) initMap(5.6037, -0.1870); // Default hub
+            if(!currentMap) initMap(5.6037, -0.1870); // Default start
         }
 
         function showModalError() {
             document.getElementById('resultModal').classList.remove('hidden');
             document.getElementById('modalDataContainer').classList.add('hidden');
             document.getElementById('modalNotFound').classList.remove('hidden');
-            document.getElementById('infoPane').classList.replace('minimized', 'expanded');
-            document.getElementById('mobileIdBadge').style.opacity = '0';
         }
 
         window.closeModal = () => {
             document.getElementById('resultModal').classList.add('hidden');
-            document.getElementById('liveBadge').classList.add('hidden');
             if(telemetryUnsubscribe) telemetryUnsubscribe();
             if(currentMap) { currentMap.remove(); currentMap = null; }
-            // State reset
-            sheetExpanded = false;
-            document.getElementById('infoPane').className = "info-sheet lg:w-[380px] lg:h-full lg:bg-slate-50 border-r border-slate-100 flex flex-col p-6 lg:p-10 minimized";
-            document.getElementById('mobileIdBadge').style.opacity = '1';
         };
     </script>
 </body>
