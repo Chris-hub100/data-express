@@ -105,8 +105,9 @@
         const params = new URLSearchParams(window.location.search);
         const nodeParam = params.get('node');
 
+        // NORMALIZATION: Ensuring the portal looks at the lowercase silo to match the Driver App
         const CONFIG = {
-            targetNode: nodeParam || "swiftline-logistics", 
+            targetNode: (nodeParam || "swiftline-logistics").trim().toLowerCase(), 
             firebase: JSON.parse('{{ __firebase_config | safe if __firebase_config else "{}" }}')
         };
 
@@ -215,7 +216,7 @@
                 <div id="liveMap"></div>
                 <div class="absolute bottom-32 lg:bottom-6 right-6 z-[1000]">
                     <div class="bg-white/90 backdrop-blur p-4 rounded-3xl shadow-2xl border border-white/50 w-48">
-                        <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Signal Status</p>
+                        <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1" id="signalLabel">Signal Status</p>
                         <div class="flex items-center gap-2">
                             <div class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
                             <span class="font-black text-[10px] text-slate-900 uppercase" id="signalStatus">Satellite Locked</span>
@@ -246,7 +247,6 @@
             // INITIALIZE LEAFLET WITH OPENSTREETMAP (OSM)
             currentMap = L.map('liveMap', { zoomControl: false, attributionControl: true }).setView([lat, lng], 15);
             
-            // THE SWAP: Using Standard OSM tiles for high-fidelity identification
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             }).addTo(currentMap);
@@ -265,7 +265,6 @@
             document.getElementById('loaderBar').style.display = 'block';
             try {
                 await auth.signInAnonymously();
-                // RULE 2 COMPLIANCE: Fetch all and filter in JS memory
                 const snap = await db.collection(`artifacts/${CONFIG.targetNode}/public/data/logistics_packages`).get();
                 const pkgDoc = snap.docs.find(d => d.data().waybillId === id);
 
@@ -281,26 +280,34 @@
         }
 
         function syncTelemetry(batchId) {
-            // 1. Find the vehicle tag from the batch
             db.collection(`artifacts/${CONFIG.targetNode}/public/data/logistics_batches`).doc(batchId).get().then(doc => {
                 if (!doc.exists) return;
                 const vehicleTag = doc.data().vehicleTag;
 
-                // 2. Find the ACTIVE session for this vehicle
                 db.collection(`artifacts/${CONFIG.targetNode}/public/data/delivery_sessions`).onSnapshot(snap => {
                     const activeSession = snap.docs.find(d => d.data().vehicleTag === vehicleTag && d.data().status === 'ACTIVE');
                     
                     if (activeSession) {
                         if (telemetryUnsubscribe) telemetryUnsubscribe();
-                        // 3. Stream logs for that session
+                        
                         telemetryUnsubscribe = db.collection(`artifacts/${CONFIG.targetNode}/public/data/delivery_sessions`)
                             .doc(activeSession.id).collection('location_logs').onSnapshot(logSnap => {
-                                const logs = logSnap.docs.map(l => l.data()).sort((a, b) => b.timestamp - a.timestamp);
+                                // FIXED: Accessing .seconds property for precise mathematical sorting
+                                // This ensures rapid manual refreshes are correctly recognized as the "newest"
+                                const logs = logSnap.docs.map(l => l.data())
+                                    .filter(l => l.timestamp)
+                                    .sort((a, b) => {
+                                        const timeA = a.timestamp?.seconds || 0;
+                                        const timeB = b.timestamp?.seconds || 0;
+                                        return timeB - timeA;
+                                    });
+
                                 if (logs.length > 0) {
                                     const latest = logs[0];
                                     updateMap(latest.lat, latest.lng);
                                     document.getElementById('liveBadge').classList.remove('hidden');
-                                    document.getElementById('signalStatus').innerText = "Telemetry: Optimal";
+                                    document.getElementById('signalLabel').innerText = "Signal: " + new Date().toLocaleTimeString();
+                                    document.getElementById('signalStatus').innerText = "Verified Stream Active";
                                 }
                             });
                     }
@@ -332,7 +339,7 @@
                 el.classList.toggle('opacity-30', i > step);
                 if (i <= step) el.querySelector('div').classList.add('bg-blue-600', 'text-white');
             }
-            if(!currentMap) initMap(5.6037, -0.1870); // Default start (Accra)
+            if(!currentMap) initMap(5.6037, -0.1870); 
         }
 
         function showModalError() {
