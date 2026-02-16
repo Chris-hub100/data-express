@@ -105,7 +105,6 @@
         const params = new URLSearchParams(window.location.search);
         const nodeParam = params.get('node');
 
-        // NORMALIZATION: Ensuring the portal looks at the lowercase silo to match the Driver App
         const CONFIG = {
             targetNode: (nodeParam || "swiftline-logistics").trim().toLowerCase(), 
             firebase: JSON.parse('{{ __firebase_config | safe if __firebase_config else "{}" }}')
@@ -285,26 +284,35 @@
                 const vehicleTag = doc.data().vehicleTag;
 
                 db.collection(`artifacts/${CONFIG.targetNode}/public/data/delivery_sessions`).onSnapshot(snap => {
-                    const activeSession = snap.docs.find(d => d.data().vehicleTag === vehicleTag && d.data().status === 'ACTIVE');
+                    const activeSession = snap.docs.find(d => 
+                        d.data().vehicleTag === vehicleTag && 
+                        d.data().status === 'ACTIVE'
+                    );
                     
                     if (activeSession) {
                         if (telemetryUnsubscribe) telemetryUnsubscribe();
                         
+                        // STREAM HANDSHAKE
                         telemetryUnsubscribe = db.collection(`artifacts/${CONFIG.targetNode}/public/data/delivery_sessions`)
                             .doc(activeSession.id).collection('location_logs').onSnapshot(logSnap => {
-                                // FIXED: Accessing .seconds property for precise mathematical sorting
-                                // This ensures rapid manual refreshes are correctly recognized as the "newest"
+                                
+                                // FIXED: THE "REFRESH PRIORITY" SORT
+                                // If timestamp is null (Pending server sync), treat as newest (Date.now())
+                                // This ensures manual button presses snap the map instantly.
                                 const logs = logSnap.docs.map(l => l.data())
-                                    .filter(l => l.timestamp)
+                                    .filter(l => l.lat && l.lng)
                                     .sort((a, b) => {
-                                        const timeA = a.timestamp?.seconds || 0;
-                                        const timeB = b.timestamp?.seconds || 0;
+                                        const timeA = a.timestamp ? (a.timestamp.seconds || a.timestamp / 1000) : (Date.now() / 1000) + 1000;
+                                        const timeB = b.timestamp ? (b.timestamp.seconds || b.timestamp / 1000) : (Date.now() / 1000) + 1000;
                                         return timeB - timeA;
                                     });
 
                                 if (logs.length > 0) {
                                     const latest = logs[0];
+                                    console.log(`[Telemetry Snapped] Node: ${CONFIG.targetNode} | Lat: ${latest.lat}`);
+                                    
                                     updateMap(latest.lat, latest.lng);
+                                    
                                     document.getElementById('liveBadge').classList.remove('hidden');
                                     document.getElementById('signalLabel').innerText = "Signal: " + new Date().toLocaleTimeString();
                                     document.getElementById('signalStatus').innerText = "Verified Stream Active";
@@ -316,8 +324,14 @@
         }
 
         function updateMap(lat, lng) {
+            // Guard: Prevent invalid coordinates or accidental reset to Accra default
+            if (!lat || !lng || (lat === 5.6037 && lng === -0.1870 && currentMap && mapMarker.getLatLng().lat !== 5.6037)) return;
+
             if (!currentMap) initMap(lat, lng);
-            else { mapMarker.setLatLng([lat, lng]); currentMap.panTo([lat, lng]); }
+            else { 
+                mapMarker.setLatLng([lat, lng]); 
+                currentMap.panTo([lat, lng]); 
+            }
         }
 
         function renderModalResult(id, data) {
