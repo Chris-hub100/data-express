@@ -200,7 +200,7 @@
                     <div class="bg-white/90 backdrop-blur p-4 rounded-3xl shadow-2xl border border-white/50 w-48">
                         <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1" id="signalLabel">Satellite Link</p>
                         <div class="flex items-center gap-2">
-                            <div class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+                            <div class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" id="signalDot"></div>
                             <span class="font-black text-[10px] text-slate-900 uppercase" id="signalStatus">Monitoring...</span>
                         </div>
                     </div>
@@ -279,11 +279,9 @@
                         if (telemetryUnsubscribe) telemetryUnsubscribe();
                         
                         // --- THE WATCHDOG LISTENER ---
-                        // Optimized to handle the 15-second high-frequency pulses
                         telemetryUnsubscribe = db.collection(`artifacts/${CONFIG.targetNode}/public/data/delivery_sessions`)
                             .doc(activeSession.id).collection('location_logs').onSnapshot(logSnap => {
                                 
-                                // WATCHDOG PRIORITY SORT
                                 const logs = logSnap.docs.map(l => ({
                                     ...l.data(),
                                     isPending: !l.data().timestamp
@@ -309,9 +307,28 @@
                                         updateMap(latest.lat, latest.lng);
                                     }
                                     
+                                    // FIX: TRUTHFUL TIMESTAMP LOGIC
+                                    // If pending, show 'Just Now', otherwise show the server-side confirmed time
+                                    let displayTime;
+                                    if (latest.isPending) {
+                                        displayTime = "Just Now";
+                                    } else if (latest.timestamp) {
+                                        const serverDate = new Date(latest.timestamp.seconds * 1000);
+                                        displayTime = serverDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                                    } else {
+                                        displayTime = "Awaiting Sync";
+                                    }
+
                                     document.getElementById('liveBadge').classList.remove('hidden');
-                                    document.getElementById('signalLabel').innerText = "Last Pulse: " + new Date().toLocaleTimeString();
+                                    document.getElementById('signalLabel').innerText = "Last Pulse: " + displayTime;
                                     document.getElementById('signalStatus').innerText = "Verified Stream Active";
+                                    const dot = document.getElementById('signalDot');
+                                    dot.classList.remove('bg-amber-500');
+                                    dot.classList.add('bg-emerald-500');
+
+                                } else {
+                                    document.getElementById('signalStatus').innerText = "Awaiting Driver Handshake";
+                                    document.getElementById('signalDot').classList.add('bg-amber-500');
                                 }
                             });
                     }
@@ -320,13 +337,11 @@
         }
 
         function updateMap(lat, lng) {
-            // Institutional Guard: Prevent snap-back to Accra if we have a real coordinate
             if (lat === 5.6037 && lng === -0.1870 && currentMap && mapMarker.getLatLng().lat !== 5.6037) return;
 
             if (!currentMap) {
                 initMap(lat, lng);
             } else { 
-                // HIGH-FIDELITY ANIMATION: Uses Leaflet flyTo for smooth transitions during 15s pulses
                 mapMarker.setLatLng([lat, lng]); 
                 currentMap.flyTo([lat, lng], 16, {
                     animate: true,
@@ -354,7 +369,7 @@
                 el.classList.toggle('opacity-30', i > step);
                 if (i <= step) el.querySelector('div').classList.add('bg-blue-600', 'text-white');
             }
-            if(!currentMap) initMap(5.6037, -0.1870); // Accra default until pulse hits
+            if(!currentMap) initMap(5.6037, -0.1870); 
         }
 
         function showModalError() {
