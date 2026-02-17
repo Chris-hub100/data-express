@@ -100,6 +100,8 @@
         let telemetryUnsubscribe = null;
         let lastKnownLat = null;
         let lastKnownLng = null;
+        let lastKnownTimestamp = null; // INSTITUTIONAL SIGNAL ANCHOR
+        let healthCheckInterval = null;
     </script>
 
     <!-- NAVIGATION -->
@@ -225,7 +227,6 @@
         function initMap(lat, lng) {
             if (currentMap) currentMap.remove();
             
-            // INITIALIZE LEAFLET WITH OPENSTREETMAP (OSM)
             currentMap = L.map('liveMap', { 
                 zoomControl: false, 
                 attributionControl: true,
@@ -278,7 +279,24 @@
                     if (activeSession) {
                         if (telemetryUnsubscribe) telemetryUnsubscribe();
                         
-                        // --- THE WATCHDOG LISTENER ---
+                        // NEW: SIGNAL INTEGRITY MONITOR (Watchdog for Viewer)
+                        if (healthCheckInterval) clearInterval(healthCheckInterval);
+                        healthCheckInterval = setInterval(() => {
+                            if (!lastKnownTimestamp) return;
+                            
+                            const now = Date.now() / 1000;
+                            const ageInSeconds = now - lastKnownTimestamp;
+                            const dot = document.getElementById('signalDot');
+                            const statusLabel = document.getElementById('signalStatus');
+
+                            // If pulse is older than 4 minutes (accounting for 3-min background task + network jitter)
+                            if (ageInSeconds > 240) {
+                                statusLabel.innerText = "Signal Suspended";
+                                dot.classList.replace('bg-emerald-500', 'bg-amber-500');
+                                dot.classList.replace('bg-blue-500', 'bg-amber-500');
+                            }
+                        }, 10000);
+
                         telemetryUnsubscribe = db.collection(`artifacts/${CONFIG.targetNode}/public/data/delivery_sessions`)
                             .doc(activeSession.id).collection('location_logs').onSnapshot(logSnap => {
                                 
@@ -288,7 +306,6 @@
                                 }))
                                 .filter(l => l.lat && l.lng)
                                 .sort((a, b) => {
-                                    // Rule: Manual/Watchdog refreshes (Pending) always move to the top
                                     if (a.isPending) return -1;
                                     if (b.isPending) return 1;
                                     
@@ -300,21 +317,21 @@
                                 if (logs.length > 0) {
                                     const latest = logs[0];
                                     
-                                    // Buffer: Only move if the coordinate is genuinely different
                                     if (latest.lat !== lastKnownLat || latest.lng !== lastKnownLng) {
                                         lastKnownLat = latest.lat;
                                         lastKnownLng = latest.lng;
                                         updateMap(latest.lat, latest.lng);
                                     }
                                     
-                                    // FIX: TRUTHFUL TIMESTAMP LOGIC
-                                    // If pending, show 'Just Now', otherwise show the server-side confirmed time
+                                    // TRUTHFUL TIMESTAMP LOGIC
                                     let displayTime;
                                     if (latest.isPending) {
                                         displayTime = "Just Now";
+                                        lastKnownTimestamp = Date.now() / 1000; 
                                     } else if (latest.timestamp) {
                                         const serverDate = new Date(latest.timestamp.seconds * 1000);
                                         displayTime = serverDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                                        lastKnownTimestamp = latest.timestamp.seconds; 
                                     } else {
                                         displayTime = "Awaiting Sync";
                                     }
@@ -381,8 +398,9 @@
         window.closeModal = () => {
             document.getElementById('resultModal').classList.add('hidden');
             if(telemetryUnsubscribe) telemetryUnsubscribe();
+            if(healthCheckInterval) clearInterval(healthCheckInterval);
             if(currentMap) { currentMap.remove(); currentMap = null; }
-            lastKnownLat = null; lastKnownLng = null;
+            lastKnownLat = null; lastKnownLng = null; lastKnownTimestamp = null;
         };
     </script>
 </body>
