@@ -61,7 +61,18 @@
             display: none;
         }
 
-        #liveMap { height: 100%; width: 100%; background: #f1f5f9; }
+        #liveMap { height: 100%; width: 100%; background: #f1f5f9; transition: filter 0.8s ease; }
+        
+        /* SECURITY LOCKDOWN STYLES */
+        .map-lockdown { filter: blur(30px) grayscale(1); pointer-events: none !important; }
+        .lockdown-overlay {
+            position: absolute; inset: 0; z-index: 1500;
+            background: rgba(15, 23, 42, 0.4);
+            display: none; align-items: center; justify-content: center;
+            backdrop-filter: blur(4px);
+        }
+        .lockdown-overlay.active { display: flex; }
+
         .btn-brand { background-color: var(--brand-dark); color: white; transition: all 0.3s ease; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
 
@@ -76,7 +87,6 @@
             .info-sheet.expanded { transform: translateY(0); }
         }
 
-        /* Vertical Stepper Connector Line */
         .stepper-line {
             position: absolute;
             left: 19px;
@@ -189,7 +199,6 @@
                         <h4 class="text-xl font-black text-slate-900" id="resStatus">Connecting...</h4>
                     </div>
                     
-                    <!-- ENHANCED STEPPER UI -->
                     <div class="space-y-12 relative flex-1 no-scrollbar overflow-y-auto px-1">
                         <div id="step-1" class="flex gap-6 relative items-center opacity-30">
                             <div class="stepper-line"></div>
@@ -206,6 +215,7 @@
                             <div><p class="font-black text-sm uppercase tracking-wider step-label">In Transit</p></div>
                         </div>
                         <div id="step-3" class="flex gap-6 relative items-center opacity-30">
+                            <div class="stepper-line"></div>
                             <div class="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center text-slate-400 z-10 border-4 border-white shadow-sm transition-colors duration-300">
                                 <i class="bi bi-flag-fill"></i>
                             </div>
@@ -216,14 +226,27 @@
 
                 <div id="modalNotFound" class="hidden text-center py-20">
                     <h4 class="font-black text-slate-900 uppercase">Not Found</h4>
-                    <p class="text-sm text-slate-400 mt-2 font-bold">Check your reference ID.</p>
+                    <p class="text-sm text-slate-400 mt-2 font-bold">Check your Waybill ID.</p>
                 </div>
             </div>
 
-            <!-- RIGHT: MAP -->
+            <!-- RIGHT: MAP & LOCKDOWN OVERLAY -->
             <div class="flex-1 h-full relative">
                 <button onclick="closeModal()" class="absolute top-6 left-6 z-[3000] w-12 h-12 bg-white/90 backdrop-blur rounded-full flex items-center justify-center shadow-xl border lg:hidden"><i class="bi bi-x-lg"></i></button>
+                
                 <div id="liveMap"></div>
+                
+                <!-- SECURITY OVERLAY -->
+                <div id="lockdownOverlay" class="lockdown-overlay">
+                    <div class="text-center animate-fade">
+                        <div class="w-16 h-16 bg-emerald-500 rounded-full flex items-center justify-center mx-auto mb-4 border-4 border-white shadow-lg">
+                            <i class="bi bi-check-lg text-white fs-2"></i>
+                        </div>
+                        <h3 class="text-white font-black uppercase tracking-tighter text-2xl">Arrived at Destination</h3>
+                        <p class="text-white opacity-80 text-xs font-bold mt-2 uppercase tracking-widest">Live Telemetry Suspended</p>
+                    </div>
+                </div>
+
                 <div class="absolute bottom-32 lg:bottom-6 right-6 z-[1000]">
                     <div class="bg-white/90 backdrop-blur p-4 rounded-3xl shadow-2xl border border-white/50 w-48">
                         <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1" id="signalLabel">Satellite Link</p>
@@ -289,10 +312,33 @@
                 else {
                     const data = pkgDoc.data();
                     renderModalResult(id, data);
-                    if (data.batchId) syncTelemetry(data.batchId);
+                    
+                    // SECURITY GUARD: Only sync telemetry if NOT arrived
+                    const status = (data.status || "").toLowerCase();
+                    if (!status.includes('arrived')) {
+                        if (data.batchId) syncTelemetry(data.batchId);
+                    } else {
+                        // Apply lockdown immediately for historical IDs
+                        applySecurityLockdown();
+                    }
                 }
             } catch (err) { console.error(err); showModalError(); }
             finally { document.getElementById('loaderBar').style.display = 'none'; }
+        }
+
+        /**
+         * SECURITY MEASURE: applySecurityLockdown
+         * Blurs map, disables interaction, and overlays arrival text.
+         */
+        function applySecurityLockdown() {
+            document.getElementById('liveMap').classList.add('map-lockdown');
+            document.getElementById('lockdownOverlay').classList.add('active');
+            document.getElementById('signalStatus').innerText = "Signal Locked";
+            document.getElementById('signalDot').className = "w-2 h-2 rounded-full bg-slate-400";
+            if(telemetryUnsubscribe) {
+                telemetryUnsubscribe();
+                telemetryUnsubscribe = null;
+            }
         }
 
         function syncTelemetry(batchId) {
@@ -306,6 +352,12 @@
                         (d.data().status === 'ACTIVE' || d.data().status === 'DELAY - FAULT')
                     );
                     
+                    // IF NO ACTIVE SESSION OR COMPLETED, LOCKDOWN
+                    if (!activeSession) {
+                        // Measures to prevent live tracking once driver ends session
+                        return;
+                    }
+                    
                     if (activeSession) {
                         const sessionData = activeSession.data();
                         const isFaultMode = sessionData.status === 'DELAY - FAULT';
@@ -314,7 +366,7 @@
                         const signalStatus = document.getElementById('signalStatus');
                         
                         if (isFaultMode) {
-                            signalStatus.innerText = "Reporting Fault";
+                            signalStatus.innerText = "Vehicle Fault Reported";
                             signalStatus.classList.add('text-amber-500');
                             signalDot.classList.replace('bg-emerald-500', 'bg-amber-500');
                         } else {
@@ -333,7 +385,7 @@
                             const statusLabel = document.getElementById('signalStatus');
 
                             if (ageInSeconds > 240) {
-                                statusLabel.innerText = isFaultMode ? "Fault/Signal Lost" : "Signal Suspended";
+                                statusLabel.innerText = isFaultMode ? "Signal Lost" : "Signal Suspended";
                                 dot.classList.replace('bg-emerald-500', 'bg-amber-500');
                                 dot.classList.replace('bg-blue-500', 'bg-amber-500');
                             }
@@ -384,6 +436,9 @@
         }
 
         function updateMap(lat, lng) {
+            // MEASURE: If map is locked, refuse all coordinate updates
+            if (document.getElementById('liveMap').classList.contains('map-lockdown')) return;
+
             if (lat === 5.6037 && lng === -0.1870 && currentMap && mapMarker.getLatLng().lat !== 5.6037) return;
             if (!currentMap) initMap(lat, lng);
             else { 
@@ -414,6 +469,14 @@
             if (status.includes('transit') || status.includes('delay')) step = 2;
             if (status.includes('arrived')) step = 3;
 
+            // MEASURE: Trigger lockdown UI if arrived
+            if (step === 3) applySecurityLockdown();
+            else {
+                // Reset lockdown if searching a new active ID
+                document.getElementById('liveMap').classList.remove('map-lockdown');
+                document.getElementById('lockdownOverlay').classList.remove('active');
+            }
+
             for(let i=1; i<=3; i++) {
                 const el = document.getElementById(`step-${i}`);
                 const iconBox = el.querySelector('div.w-10');
@@ -438,7 +501,6 @@
                             lineClass = 'bg-emerald-500';
                         }
                     } else {
-                        // Previous steps already passed
                         if (status.includes('arrived')) {
                             colorClass = 'bg-emerald-500';
                             lineClass = 'bg-emerald-500';
