@@ -62,7 +62,6 @@
         }
 
         #liveMap { height: 100%; width: 100%; background: #f1f5f9; }
-
         .btn-brand { background-color: var(--brand-dark); color: white; transition: all 0.3s ease; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
 
@@ -73,9 +72,19 @@
                 z-index: 2000; transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
                 box-shadow: 0 -10px 40px rgba(0,0,0,0.15); max-height: 85vh; overflow-y: auto;
             }
-            .info-sheet.minimized { transform: translateY(calc(100% - 115px)); }
+            .info-sheet.minimized { transform: translateY(calc(100% - 95px)); }
             .info-sheet.expanded { transform: translateY(0); }
-            .sheet-handle { width: 40px; height: 5px; background: #cbd5e1; border-radius: 10px; margin: 15px auto 5px auto; }
+        }
+
+        /* Vertical Stepper Connector Line */
+        .stepper-line {
+            position: absolute;
+            left: 19px;
+            top: 40px;
+            bottom: -32px;
+            width: 2px;
+            background-color: #e2e8f0;
+            z-index: 0;
         }
     </style>
 </head>
@@ -100,7 +109,7 @@
         let telemetryUnsubscribe = null;
         let lastKnownLat = null;
         let lastKnownLng = null;
-        let lastKnownTimestamp = null; // INSTITUTIONAL SIGNAL ANCHOR
+        let lastKnownTimestamp = null; 
         let healthCheckInterval = null;
     </script>
 
@@ -153,12 +162,11 @@
             <!-- LEFT: INFO -->
             <div id="infoPane" class="info-sheet lg:w-[380px] lg:h-full lg:bg-slate-50 border-r border-slate-100 flex flex-col p-6 lg:p-10 minimized">
                 <div class="lg:hidden">
-                    <div class="sheet-handle"></div>
-                    <div class="flex items-center justify-between mb-4 px-2">
+                    <div class="flex items-center justify-between mb-6 px-2 pt-2">
                         <div id="mobileIdBadge" class="bg-white px-4 py-2 rounded-full border border-slate-200">
                              <h6 class="font-black text-xs tracking-widest text-slate-900" id="minimizedResID">--</h6>
                         </div>
-                        <button onclick="toggleMobileSheet()" class="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-sm border">
+                        <button onclick="toggleMobileSheet()" class="w-10 h-10 bg-blue-600 text-white rounded-full flex items-center justify-center shadow-lg transform transition-transform duration-300" id="mobileSheetBtn">
                             <i id="sheetToggleIcon" class="bi bi-chevron-up"></i>
                         </button>
                     </div>
@@ -181,10 +189,28 @@
                         <h4 class="text-xl font-black text-slate-900" id="resStatus">Connecting...</h4>
                     </div>
                     
-                    <div class="space-y-8 relative flex-1 no-scrollbar overflow-y-auto">
-                        <div id="step-1" class="flex gap-6 opacity-30"><div class="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center text-slate-400"><i class="bi bi-check-lg"></i></div><div><p class="font-black text-sm uppercase">Registered</p></div></div>
-                        <div id="step-2" class="flex gap-6 opacity-30"><div class="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center text-slate-400"><i class="bi bi-truck"></i></div><div><p class="font-black text-sm uppercase">In Transit</p></div></div>
-                        <div id="step-3" class="flex gap-6 opacity-30"><div class="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center text-slate-400"><i class="bi bi-flag-fill"></i></div><div><p class="font-black text-sm uppercase">Arrived</p></div></div>
+                    <!-- ENHANCED STEPPER UI -->
+                    <div class="space-y-12 relative flex-1 no-scrollbar overflow-y-auto px-1">
+                        <div id="step-1" class="flex gap-6 relative items-center opacity-30">
+                            <div class="stepper-line"></div>
+                            <div class="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center text-slate-400 z-10 border-4 border-white shadow-sm transition-colors duration-300">
+                                <i class="bi bi-check-lg"></i>
+                            </div>
+                            <div><p class="font-black text-sm uppercase tracking-wider step-label">Registered</p></div>
+                        </div>
+                        <div id="step-2" class="flex gap-6 relative items-center opacity-30">
+                            <div class="stepper-line"></div>
+                            <div class="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center text-slate-400 z-10 border-4 border-white shadow-sm transition-colors duration-300">
+                                <i class="bi bi-truck"></i>
+                            </div>
+                            <div><p class="font-black text-sm uppercase tracking-wider step-label">In Transit</p></div>
+                        </div>
+                        <div id="step-3" class="flex gap-6 relative items-center opacity-30">
+                            <div class="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center text-slate-400 z-10 border-4 border-white shadow-sm transition-colors duration-300">
+                                <i class="bi bi-flag-fill"></i>
+                            </div>
+                            <div><p class="font-black text-sm uppercase tracking-wider step-label">Arrived</p></div>
+                        </div>
                     </div>
                 </div>
 
@@ -219,24 +245,31 @@
 
         function toggleMobileSheet() {
             const pane = document.getElementById('infoPane');
+            const icon = document.getElementById('sheetToggleIcon');
+            const btn = document.getElementById('mobileSheetBtn');
             sheetExpanded = !sheetExpanded;
-            if(sheetExpanded) pane.classList.replace('minimized', 'expanded');
-            else pane.classList.replace('expanded', 'minimized');
+            
+            if(sheetExpanded) {
+                pane.classList.replace('minimized', 'expanded');
+                icon.classList.replace('bi-chevron-up', 'bi-chevron-down');
+                btn.classList.replace('bg-blue-600', 'bg-slate-900');
+            } else {
+                pane.classList.replace('expanded', 'minimized');
+                icon.classList.replace('bi-chevron-down', 'bi-chevron-up');
+                btn.classList.replace('bg-slate-900', 'bg-blue-600');
+            }
         }
 
         function initMap(lat, lng) {
             if (currentMap) currentMap.remove();
-            
             currentMap = L.map('liveMap', { 
                 zoomControl: false, 
                 attributionControl: true,
                 scrollWheelZoom: true 
             }).setView([lat, lng], 15);
-            
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 attribution: '&copy; OSM contributors'
             }).addTo(currentMap);
-
             const icon = L.divIcon({
                 html: `<div style="background-color: #3b82f6; width: 18px; height: 18px; border-radius: 50%; border: 4px solid white; box-shadow: 0 0 20px rgba(59, 130, 246, 0.5);"></div>`,
                 iconSize: [18, 18], iconAnchor: [9, 9]
@@ -247,16 +280,13 @@
         async function handleTrack() {
             const id = document.getElementById('waybillInput').value.trim().toUpperCase();
             if(!id) return;
-            
             document.getElementById('loaderBar').style.display = 'block';
             try {
                 await auth.signInAnonymously();
                 const snap = await db.collection(`artifacts/${CONFIG.targetNode}/public/data/logistics_packages`).get();
                 const pkgDoc = snap.docs.find(d => d.data().waybillId === id);
-
-                if (!pkgDoc) {
-                    showModalError();
-                } else {
+                if (!pkgDoc) showModalError();
+                else {
                     const data = pkgDoc.data();
                     renderModalResult(id, data);
                     if (data.batchId) syncTelemetry(data.batchId);
@@ -273,25 +303,37 @@
                 db.collection(`artifacts/${CONFIG.targetNode}/public/data/delivery_sessions`).onSnapshot(snap => {
                     const activeSession = snap.docs.find(d => 
                         d.data().vehicleTag === vehicleTag && 
-                        d.data().status === 'ACTIVE'
+                        (d.data().status === 'ACTIVE' || d.data().status === 'DELAY - FAULT')
                     );
                     
                     if (activeSession) {
+                        const sessionData = activeSession.data();
+                        const isFaultMode = sessionData.status === 'DELAY - FAULT';
+
+                        const signalDot = document.getElementById('signalDot');
+                        const signalStatus = document.getElementById('signalStatus');
+                        
+                        if (isFaultMode) {
+                            signalStatus.innerText = "Reporting Fault";
+                            signalStatus.classList.add('text-amber-500');
+                            signalDot.classList.replace('bg-emerald-500', 'bg-amber-500');
+                        } else {
+                            signalStatus.innerText = "Verified Stream Active";
+                            signalStatus.classList.remove('text-amber-500');
+                        }
+
                         if (telemetryUnsubscribe) telemetryUnsubscribe();
                         
-                        // NEW: SIGNAL INTEGRITY MONITOR (Watchdog for Viewer)
                         if (healthCheckInterval) clearInterval(healthCheckInterval);
                         healthCheckInterval = setInterval(() => {
                             if (!lastKnownTimestamp) return;
-                            
                             const now = Date.now() / 1000;
                             const ageInSeconds = now - lastKnownTimestamp;
                             const dot = document.getElementById('signalDot');
                             const statusLabel = document.getElementById('signalStatus');
 
-                            // If pulse is older than 4 minutes (accounting for 3-min background task + network jitter)
                             if (ageInSeconds > 240) {
-                                statusLabel.innerText = "Signal Suspended";
+                                statusLabel.innerText = isFaultMode ? "Fault/Signal Lost" : "Signal Suspended";
                                 dot.classList.replace('bg-emerald-500', 'bg-amber-500');
                                 dot.classList.replace('bg-blue-500', 'bg-amber-500');
                             }
@@ -299,7 +341,6 @@
 
                         telemetryUnsubscribe = db.collection(`artifacts/${CONFIG.targetNode}/public/data/delivery_sessions`)
                             .doc(activeSession.id).collection('location_logs').onSnapshot(logSnap => {
-                                
                                 const logs = logSnap.docs.map(l => ({
                                     ...l.data(),
                                     isPending: !l.data().timestamp
@@ -308,22 +349,17 @@
                                 .sort((a, b) => {
                                     if (a.isPending) return -1;
                                     if (b.isPending) return 1;
-                                    
-                                    const timeA = a.timestamp?.seconds || 0;
-                                    const timeB = b.timestamp?.seconds || 0;
-                                    return timeB - timeA;
+                                    return (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0);
                                 });
 
                                 if (logs.length > 0) {
                                     const latest = logs[0];
-                                    
                                     if (latest.lat !== lastKnownLat || latest.lng !== lastKnownLng) {
                                         lastKnownLat = latest.lat;
                                         lastKnownLng = latest.lng;
                                         updateMap(latest.lat, latest.lng);
                                     }
                                     
-                                    // TRUTHFUL TIMESTAMP LOGIC
                                     let displayTime;
                                     if (latest.isPending) {
                                         displayTime = "Just Now";
@@ -332,20 +368,14 @@
                                         const serverDate = new Date(latest.timestamp.seconds * 1000);
                                         displayTime = serverDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
                                         lastKnownTimestamp = latest.timestamp.seconds; 
-                                    } else {
-                                        displayTime = "Awaiting Sync";
                                     }
 
                                     document.getElementById('liveBadge').classList.remove('hidden');
                                     document.getElementById('signalLabel').innerText = "Last Pulse: " + displayTime;
-                                    document.getElementById('signalStatus').innerText = "Verified Stream Active";
-                                    const dot = document.getElementById('signalDot');
-                                    dot.classList.remove('bg-amber-500');
-                                    dot.classList.add('bg-emerald-500');
-
-                                } else {
-                                    document.getElementById('signalStatus').innerText = "Awaiting Driver Handshake";
-                                    document.getElementById('signalDot').classList.add('bg-amber-500');
+                                    if (!isFaultMode) {
+                                        document.getElementById('signalStatus').innerText = "Verified Stream Active";
+                                        signalDot.classList.replace('bg-amber-500', 'bg-emerald-500');
+                                    }
                                 }
                             });
                     }
@@ -355,15 +385,10 @@
 
         function updateMap(lat, lng) {
             if (lat === 5.6037 && lng === -0.1870 && currentMap && mapMarker.getLatLng().lat !== 5.6037) return;
-
-            if (!currentMap) {
-                initMap(lat, lng);
-            } else { 
+            if (!currentMap) initMap(lat, lng);
+            else { 
                 mapMarker.setLatLng([lat, lng]); 
-                currentMap.flyTo([lat, lng], 16, {
-                    animate: true,
-                    duration: 1.5 
-                });
+                currentMap.flyTo([lat, lng], 16, { animate: true, duration: 1.5 });
             }
         }
 
@@ -373,18 +398,61 @@
             document.getElementById('modalDataContainer').classList.remove('hidden');
             document.getElementById('resID').innerText = id;
             document.getElementById('minimizedResID').innerText = id;
-            document.getElementById('resStatus').innerText = data.status || "In Transit";
+            
+            const statusText = data.status || "In Transit";
+            document.getElementById('resStatus').innerText = statusText;
+            
+            if (statusText.includes('DELAY')) {
+                document.getElementById('resStatus').className = "text-xl font-black text-amber-500";
+            } else {
+                document.getElementById('resStatus').className = "text-xl font-black text-slate-900";
+            }
             
             const status = (data.status || "").toLowerCase();
             let step = 0;
             if (status.includes('registered')) step = 1;
-            if (status.includes('transit')) step = 2;
+            if (status.includes('transit') || status.includes('delay')) step = 2;
             if (status.includes('arrived')) step = 3;
 
             for(let i=1; i<=3; i++) {
                 const el = document.getElementById(`step-${i}`);
+                const iconBox = el.querySelector('div.w-10');
+                const label = el.querySelector('.step-label');
+                const line = el.querySelector('.stepper-line');
+                
                 el.classList.toggle('opacity-30', i > step);
-                if (i <= step) el.querySelector('div').classList.add('bg-blue-600', 'text-white');
+                
+                if (i <= step) {
+                    let colorClass = 'bg-blue-600';
+                    let textClass = 'text-blue-600';
+                    let lineClass = 'bg-blue-600';
+                    
+                    if (i === step) {
+                        if (status.includes('delay')) {
+                            colorClass = 'bg-amber-500';
+                            textClass = 'text-amber-500';
+                            lineClass = 'bg-amber-200';
+                        } else if (status.includes('arrived')) {
+                            colorClass = 'bg-emerald-500';
+                            textClass = 'text-emerald-600';
+                            lineClass = 'bg-emerald-500';
+                        }
+                    } else {
+                        // Previous steps already passed
+                        if (status.includes('arrived')) {
+                            colorClass = 'bg-emerald-500';
+                            lineClass = 'bg-emerald-500';
+                        }
+                    }
+
+                    iconBox.className = `w-10 h-10 rounded-full ${colorClass} flex items-center justify-center text-white z-10 border-4 border-white shadow-sm`;
+                    label.className = `font-black text-sm uppercase tracking-wider step-label ${textClass}`;
+                    if (line) line.className = `stepper-line ${lineClass}`;
+                } else {
+                    iconBox.className = `w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center text-slate-400 z-10 border-4 border-white shadow-sm`;
+                    label.className = `font-black text-sm uppercase tracking-wider step-label text-slate-400`;
+                    if (line) line.className = `stepper-line bg-slate-100`;
+                }
             }
             if(!currentMap) initMap(5.6037, -0.1870); 
         }
