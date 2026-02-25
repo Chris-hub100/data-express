@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}About Us | ProlyfiQ{% endblock %}
+{% block title %}Corporate Profile | Ledgehold Intelligence{% endblock %}
 
 {% block content %}
 <style>
@@ -40,7 +40,7 @@
         background-image: radial-gradient(#cbd5e1 1px, transparent 1px);
         background-size: 40px 40px;
         border-radius: 40px;
-        padding: 80px 15px; /* Adjusted padding for mobile safety */
+        padding: 100px 15px;
         margin-bottom: 60px;
         border: 1px solid white;
         position: relative;
@@ -48,14 +48,11 @@
         box-shadow: 0 25px 50px -12px rgba(0,0,0,0.05);
     }
 
-    /* MASSIVE PURPLE-GOLD HEADER (Dynamic & Big) */
     .brand-hero-text {
-        /* RESPONSIVE FIX: Lowered minimum size to 2.5rem for mobile safety */
         font-size: clamp(2.5rem, 10vw, 6rem);
         font-weight: 900;
         letter-spacing: -0.04em;
-        line-height: 1.1; /* Increased to prevent clipping */
-        /* Royal Purple to Gold Gradient */
+        line-height: 1.1; 
         background: linear-gradient(135deg, #4c1d95 0%, #fbbf24 50%, #4c1d95 100%);
         background-size: 200% auto;
         -webkit-background-clip: text;
@@ -63,8 +60,6 @@
         animation: gradientFlow 6s ease infinite, fadeInUp 1s ease-out forwards;
         margin-bottom: 1.5rem;
         filter: drop-shadow(0 10px 20px rgba(76, 29, 149, 0.1));
-        
-        /* Safety for small screens */
         max-width: 100%;
         word-wrap: break-word;
     }
@@ -83,7 +78,7 @@
     .stat-card:hover {
         transform: translateY(-10px) scale(1.02);
         box-shadow: 0 20px 40px -5px rgba(0, 0, 0, 0.1);
-        border-color: rgba(251, 191, 36, 0.5); /* Gold Border on Hover */
+        border-color: rgba(251, 191, 36, 0.5);
     }
 
     .value-icon {
@@ -108,108 +103,121 @@
 
     .hover-scale { transition: transform 0.2s; }
     .hover-scale:hover { transform: scale(1.05); }
+
+    .intelligence-pill {
+        background: #0f172a;
+        color: #fbbf24;
+        font-weight: 800;
+        text-transform: uppercase;
+        font-size: 0.65rem;
+        letter-spacing: 2px;
+        padding: 6px 16px;
+        border-radius: 100px;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
 </style>
 
 <div class="container py-4">
     
     <!-- HERO: THE VISION -->
     <div class="hero-section text-center">
-        <!-- Soft Spotlight -->
         <div class="position-absolute top-50 start-50 translate-middle" 
              style="width: 120%; height: 120%; background: radial-gradient(circle, rgba(255,255,255,1) 0%, rgba(255,255,255,0.8) 40%, rgba(255,255,255,0) 70%); pointer-events: none;">
         </div>
 
         <div class="position-relative z-1">
-            <div class="animate-in delay-100">
-                <span class="d-inline-block px-3 py-1 rounded-pill bg-white border shadow-sm text-dark fw-bold x-small mb-3 text-uppercase tracking-wider">
-                    <i class="bi bi-cpu-fill text-warning me-1"></i> Powered by Ledgehold
-                </span>
+            <div class="animate-in delay-100 mb-4">
+                <div class="intelligence-pill shadow-lg">
+                    <i class="bi bi-cpu-fill animate-pulse"></i> Operational Intelligence Layer
+                </div>
             </div>
 
-            <h1 class="brand-hero-text">ProlyfiQ</h1>
+            <h1 class="brand-hero-text">Ledgehold</h1>
             
             <h2 class="h4 fw-bold text-dark mb-4 animate-in delay-200" style="opacity: 0.8;">
-                The Operating System for Student Commerce
+                Protecting SME Margins through Invisible Infrastructure.
             </h2>
             
-            <p class="lead text-muted mx-auto animate-in delay-300" style="max-width: 700px; font-size: 1.1rem;">
-                We are not just a marketplace. We are a compliance-first infrastructure company digitizing the informal campus economy through identity verification, aggregated logistics, and secure escrow rails.
+            <p class="lead text-muted mx-auto animate-in delay-300" style="max-width: 750px; font-size: 1.15rem; line-height: 1.7;">
+                Ledgehold is a proprietary intelligence layer engineered to solve the "Trust Deficit" in emerging markets. We defend small business profitability by integrating subtle fraud prevention protocols and automated margin protection into the informal campus economy.
             </p>
         </div>
     </div>
 
-    <!-- CORE PILLARS -->
+    <!-- CORE PILLARS: INTELLIGENCE & FRAUD PREVENTION -->
     <div class="row g-4 mb-5">
         <div class="col-md-4">
             <div class="stat-card animate-in delay-200">
                 <div class="value-icon bg-primary bg-opacity-10 text-primary">
-                    <i class="bi bi-shield-lock-fill"></i>
+                    <i class="bi bi-shield-check"></i>
                 </div>
-                <h5 class="fw-bold text-dark mb-3">The Gatekeeper Policy</h5>
+                <h5 class="fw-bold text-dark mb-3">Margin Protection</h5>
                 <p class="text-muted small mb-0" style="line-height: 1.6;">
-                    Our proprietary compliance standard. We believe that trust is an engineering problem. By enforcing 100% receipt-to-log matching and SHA-256 identity hashing, we create a fraud-resistant trade environment.
+                    Informal trade often suffers from "Revenue Leakage." Ledgehold provides automated auditing tools that track inventory velocity against receipted sales, ensuring merchants retain 100% of their intended margins.
                 </p>
             </div>
         </div>
         <div class="col-md-4">
             <div class="stat-card animate-in delay-300">
                 <div class="value-icon bg-warning bg-opacity-10 text-warning">
-                    <i class="bi bi-diagram-3-fill"></i>
+                    <i class="bi bi-fingerprint"></i>
                 </div>
-                <h5 class="fw-bold text-dark mb-3">Aggregated Logistics</h5>
+                <h5 class="fw-bold text-dark mb-3">Subtle Fraud Mitigation</h5>
                 <p class="text-muted small mb-0" style="line-height: 1.6;">
-                    We solve the "Last-Mile" chaos by building "Hub-to-Hub" corridors. By consolidating student volume at campus landmarks, we turn fragmented deliveries into efficient logistics contracts.
+                    Using SHA-256 identity hashing and device fingerprinting, we eliminate buyer-side impersonation and payment disputes. Our system verifies the "Physical Handshake" before funds are ever moved from escrow.
                 </p>
             </div>
         </div>
         <div class="col-md-4">
             <div class="stat-card animate-in delay-400">
                 <div class="value-icon bg-success bg-opacity-10 text-success">
-                    <i class="bi bi-graph-up-arrow"></i>
+                    <i class="bi bi-lightning-charge-fill"></i>
                 </div>
-                <h5 class="fw-bold text-dark">Merchant Empowerment</h5>
+                <h5 class="fw-bold text-dark">Prolyfiq</h5>
                 <p class="text-muted small mb-0" style="line-height: 1.6;">
-                    ProlyfiQ is a launchpad. We provide student entrepreneurs with institutional-grade tools—like automated marketing kits and verified credit histories—to help them transition from "Side Hustle" to "SME."
+                    Prolyfiq is our consumer-facing engine. It handles the high-speed execution of marketplace trade, utility payments, and logistics, all while being continuously audited by the Ledgehold intelligence layer.
                 </p>
             </div>
         </div>
     </div>
 
-    <!-- THE ENTITY STRUCTURE (ANIMATED) -->
+    <!-- THE ENTITY STRUCTURE (REFINED FOR INVESTORS) -->
     <div class="card border-0 shadow-lg rounded-5 overflow-hidden bg-dark text-white mb-5 animate-in delay-300">
         <div class="row g-0 align-items-center">
             <div class="col-lg-6 p-5">
                 <div class="d-flex align-items-center gap-2 mb-4">
-                    <span class="badge bg-warning text-dark rounded-pill px-3 fw-bold">CORPORATE ARCHITECTURE</span>
+                    <span class="badge bg-warning text-dark rounded-pill px-3 fw-bold">SYSTEM ARCHITECTURE</span>
                 </div>
 
-                <h3 class="fw-bold mb-5 display-6">One Engine. <br>Two Frontiers.</h3>
+                <h3 class="fw-bold mb-5 display-6">One Core.<br>Two Frontiers.</h3>
                 
-                <!-- Floating Card 1: Ledgehold -->
+                <!-- Floating Card 1: Ledgehold Intelligence -->
                 <div class="d-flex gap-4 mb-4 bg-white bg-opacity-10 p-4 rounded-4 border border-white border-opacity-10 floating-card">
                     <div class="border-start border-warning border-4 ps-3">
-                        <h5 class="fw-bold text-warning">Ledgehold</h5>
-                        <p class="small text-white-50 mb-0">The Registered Parent Entity. Holds the IP, DPA Certification, the Gatekeeper Technology, and the Institutional Partnerships.</p>
+                        <h5 class="fw-bold text-warning">Ledgehold Layer</h5>
+                        <p class="small text-white-50 mb-0">The Intellectual Property core. Manages DPA compliance, the Gatekeeper Policy, identity verification, and the SME risk-scoring algorithm.</p>
                     </div>
                 </div>
                 
-                <!-- Floating Card 2: DataExpress -->
+                <!-- Floating Card 2: DataExpress Interface -->
                 <div class="d-flex gap-4 bg-white bg-opacity-10 p-4 rounded-4 border border-white border-opacity-10 floating-card delay-200" style="animation-delay: 1s;">
                     <div class="border-start border-primary border-4 ps-3">
-                        <h5 class="fw-bold text-primary">ProlyfiQ</h5>
-                        <p class="small text-white-50 mb-0">The Consumer Platform. The interface where students trade, utilities are paid, and logistics are executed.</p>
+                        <h5 class="fw-bold text-primary">Prolyfiq Utility</h5>
+                        <p class="small text-white-50 mb-0">The Market Frontier. A high-efficiency transactional interface where students trade assets, pay utilities, and trigger logistics.</p>
                     </div>
                 </div>
             </div>
             
             <div class="col-lg-6 position-relative" style="min-height: 500px; overflow: hidden;">
-                <img src="https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=1000&auto=format&fit=crop" class="w-100 h-100 object-fit-cover" style="filter: brightness(0.3) saturate(0);">
+                <img src="https://images.unsplash.com/photo-1551434678-e076c223a692?q=80&w=1000&auto=format&fit=crop" class="w-100 h-100 object-fit-cover" style="filter: brightness(0.4) saturate(0.5);">
                 
                 <div class="position-absolute top-50 start-50 translate-middle text-center w-100 p-4">
                     <div class="floating-card" style="animation-duration: 8s;">
                         <h1 class="display-1 fw-900 text-white opacity-25" style="letter-spacing: -5px;">2026</h1>
                         <div class="border-top border-white border-opacity-25 pt-3 d-inline-block">
-                            <p class="text-white fw-bold small text-uppercase letter-spacing-2 mb-0">Built by Students for Students</p>
+                            <p class="text-white fw-bold small text-uppercase letter-spacing-2 mb-0">Built for Economic Integrity</p>
                         </div>
                     </div>
                 </div>
@@ -217,13 +225,13 @@
         </div>
     </div>
 
-    <!-- CALL TO ACTION -->
+    <!-- CALL TO ACTION: FUNDING READY -->
     <div class="text-center py-5 animate-in delay-400">
-        <h4 class="fw-bold text-dark mb-3">Ready to integrate?</h4>
-        <p class="text-muted small mb-4">We are actively onboarding Logistics Partners and Corporate Sponsors.</p>
+        <h4 class="fw-bold text-dark mb-3">Digitizing Trust. Seeding Growth.</h4>
+        <p class="text-muted small mb-4">Ledgehold is currently open to strategic partnerships with institutional logistics firms and capital providers.</p>
         <div class="d-flex justify-content-center gap-3">
-            <a href="mailto:partner@prolyfiq.com" class="btn btn-dark rounded-pill px-5 fw-bold py-3 hover-scale shadow-lg">
-                Partner With Us
+            <a href="mailto:partner@prolyfiq.store" class="btn btn-dark rounded-pill px-5 fw-bold py-3 hover-scale shadow-lg">
+                Partner with Us
             </a>
         </div>
     </div>
@@ -231,7 +239,6 @@
 </div>
 
 <script>
-    // Trigger animations on scroll
     document.addEventListener('DOMContentLoaded', () => {
         const observer = new IntersectionObserver((entries) => {
             entries.forEach(entry => {
