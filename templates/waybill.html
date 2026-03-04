@@ -106,7 +106,7 @@
         const nodeParam = params.get('node');
 
         const CONFIG = {
-            targetNode: (nodeParam || "swiftline-logistics").trim().toLowerCase(), 
+            targetNode: (nodeParam || "westruck-logistics").trim().toLowerCase(), 
             firebase: JSON.parse('{{ __firebase_config | safe if __firebase_config else "{}" }}')
         };
 
@@ -525,13 +525,15 @@
             document.getElementById('modalNotFound').classList.remove('hidden');
         }
 
-        window.closeModal = () => {
-            document.getElementById('resultModal').classList.add('hidden');
-            if(telemetryUnsubscribe) telemetryUnsubscribe();
-            if(healthCheckInterval) clearInterval(healthCheckInterval);
-            if(currentMap) { currentMap.remove(); currentMap = null; }
-            lastKnownLat = null; lastKnownLng = null; lastKnownTimestamp = null;
-        };
+    window.closeModal = () => {
+        document.getElementById('resultModal').classList.add('hidden');
+        document.getElementById('liveMap').classList.remove('map-lockdown');
+        document.getElementById('lockdownOverlay').classList.remove('active');
+        if(telemetryUnsubscribe) telemetryUnsubscribe();
+        if(healthCheckInterval) clearInterval(healthCheckInterval);
+        if(currentMap) { currentMap.remove(); currentMap = null; }
+        lastKnownLat = null; lastKnownLng = null; lastKnownTimestamp = null;
+    };
     </script>
 </body>
 </html>

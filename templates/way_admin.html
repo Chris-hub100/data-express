@@ -243,7 +243,7 @@
         const nodeParam = params.get('node');
 
         const INSTITUTION_CONFIG = {
-            clientId: nodeParam || "swiftline-logistics", 
+            clientId: nodeParam || "westruck-logistics", 
             firebase: JSON.parse('{{ __firebase_config | safe if __firebase_config else "{}" }}')
         };
 
@@ -687,7 +687,7 @@
             body.innerHTML = activeSessions.map(session => {
                 const batch = allBatches.find(b => b.vehicleTag === session.vehicleTag && !b.status?.toLowerCase().includes('arrived'));
                 const loadCount = batch ? batch.packageIds.length : '0';
-                const lastSeen = session.lastUpdated ? new Date(session.lastUpdated).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Syncing...';
+                const lastSeen = session.lastUpdated?.toDate ? session.lastUpdated.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Syncing...';
                 
                 return `
                     <tr class="animate-fade border-b border-slate-50">
