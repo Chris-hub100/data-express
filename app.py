@@ -399,6 +399,10 @@ def marketing():
     cloudinary_name = os.getenv('CLOUDINARY_CLOUD_NAME')
     return render_template('marketing_toolkit.html',CLOUDINARY_CLOUD_NAME=cloudinary_name, **get_firebase_context())
 
+@app.route('/landing')
+def ledgehold():
+    return render_template('ledgehold.html')
+
 @app.route('/endorsement')
 def endorsement():
     return render_template('endorsement.html', **get_firebase_context())

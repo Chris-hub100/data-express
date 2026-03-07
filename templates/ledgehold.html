@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ledgehold | The Intelligence Layer for Emerging Markets</title>
+    
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <!-- Icons & Frameworks -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <style>
+        :root {
+            --brand-blue: #2563eb;
+            --brand-slate: #0f172a;
+            --brand-indigo: #4338ca;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #ffffff;
+            color: var(--brand-slate);
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* --- MASTERCLASS ANIMATION ENGINE --- */
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(40px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes meshFlow {
+            0% { transform: translate(0,0) scale(1); }
+            33% { transform: translate(30px, -50px) scale(1.1); }
+            66% { transform: translate(-20px, 20px) scale(0.9); }
+            100% { transform: translate(0,0) scale(1); }
+        }
+
+        .animate-in {
+            opacity: 0;
+            animation: fadeInUp 1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        .delay-100 { animation-delay: 0.1s; }
+        .delay-200 { animation-delay: 0.2s; }
+        .delay-300 { animation-delay: 0.3s; }
+
+        /* --- DEEL AESTHETIC REFINEMENTS --- */
+        .hero-title {
+            font-size: clamp(3rem, 10vw, 7rem);
+            line-height: 0.85;
+            letter-spacing: -0.06em;
+            font-weight: 900;
+        }
+
+        .glass-nav {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+
+        .institutional-card {
+            background: #ffffff;
+            border: 1px solid #f1f5f9;
+            transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .institutional-card:hover {
+            border-color: var(--brand-blue);
+            box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.08);
+            transform: translateY(-10px);
+        }
+
+        /* --- BACKGROUND ARCHITECTURE --- */
+        .mesh-gradient-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            z-index: -1;
+            background: #ffffff;
+        }
+
+        .blob {
+            position: absolute;
+            width: 800px;
+            height: 800px;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.15;
+            animation: meshFlow 20s infinite ease-in-out;
+        }
+
+        .blob-1 { background: var(--brand-blue); top: -200px; left: -200px; }
+        .blob-2 { background: var(--brand-indigo); bottom: -200px; right: -200px; animation-delay: -5s; }
+        .blob-3 { background: #60a5fa; top: 20%; right: 10%; animation-delay: -10s; }
+
+        .grid-overlay {
+            position: absolute;
+            inset: 0;
+            background-image: radial-gradient(#cbd5e1 1px, transparent 1px);
+            background-size: 40px 40px;
+            mask-image: radial-gradient(circle at center, black, transparent 80%);
+            opacity: 0.4;
+        }
+
+        /* --- BUTTONS --- */
+        .btn-institutional {
+            background-color: var(--brand-slate);
+            color: white;
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-institutional:hover {
+            background-color: var(--brand-blue);
+            transform: scale(1.05);
+            box-shadow: 0 20px 40px rgba(37, 99, 235, 0.2);
+        }
+
+        .dark-section {
+            background-color: var(--brand-slate);
+            color: white;
+            position: relative;
+        }
+
+        .image-overlay {
+            filter: brightness(0.4) grayscale(1);
+            transition: all 0.8s ease;
+        }
+
+        .institutional-card:hover .image-overlay {
+            filter: brightness(0.6) grayscale(0.5);
+        }
+    </style>
+</head>
+<body class="overflow-x-hidden">
+
+    <!-- NAVIGATION -->
+    <nav class="fixed w-full z-50 glass-nav border-b border-slate-100">
+        <div class="max-w-7xl mx-auto px-8 py-6 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <div class="bg-slate-900 text-white w-10 h-10 rounded-xl flex items-center justify-center font-black shadow-lg">L</div>
+                <span class="text-2xl font-black tracking-tighter text-slate-900">Ledgehold</span>
+            </div>
+            
+            <div class="hidden md:flex items-center gap-12 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">
+                <a href="#vision" class="hover:text-blue-600 transition-colors">Infrastructure</a>
+                <a href="#protocols" class="hover:text-blue-600 transition-colors">Protocols</a>
+                <a href="#architecture" class="hover:text-blue-600 transition-colors">Governance</a>
+                <button class="bg-slate-900 text-white px-8 py-3.5 rounded-full hover:bg-blue-600 transition-all shadow-2xl shadow-slate-200">
+                    Request Partnership
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- HERO SECTION -->
+    <section class="relative pt-48 pb-32 lg:pt-64 lg:pb-48">
+        <div class="mesh-gradient-bg">
+            <div class="blob blob-1"></div>
+            <div class="blob blob-2"></div>
+            <div class="blob blob-3"></div>
+            <div class="grid-overlay"></div>
+        </div>
+
+        <div class="max-w-7xl mx-auto px-8 text-center relative z-10">
+            <div class="animate-in delay-100 inline-flex items-center gap-3 px-5 py-2 rounded-full bg-white border border-slate-200 shadow-sm mb-10">
+                <i class="bi bi-shield-lock-fill text-blue-600"></i>
+                <span class="text-[10px] font-black tracking-[0.3em] text-slate-600 uppercase">Institutional Intelligence Node</span>
+            </div>
+            
+            <h1 class="hero-title animate-in delay-200 mb-12">
+                The Invisible Layer of <span class="text-blue-600">Economic Integrity.</span>
+            </h1>
+            
+            <p class="text-xl lg:text-2xl text-slate-500 max-w-3xl mx-auto mb-16 font-medium leading-relaxed animate-in delay-300">
+                Ledgehold is the underlying orchestration core protecting margins and mitigating fraud in informal economies through SHA-256 silo isolation and mathematical fault recovery.
+            </p>
+
+            <div class="flex flex-col sm:flex-row gap-6 justify-center items-center animate-in delay-300">
+                <button class="w-full sm:w-auto btn-institutional px-12 py-6 rounded-2xl font-black text-sm uppercase tracking-widest flex items-center justify-center gap-4 group">
+                    Strategic Integration <i class="bi bi-arrow-right group-hover:translate-x-1 transition-transform"></i>
+                </button>
+                <button class="w-full sm:w-auto bg-white text-slate-900 border border-slate-200 px-12 py-6 rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-slate-50 transition-all shadow-sm">
+                    View Infrastructure
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- HIGH-SECURITY ARCHITECTURE MOCKUP -->
+    <section class="px-8 pb-32">
+        <div class="max-w-7xl mx-auto">
+            <div class="relative rounded-[60px] border border-slate-200 bg-slate-900 p-4 shadow-[0_50px_100px_-20px_rgba(0,0,0,0.2)] overflow-hidden animate-in">
+                <img src="https://images.unsplash.com/photo-1550751827-4bd374c3f58b?q=80&w=2000&auto=format&fit=crop" 
+                     alt="Silo Architecture" 
+                     class="rounded-[48px] w-full object-cover h-[500px] lg:h-[800px] opacity-40 grayscale brightness-125">
+                
+                <div class="absolute inset-0 flex items-center justify-center">
+                    <div class="text-center p-10 bg-white/5 backdrop-blur-xl rounded-[40px] border border-white/10 max-w-lg">
+                        <div class="w-20 h-20 bg-blue-600 rounded-3xl flex items-center justify-center text-white mx-auto mb-8 shadow-2xl animate-pulse">
+                            <i class="bi bi-cpu fs-1"></i>
+                        </div>
+                        <h3 class="text-white text-3xl font-black tracking-tighter mb-4 uppercase">Silo Isolation v2.0</h3>
+                        <p class="text-slate-400 text-sm font-bold leading-relaxed tracking-wide">Every firm operates in a cryptographically isolated corridor. Zero cross-tenant data leakage, guaranteed by SHA-256 identity hashing.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CORE MOATS -->
+    <section id="protocols" class="py-40 bg-slate-50 relative overflow-hidden">
+        <div class="max-w-7xl mx-auto px-8 relative z-10">
+            <div class="flex flex-col lg:flex-row gap-16 items-end mb-32">
+                <div class="lg:w-2/3">
+                    <h4 class="text-blue-600 font-black uppercase tracking-[0.3em] text-[10px] mb-6">The Moat</h4>
+                    <h2 class="text-5xl lg:text-8xl font-black tracking-tighter leading-[0.9] text-slate-900">
+                        Designed to protect <br><span class="text-slate-400">the frontier.</span>
+                    </h2>
+                </div>
+                <div class="lg:w-1/3 border-l-4 border-blue-600 pl-10 py-2">
+                    <p class="text-slate-500 font-bold text-xl leading-relaxed">
+                        We eliminate revenue leakage by turning informal trust into hard cryptographic evidence.
+                    </p>
+                </div>
+            </div>
+
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-10">
+                <!-- Card 1 -->
+                <div class="institutional-card p-14 rounded-[50px]">
+                    <div class="w-14 h-14 bg-slate-900 rounded-2xl flex items-center justify-center text-white mb-10 shadow-xl">
+                        <i class="bi bi-fingerprint fs-3"></i>
+                    </div>
+                    <h3 class="text-3xl font-black tracking-tight mb-6 text-slate-900">Identity Hashing</h3>
+                    <p class="text-slate-500 font-bold leading-relaxed text-sm">
+                        Digital fingerprinting protocols ensure that transaction participants are verified across our global institutional registry.
+                    </p>
+                </div>
+                <!-- Card 2 -->
+                <div class="institutional-card p-14 rounded-[50px]">
+                    <div class="w-14 h-14 bg-slate-900 rounded-2xl flex items-center justify-center text-white mb-10 shadow-xl">
+                        <i class="bi bi-graph-up-arrow fs-3"></i>
+                    </div>
+                    <h3 class="text-3xl font-black tracking-tight mb-6 text-slate-900">Margin Defense</h3>
+                    <p class="text-slate-500 font-bold leading-relaxed text-sm">
+                        Automated auditing detects inventory displacement in real-time, preventing capital erosion for small business operators.
+                    </p>
+                </div>
+                <!-- Card 3 -->
+                <div class="institutional-card p-14 rounded-[50px]">
+                    <div class="w-14 h-14 bg-slate-900 rounded-2xl flex items-center justify-center text-white mb-10 shadow-xl">
+                        <i class="bi bi-broadcast fs-3"></i>
+                    </div>
+                    <h3 class="text-3xl font-black tracking-tight mb-6 text-slate-900">Fault Recovery</h3>
+                    <p class="text-slate-500 font-bold leading-relaxed text-sm">
+                        Mathematical displacement monitoring allows our telemetry nodes to automatically resume active status upon detecting movement.
+                    </p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Background Grid Decoration -->
+        <div class="absolute inset-0 opacity-5 pointer-events-none">
+            <div class="w-full h-full bg-[radial-gradient(#000_1px,transparent_1px)] [background-size:24px_24px]"></div>
+        </div>
+    </section>
+
+    <!-- INSTITUTIONAL DARK SECTION -->
+    <section id="architecture" class="dark-section py-48 overflow-hidden">
+        <div class="max-w-7xl mx-auto px-8 relative z-10">
+            <div class="grid lg:grid-cols-2 gap-24 items-center">
+                <div class="animate-in">
+                    <span class="text-blue-500 font-black uppercase tracking-[0.4em] text-[10px] mb-8 block">Architecture & IP</span>
+                    <h2 class="text-5xl lg:text-7xl font-black tracking-tighter leading-none mb-10 text-white">One Core. <br>Universal Compliance.</h2>
+                    <p class="text-slate-400 text-xl font-medium leading-relaxed mb-16">
+                        Ledgehold is the governing engine for DPA compliance, risk-scoring algorithms, and autonomous waybill telemetry.
+                    </p>
+                    
+                    <div class="space-y-8">
+                        <div class="flex gap-6 p-8 rounded-[32px] bg-white/5 border border-white/10 hover:bg-white/10 transition-all group">
+                            <div class="text-blue-500"><i class="bi bi-check-circle-fill fs-4"></i></div>
+                            <div>
+                                <h5 class="font-black uppercase text-xs tracking-widest text-white mb-2">Gatekeeper Protocol v2.0</h5>
+                                <p class="text-xs text-slate-500 leading-relaxed font-bold">100% receipt-to-log matching enforced at the kernel level.</p>
+                            </div>
+                        </div>
+                        <div class="flex gap-6 p-8 rounded-[32px] bg-white/5 border border-white/10 hover:bg-white/10 transition-all group">
+                            <div class="text-emerald-500"><i class="bi bi-check-circle-fill fs-4"></i></div>
+                            <div>
+                                <h5 class="font-black uppercase text-xs tracking-widest text-white mb-2">Silo Isolation Protocol</h5>
+                                <p class="text-xs text-slate-500 leading-relaxed font-bold">Encrypted multi-tenant architecture for secure institutional scaling.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="relative animate-in delay-200">
+                    <div class="absolute -inset-20 bg-blue-600/20 blur-[120px] rounded-full"></div>
+                    <img src="https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=2000&auto=format&fit=crop" 
+                         class="rounded-[60px] shadow-2xl grayscale brightness-75 relative z-10" alt="Global Node">
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CALL TO ACTION -->
+    <section class="py-48 text-center relative">
+        <div class="max-w-4xl mx-auto px-8 relative z-10">
+            <h2 class="text-5xl lg:text-8xl font-black tracking-tighter mb-12 text-slate-900 leading-[0.85]">
+                Digitizing Trust. <br><span class="text-blue-600 tracking-[-0.08em]">Seeding Growth.</span>
+            </h2>
+            <p class="text-slate-500 text-xl font-bold mb-16 max-w-2xl mx-auto">
+                Join the Ledgehold ecosystem. We are currently opening strategic corridors for institutional logistics partners and capital providers.
+            </p>
+            <div class="flex flex-col sm:flex-row gap-6 justify-center items-center">
+                <button class="w-full sm:w-auto btn-institutional px-14 py-6 rounded-[24px] font-black text-xs uppercase tracking-[0.2em] shadow-2xl">
+                    Invest in the Core
+                </button>
+                <button class="w-full sm:w-auto bg-transparent border-2 border-slate-200 text-slate-900 px-14 py-6 rounded-[24px] font-black text-xs uppercase tracking-[0.2em] hover:bg-slate-50 transition-all">
+                    Partner Onboarding
+                </button>
+            </div>
+        </div>
+        
+        <!-- Subtle Animated Grid -->
+        <div class="absolute inset-0 -z-10 bg-[radial-gradient(#e2e8f0_1px,transparent_1px)] [background-size:32px_32px] opacity-40"></div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="bg-white border-t border-slate-100 pt-32 pb-16">
+        <div class="max-w-7xl mx-auto px-8">
+            <div class="grid lg:grid-cols-4 gap-20 mb-32">
+                <div class="lg:col-span-2">
+                    <div class="flex items-center gap-3 mb-10">
+                        <div class="bg-slate-900 text-white w-12 h-12 rounded-2xl flex items-center justify-center font-black shadow-xl">L</div>
+                        <span class="text-3xl font-black tracking-tighter text-slate-900">Ledgehold</span>
+                    </div>
+                    <p class="text-slate-400 text-sm font-bold leading-relaxed max-w-sm uppercase tracking-wider">
+                        The Infrastructure of Economic Integrity. <br>Protecting margins, securing trade, and digitizing trust in emerging markets.
+                    </p>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-16 lg:col-span-2">
+                    <div>
+                        <h5 class="text-[10px] font-black text-slate-900 uppercase tracking-[0.3em] mb-10">Core Nodes</h5>
+                        <ul class="space-y-6 text-xs font-black text-slate-500 uppercase tracking-widest">
+                            <li><a href="#" class="hover:text-blue-600 transition-colors">Intelligence Hub</a></li>
+                            <li><a href="#" class="hover:text-blue-600 transition-colors">Logistics Node</a></li>
+                            <li><a href="#" class="hover:text-blue-600 transition-colors">Risk Scoring</a></li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h5 class="text-[10px] font-black text-slate-900 uppercase tracking-[0.3em] mb-10">Governance</h5>
+                        <ul class="space-y-6 text-xs font-black text-slate-500 uppercase tracking-widest">
+                            <li><a href="#" class="hover:text-blue-600 transition-colors">DPA Certified</a></li>
+                            <li><a href="#" class="hover:text-blue-600 transition-colors">Silo Policy</a></li>
+                            <li><a href="#" class="hover:text-blue-600 transition-colors">Legal Framework</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="flex flex-col md:flex-row justify-between items-center gap-10 pt-16 border-t border-slate-50">
+                <p class="text-[10px] font-black text-slate-300 uppercase tracking-[0.3em]">© 2026 Ledgehold Enterprise. | Institutional Grade Infrastructure</p>
+                <div class="flex gap-6">
+                    <div class="text-[9px] font-black text-slate-900 px-5 py-2 bg-slate-50 rounded-full border border-slate-100 uppercase tracking-widest shadow-sm">SEC Region: West Africa</div>
+                    <div class="text-[9px] font-black text-slate-900 px-5 py-2 bg-slate-50 rounded-full border border-slate-100 uppercase tracking-widest shadow-sm">Powered by SHA-256</div>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Trigger animations on scroll using Intersection Observer
+        document.addEventListener('DOMContentLoaded', () => {
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.style.animationPlayState = 'running';
+                        entry.target.style.opacity = '1';
+                    }
+                });
+            }, { threshold: 0.1 });
+            
+            document.querySelectorAll('.animate-in').forEach(el => {
+                el.style.animationPlayState = 'paused';
+                observer.observe(el);
+            });
+        });
+    </script>
+</body>
+</html>
