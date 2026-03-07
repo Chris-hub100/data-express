@@ -403,6 +403,10 @@ def marketing():
 def ledgehold():
     return render_template('ledgehold.html')
 
+@app.route('/landing/tracking')
+def landing_tracking_redirect():
+    return redirect('/tracking', code=301)
+
 @app.route('/endorsement')
 def endorsement():
     return render_template('endorsement.html', **get_firebase_context())
