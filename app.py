@@ -407,6 +407,10 @@ def ledgehold():
 def landing_tracking_redirect():
     return redirect('/tracking', code=301)
 
+@app.route('/landing/logistics')
+def landing_tracking_redirect():
+    return redirect('/way_admin', code=301)
+
 @app.route('/endorsement')
 def endorsement():
     return render_template('endorsement.html', **get_firebase_context())
