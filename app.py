@@ -408,7 +408,7 @@ def landing_tracking_redirect():
     return redirect('/tracking', code=301)
 
 @app.route('/landing/logistics')
-def landing_tracking_redirect():
+def landing_logistics_redirect():
     return redirect('/way_admin', code=301)
 
 @app.route('/endorsement')
