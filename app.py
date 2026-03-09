@@ -228,12 +228,19 @@ def stream_gps():
     try:
         data = request.json
         app_id, s_id, lat, lng = data.get('appId'), data.get('sessionId'), data.get('lat'), data.get('lng')
+        
         db.collection('artifacts').document(app_id).collection('public').document('data')\
           .collection('delivery_sessions').document(s_id).collection('location_logs').document().set({
             "lat": lat, "lng": lng, "timestamp": firestore.SERVER_TIMESTAMP
         })
+        
         db.collection('artifacts').document(app_id).collection('public').document('data')\
-          .collection('delivery_sessions').document(s_id).update({"lastUpdated": firestore.SERVER_TIMESTAMP})
+          .collection('delivery_sessions').document(s_id).update({
+            "currentLat": lat,
+            "currentLng": lng,
+            "lastUpdated": firestore.SERVER_TIMESTAMP
+        })
+        
         return jsonify({"success": True}), 200
     except Exception as e: return jsonify({"success": False, "error": str(e)}), 500
 
