@@ -6,41 +6,45 @@
     <title>Global Logistics Portal | Live Track</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    
-    <!-- Leaflet.js Mapping Infrastructure (Zero OpEx) -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
-    <!-- Google Fonts: DM Sans -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&display=swap" rel="stylesheet">
-    
-    <!-- Firebase Compat SDKs -->
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
     <script src="https://www.gstatic.com/firebasejs/11.1.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/11.1.0/firebase-auth-compat.js"></script>
 
     <style>
         :root {
-            --brand-primary: #3b82f6; 
+            --brand-primary: #3b82f6;
             --brand-dark: #0f172a;
-            --backmarket-green: #00FF85; 
+            --accent-green: #00FF85;
+            --border: #e2e8f0;
+            --border-strong: #cbd5e1;
+            --text-primary: #0f172a;
+            --text-secondary: #475569;
+            --text-muted: #94a3b8;
+            --mono: 'DM Mono', monospace;
         }
 
-        body { 
-            font-family: 'DM Sans', sans-serif; 
+        body {
+            font-family: 'DM Sans', sans-serif;
             background-color: #ffffff;
-            color: var(--brand-dark);
+            color: var(--text-primary);
             scroll-behavior: smooth;
         }
 
-        .tracker-container {
-            transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
-            z-index: 1000;
+        /* ── TRACKER EVOLUTION ── */
+        .tracker-container { 
+            transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1); 
+            z-index: 1000; 
             border-width: 2px;
+            background: white;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
         }
 
+        /* State 1: Expanded Bar (Bottom/Landing) */
         .tracker-expanded {
             width: 90%;
             max-width: 500px;
@@ -48,54 +52,288 @@
             left: 50%;
             transform: translateX(-50%);
             border-radius: 100px;
-            background: white;
             padding: 0.5rem;
-            border-color: var(--backmarket-green);
+            border-color: var(--accent-green);
         }
-        
+
+        /* State 2: Collapsed Circle (Scroll) */
+        .tracker-collapsed {
+            width: 60px;
+            height: 60px;
+            bottom: 2rem;
+            right: 2rem;
+            left: auto;
+            transform: translateX(0);
+            border-radius: 50%;
+            padding: 0;
+            cursor: pointer;
+            border-color: var(--brand-primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .tracker-collapsed:hover {
+            transform: scale(1.1);
+            background: var(--brand-primary);
+            color: white;
+        }
+
+        .tracker-collapsed .search-content {
+            display: none;
+        }
+
+        .collapsed-icon {
+            display: none;
+            font-size: 1.5rem;
+        }
+
+        .tracker-collapsed .collapsed-icon {
+            display: block;
+        }
+
         @keyframes loading-sweep { 0% { left: -100%; } 100% { left: 100%; } }
         .loader-bar {
             position: absolute; top: 0; left: 0; height: 3px; width: 100%;
             background: linear-gradient(90deg, transparent, var(--brand-primary), transparent);
-            animation: loading-sweep 1.5s infinite linear;
-            display: none;
+            animation: loading-sweep 1.5s infinite linear; display: none;
         }
 
+        /* ── MAP ── */
         #liveMap { height: 100%; width: 100%; background: #f1f5f9; transition: filter 0.8s ease; }
-        
-        /* SECURITY LOCKDOWN STYLES */
         .map-lockdown { filter: blur(30px) grayscale(1); pointer-events: none !important; }
         .lockdown-overlay {
             position: absolute; inset: 0; z-index: 1500;
-            background: rgba(15, 23, 42, 0.4);
+            background: rgba(15,23,42,0.45);
             display: none; align-items: center; justify-content: center;
-            backdrop-filter: blur(4px);
+            backdrop-filter: blur(6px);
         }
         .lockdown-overlay.active { display: flex; }
-
-        .btn-brand { background-color: var(--brand-dark); color: white; transition: all 0.3s ease; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
 
-        @media (max-width: 1024px) {
-            .info-sheet {
-                position: absolute; bottom: 0; left: 0; right: 0;
-                background: #f8fafc; border-top-left-radius: 2.5rem; border-top-right-radius: 2.5rem;
-                z-index: 2000; transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
-                box-shadow: 0 -10px 40px rgba(0,0,0,0.15); max-height: 85vh; overflow-y: auto;
-            }
-            .info-sheet.minimized { transform: translateY(calc(100% - 95px)); }
-            .info-sheet.expanded { transform: translateY(0); }
+        /* ── HERO TRUST BADGES ── */
+        .trust-badge {
+            display: inline-flex; align-items: center; gap: 6px;
+            background: rgba(255,255,255,0.12);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: rgba(255,255,255,0.85);
+            padding: 6px 14px; border-radius: 100px;
+            font-size: 11px; font-weight: 600;
+            backdrop-filter: blur(8px);
         }
 
-        .stepper-line {
-            position: absolute;
-            left: 19px;
-            top: 40px;
-            bottom: -32px;
-            width: 2px;
-            background-color: #e2e8f0;
-            z-index: 0;
+        /* ── HERO STATS ── */
+        .hero-stat { text-align: center; padding: 0 2rem; border-right: 1px solid rgba(255,255,255,0.15); }
+        .hero-stat:last-child { border-right: none; }
+
+        /* ── FEATURE STRIP ── */
+        .feature-strip { display: flex; align-items: stretch; border-top: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0; }
+        .feature-item { flex: 1; padding: 2rem 1.5rem; border-right: 1px solid #e2e8f0; display: flex; flex-direction: column; gap: 8px; }
+        .feature-item:last-child { border-right: none; }
+
+        /* ── MODAL BACKDROP ── */
+        .modal-backdrop-open {
+            position: fixed; inset: 0; z-index: 2000;
+            background: rgba(15,23,42,0.75);
+            backdrop-filter: blur(10px);
+            display: flex; align-items: center; justify-content: center;
+            padding: 8px;
         }
+        @media (min-width: 1024px) { .modal-backdrop-open { padding: 2rem; } }
+
+        /* ── MODAL SHELL ── */
+        .modal-shell {
+            background: white;
+            width: 100%; height: 95vh;
+            border-radius: 1.75rem;
+            overflow: hidden;
+            display: flex; flex-direction: column;
+            box-shadow: 0 30px 80px rgba(0,0,0,0.3);
+            position: relative;
+        }
+        @media (min-width: 1024px) {
+            .modal-shell { max-width: 1200px; height: 88vh; flex-direction: row; }
+        }
+
+        /* ── INFO PANEL ── */
+        .info-panel {
+            background: #ffffff;
+            display: flex; flex-direction: column;
+            overflow: hidden;
+            width: 100%;
+        }
+        @media (min-width: 1024px) {
+            .info-panel { width: 400px; flex-shrink: 0; border-right: 1px solid var(--border); height: 100%; }
+        }
+
+        /* Mobile bottom sheet */
+        @media (max-width: 1023px) {
+            .info-panel {
+                position: absolute; bottom: 0; left: 0; right: 0;
+                border-top-left-radius: 1.5rem; border-top-right-radius: 1.5rem;
+                z-index: 2000;
+                transform: translateY(calc(100% - 84px));
+                transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+                box-shadow: 0 -8px 40px rgba(0,0,0,0.12);
+                max-height: 88vh;
+            }
+            .info-panel.expanded { transform: translateY(0); }
+            .map-panel { height: 100%; }
+        }
+
+        /* ── PANEL HEADER ── */
+        .panel-header { padding: 0 1.5rem; border-bottom: 1px solid var(--border); flex-shrink: 0; position: relative; }
+
+        .handle-pill {
+            width: 36px; height: 4px; background: var(--border-strong);
+            border-radius: 2px; margin: 0 auto;
+            position: absolute; left: 50%; transform: translateX(-50%); top: 9px;
+        }
+
+        .mobile-handle { display: flex; align-items: center; justify-content: space-between; padding: 1.25rem 0 1rem; }
+        @media (min-width: 1024px) { .mobile-handle { display: none; } }
+
+        .handle-id-badge {
+            display: inline-flex; align-items: center; gap: 7px;
+            background: #f8fafc; border: 1px solid var(--border);
+            padding: 5px 12px; border-radius: 100px;
+            font-family: var(--mono); font-size: 11px; font-weight: 500;
+            color: var(--text-primary); letter-spacing: 0.5px;
+        }
+        .handle-id-dot { width: 6px; height: 6px; border-radius: 50%; background: #10b981; box-shadow: 0 0 0 2px rgba(16,185,129,0.2); }
+
+        .handle-toggle-btn {
+            width: 36px; height: 36px; border-radius: 50%;
+            border: 1.5px solid var(--border); background: white;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; color: var(--text-secondary); font-size: 13px;
+            transition: all 0.2s; box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+        }
+        .handle-toggle-btn:hover { background: #f8fafc; }
+
+        .panel-title-row { display: none; align-items: center; justify-content: space-between; padding: 1.25rem 0; }
+        @media (min-width: 1024px) { .panel-title-row { display: flex; } }
+
+        .panel-title { font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--text-muted); }
+
+        .close-btn-desktop {
+            width: 32px; height: 32px; border-radius: 50%;
+            border: 1.5px solid var(--border); background: white;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; color: var(--text-secondary); font-size: 12px;
+            transition: all 0.2s;
+        }
+        .close-btn-desktop:hover { background: #fee2e2; border-color: #fca5a5; color: #ef4444; }
+
+        /* ── WAYBILL HERO ── */
+        .waybill-hero { padding: 1.5rem; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+
+        .verified-chip {
+            display: inline-flex; align-items: center; gap: 5px;
+            background: #eff6ff; color: #3b82f6;
+            border: 1px solid #bfdbfe;
+            padding: 3px 10px; border-radius: 100px;
+            font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase;
+            margin-bottom: 12px;
+        }
+
+        .waybill-ref-label { font-size: 10px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--text-muted); margin-bottom: 3px; }
+        .waybill-ref-id { font-family: var(--mono); font-size: 26px; font-weight: 700; color: var(--text-primary); letter-spacing: -0.5px; line-height: 1.1; }
+
+        /* ── STATUS BLOCK ── */
+        .status-block {
+            padding: 1.125rem 1.5rem;
+            border-bottom: 1px solid var(--border);
+            display: flex; align-items: center; justify-content: space-between;
+            flex-shrink: 0; gap: 12px;
+        }
+        .status-label-text { font-size: 10px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--text-muted); margin-bottom: 4px; }
+        .status-value-text { font-size: 17px; font-weight: 800; color: var(--text-primary); line-height: 1.2; }
+
+        .live-badge {
+            display: none; align-items: center; gap: 6px;
+            background: #f0fdf4; border: 1px solid #bbf7d0; color: #16a34a;
+            padding: 5px 10px; border-radius: 100px;
+            font-size: 10px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; white-space: nowrap;
+        }
+        .live-badge.show { display: inline-flex; }
+
+        .watchdog-pulse { width: 6px; height: 6px; border-radius: 50%; background: #16a34a; }
+        @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+        .watchdog-pulse { animation: blink 1.8s ease-in-out infinite; }
+
+        /* ── STEPPER ── */
+        .stepper-block { padding: 1.5rem; flex: 1; overflow-y: auto; }
+        .stepper-block::-webkit-scrollbar { width: 3px; }
+        .stepper-block::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+        .stepper-header { font-size: 10px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--text-muted); margin-bottom: 1.25rem; }
+
+        .step-row { display: flex; gap: 0; align-items: stretch; }
+
+        .step-left { display: flex; flex-direction: column; align-items: center; width: 40px; flex-shrink: 0; }
+
+        .step-node {
+            width: 36px; height: 36px; border-radius: 50%;
+            border: 2px solid var(--border); background: white;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 13px; color: var(--text-muted);
+            transition: all 0.35s; flex-shrink: 0; z-index: 1;
+        }
+        .step-connector { width: 2px; flex: 1; min-height: 24px; background: var(--border); margin: 3px 0; border-radius: 1px; transition: background 0.35s; }
+
+        .step-content { flex: 1; padding: 5px 0 24px 14px; }
+        .step-name { font-size: 13px; font-weight: 700; color: var(--text-muted); transition: color 0.35s; line-height: 1.3; margin-bottom: 3px; }
+        .step-desc { font-size: 11px; font-weight: 500; color: var(--text-muted); line-height: 1.6; opacity: 0; max-height: 0; overflow: hidden; transition: all 0.35s ease; }
+
+        /* Step states */
+        .step-row.is-done .step-node { border-color: #10b981; background: #f0fdf4; color: #10b981; }
+        .step-row.is-done .step-connector { background: #10b981; }
+        .step-row.is-done .step-name { color: var(--text-secondary); }
+
+        .step-row.is-active .step-node { border-color: #3b82f6; background: #eff6ff; color: #3b82f6; box-shadow: 0 0 0 4px rgba(59,130,246,0.1); }
+        .step-row.is-active .step-name { color: var(--text-primary); font-weight: 800; }
+        .step-row.is-active .step-desc { opacity: 1; max-height: 60px; color: var(--text-secondary); }
+
+        .step-row.is-fault .step-node { border-color: #f59e0b; background: #fffbeb; color: #f59e0b; box-shadow: 0 0 0 4px rgba(245,158,11,0.1); }
+        .step-row.is-fault .step-name { color: #92400e; font-weight: 800; }
+        .step-row.is-fault .step-desc { opacity: 1; max-height: 60px; color: #b45309; }
+
+        .step-row.is-arrived .step-node { border-color: #10b981; background: #f0fdf4; color: #10b981; box-shadow: 0 0 0 4px rgba(16,185,129,0.1); }
+        .step-row.is-arrived .step-name { color: #065f46; font-weight: 800; }
+        .step-row.is-arrived .step-desc { opacity: 1; max-height: 60px; color: #065f46; }
+
+        /* ── PANEL FOOTER ── */
+        .panel-footer {
+            padding: 12px 1.5rem; border-top: 1px solid var(--border);
+            display: flex; align-items: center; justify-content: space-between; flex-shrink: 0;
+        }
+        .powered-by { display: flex; align-items: center; gap: 7px; font-size: 10px; font-weight: 600; color: var(--text-muted); }
+        .powered-by-mark { width: 18px; height: 18px; background: #3b82f6; border-radius: 4px; display: flex; align-items: center; justify-content: center; color: white; font-size: 9px; }
+
+        /* ── NOT FOUND ── */
+        .not-found-state { display: none; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 3rem 2rem; flex: 1; }
+
+        /* ── SIGNAL PILL ── */
+        .signal-pill {
+            position: absolute; bottom: 1.5rem; right: 1.5rem; z-index: 1000;
+            background: rgba(255,255,255,0.95); backdrop-filter: blur(12px);
+            border: 1px solid var(--border); padding: 10px 14px; border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1); min-width: 160px;
+        }
+
+        /* ── LOCKDOWN CARD ── */
+        .lockdown-card { background: white; border-radius: 1.5rem; padding: 2.5rem 2rem; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.15); max-width: 280px; }
+
+        /* ── MOBILE CLOSE (on map) ── */
+        .mobile-close-map {
+            position: absolute; top: 1rem; left: 1rem; z-index: 3000;
+            width: 40px; height: 40px; background: white; border-radius: 50%;
+            border: 1.5px solid var(--border); display: flex; align-items: center; justify-content: center;
+            cursor: pointer; font-size: 14px; color: var(--text-secondary);
+            box-shadow: 0 2px 12px rgba(0,0,0,0.12);
+        }
+        @media (min-width: 1024px) { .mobile-close-map { display: none; } }
     </style>
 </head>
 <body class="overflow-x-hidden">
@@ -104,26 +342,20 @@
     <script>
         const params = new URLSearchParams(window.location.search);
         const nodeParam = params.get('node');
-
         const CONFIG = {
-            targetNode: (nodeParam || "westruck-logistics").trim().toLowerCase(), 
+            targetNode: (nodeParam || "westruck-logistics").trim().toLowerCase(),
             firebase: JSON.parse('{{ __firebase_config | safe if __firebase_config else "{}" }}')
         };
-
         if (!firebase.apps.length) firebase.initializeApp(CONFIG.firebase);
         const db = firebase.firestore();
         const auth = firebase.auth();
-        
-        let currentMap = null;
-        let mapMarker = null;
-        let telemetryUnsubscribe = null;
-        let lastKnownLat = null;
-        let lastKnownLng = null;
-        let lastKnownTimestamp = null; 
-        let healthCheckInterval = null;
+
+        let currentMap = null, mapMarker = null, telemetryUnsubscribe = null;
+        let lastKnownLat = null, lastKnownLng = null, lastKnownTimestamp = null;
+        let healthCheckInterval = null, sheetExpanded = false;
     </script>
 
-    <!-- NAVIGATION -->
+    <!-- NAV -->
     <nav class="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-100 py-4">
         <div class="container mx-auto px-6 flex justify-between items-center">
             <div class="flex items-center gap-3">
@@ -144,165 +376,263 @@
             <div class="absolute inset-0 bg-gradient-to-t from-white via-transparent to-transparent"></div>
         </div>
         <div class="relative z-10 text-center px-6">
-            <h3 class="text-5xl lg:text-9xl font-black text-white uppercase tracking-tighter mb-8 opacity-90">
+            <div class="flex items-center justify-center gap-3 mb-8 flex-wrap">
+                <div class="trust-badge"><i class="bi bi-shield-check-fill text-green-400"></i> End-to-End Visibility</div>
+                <div class="trust-badge"><i class="bi bi-broadcast text-blue-300"></i> Live Telemetry</div>
+                <div class="trust-badge"><i class="bi bi-lock-fill text-slate-300"></i> Secure Portal</div>
+            </div>
+            <h3 class="text-5xl lg:text-9xl font-black text-white uppercase tracking-tighter mb-6 opacity-90">
                 Live <span class="text-blue-400">Telemetry.</span>
             </h3>
-            <p class="text-white/70 max-w-xl mx-auto font-medium text-lg leading-relaxed">Enter your waybill reference to open the autonomous visibility corridor.</p>
+            <p class="text-white/70 max-w-xl mx-auto font-medium text-lg leading-relaxed mb-10">Enter your waybill reference to open the autonomous visibility corridor.</p>
+            <div class="flex items-center justify-center">
+                <div class="hero-stat">
+                    <div class="text-2xl font-black text-white">Live</div>
+                    <div class="text-[10px] font-bold text-white/50 uppercase tracking-widest mt-1">GPS Updates</div>
+                </div>
+                <div class="hero-stat">
+                    <div class="text-2xl font-black text-white">SMS</div>
+                    <div class="text-[10px] font-bold text-white/50 uppercase tracking-widest mt-1">Notifications</div>
+                </div>
+                <div class="hero-stat">
+                    <div class="text-2xl font-black text-white">Real-Time</div>
+                    <div class="text-[10px] font-bold text-white/50 uppercase tracking-widest mt-1">Status Feed</div>
+                </div>
+            </div>
         </div>
     </section>
 
-    <!-- FLOATING TRACKER -->
-    <div id="tracker" class="fixed tracker-container tracker-expanded shadow-2xl flex items-center overflow-hidden">
-        <div id="loaderBar" class="loader-bar"></div>
-        <div class="search-content flex items-center w-full px-4 gap-3">
-            <i class="bi bi-upc-scan text-slate-400 fs-5"></i>
-            <input type="text" id="waybillInput" placeholder="ENTER WAYBILL ID" class="w-full bg-transparent border-none outline-none font-bold tracking-widest text-sm uppercase">
-            <button id="trackBtn" onclick="handleTrack()" class="bg-blue-600 text-white px-6 py-2.5 rounded-full font-black text-[10px] uppercase tracking-widest hover:bg-blue-700 transition-all">Track</button>
+    <!-- FEATURE STRIP (desktop only) -->
+    <div class="lg:flex">
+        <div class="feature-item">
+            <div class="w-9 h-9 bg-blue-50 rounded-xl flex items-center justify-center text-blue-600 mb-1"><i class="bi bi-geo-alt-fill"></i></div>
+            <div class="font-bold text-sm text-slate-900">Passive GPS Tracking</div>
+            <div class="text-xs text-slate-500 leading-relaxed">Track your delivery progress.</div>
+        </div>
+        <div class="feature-item">
+            <div class="w-9 h-9 bg-emerald-50 rounded-xl flex items-center justify-center text-emerald-600 mb-1"><i class="bi bi-bell-fill"></i></div>
+            <div class="font-bold text-sm text-slate-900">Automated SMS Alerts</div>
+            <div class="text-xs text-slate-500 leading-relaxed">Recipients are notified automatically at each delivery milestone. Zero manual calls.</div>
+        </div>
+        <div class="feature-item">
+            <div class="w-9 h-9 bg-amber-50 rounded-xl flex items-center justify-center text-amber-600 mb-1"><i class="bi bi-eye-fill"></i></div>
+            <div class="font-bold text-sm text-slate-900">Full Load Visibility</div>
+            <div class="text-xs text-slate-500 leading-relaxed">Track each waybill from registration through to confirmed arrival at destination.</div>
+        </div>
+        <div class="feature-item">
+            <div class="w-9 h-9 bg-slate-100 rounded-xl flex items-center justify-center text-slate-600 mb-1"><i class="bi bi-shield-lock-fill"></i></div>
+            <div class="font-bold text-sm text-slate-900">Secure &amp; Private</div>
+            <div class="text-xs text-slate-500 leading-relaxed">Waybill-gated access. Location data is locked once delivery is confirmed.</div>
         </div>
     </div>
 
-    <!-- RESULT MODAL -->
-    <div id="resultModal" class="fixed inset-0 z-[2000] hidden flex items-center justify-center p-2 lg:p-6 bg-slate-950/80 backdrop-blur-md">
-        <div class="bg-white w-full max-w-[98vw] h-[95vh] lg:max-w-7xl lg:h-[85vh] rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col lg:flex-row relative">
-            
-            <button onclick="closeModal()" class="absolute top-6 right-6 z-[3000] w-12 h-12 bg-white/90 backdrop-blur rounded-full items-center justify-center hover:bg-white shadow-xl hidden lg:flex">
-                <i class="bi bi-x-lg text-slate-900 fs-5"></i>
-            </button>
+    <!-- FLOATING TRACKER (DYNAMIC COLLAPSE) -->
+    <div id="tracker" onclick="handleTrackerClick()" class="fixed tracker-container tracker-expanded shadow-2xl flex items-center overflow-hidden">
+        <div id="loaderBar" class="loader-bar"></div>
+        
+        <!-- Collapsed Content -->
+        <i class="bi bi-search collapsed-icon"></i>
 
-            <!-- LEFT: INFO -->
-            <div id="infoPane" class="info-sheet lg:w-[380px] lg:h-full lg:bg-slate-50 border-r border-slate-100 flex flex-col p-6 lg:p-10 minimized">
-                <div class="lg:hidden">
-                    <div class="flex items-center justify-between mb-6 px-2 pt-2">
-                        <div id="mobileIdBadge" class="bg-white px-4 py-2 rounded-full border border-slate-200">
-                             <h6 class="font-black text-xs tracking-widest text-slate-900" id="minimizedResID">--</h6>
+        <!-- Expanded Content -->
+        <div class="search-content flex items-center w-full px-4 gap-3" onclick="event.stopPropagation()">
+            <i class="bi bi-upc-scan text-slate-400 fs-5"></i>
+            <input type="text" id="waybillInput" placeholder="ENTER WAYBILL ID"
+                class="w-full bg-transparent border-none outline-none font-bold tracking-widest text-sm uppercase"
+                onkeydown="if(event.key==='Enter') handleTrack()">
+            <button id="trackBtn" onclick="handleTrack()"
+                class="bg-blue-600 text-white px-6 py-2.5 rounded-full font-black text-[10px] uppercase tracking-widest hover:bg-blue-700 transition-all">Track</button>
+        </div>
+    </div>
+
+    <!-- RESULT MODAL (hidden by default, shown via JS) -->
+    <div id="resultModal" style="display:none; position:fixed; inset:0; z-index:2000;">
+        <div class="modal-backdrop-open" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:8px;" onclick="if(event.target===this)closeModal()">
+
+            <div class="modal-shell" onclick="event.stopPropagation()">
+
+                <!-- INFO PANEL -->
+                <div class="info-panel" id="infoPane">
+
+                    <div class="panel-header">
+                        <div class="handle-pill"></div>
+
+                        <!-- Mobile handle -->
+                        <div class="mobile-handle">
+                            <div class="handle-id-badge">
+                                <div class="handle-id-dot"></div>
+                                <span id="minimizedResID">—</span>
+                            </div>
+                            <button class="handle-toggle-btn" onclick="toggleMobileSheet()" id="mobileSheetBtn">
+                                <i class="bi bi-chevron-up" id="sheetToggleIcon"></i>
+                            </button>
                         </div>
-                        <button onclick="toggleMobileSheet()" class="w-10 h-10 bg-blue-600 text-white rounded-full flex items-center justify-center shadow-lg transform transition-transform duration-300" id="mobileSheetBtn">
-                            <i id="sheetToggleIcon" class="bi bi-chevron-up"></i>
-                        </button>
-                    </div>
-                </div>
 
-                <div id="modalDataContainer" class="flex-1 flex flex-col h-full">
-                    <div class="mb-8">
-                        <div class="bg-blue-50 text-blue-600 px-3 py-1 rounded-full font-black text-[9px] uppercase tracking-widest border border-blue-100 mb-4 inline-block">Waybill Verified</div>
-                        <h5 class="text-[10px] font-black text-slate-400 uppercase tracking-[3px] mb-1">Reference</h5>
-                        <h2 class="text-3xl font-black text-slate-900 tracking-tighter" id="resID">--</h2>
+                        <!-- Desktop title row -->
+                        <div class="panel-title-row">
+                            <span class="panel-title">Shipment Details</span>
+                            <button class="close-btn-desktop" onclick="closeModal()"><i class="bi bi-x-lg"></i></button>
+                        </div>
                     </div>
 
-                    <div class="bg-white p-5 rounded-3xl border border-slate-200 shadow-sm mb-8">
-                        <div class="flex items-center justify-between mb-2">
-                            <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</p>
-                            <div id="liveBadge" class="bg-emerald-50 text-emerald-600 px-3 py-1 rounded-full font-bold text-[9px] uppercase tracking-wider hidden animate-pulse">
-                                <i class="bi bi-broadcast"></i> Watchdog Active
+                    <!-- DATA -->
+                    <div id="modalDataContainer" class="flex flex-col flex-1 overflow-hidden">
+
+                        <div class="waybill-hero">
+                            <div class="verified-chip"><i class="bi bi-patch-check-fill"></i> Waybill Verified</div>
+                            <div class="waybill-ref-label">Reference ID</div>
+                            <div class="waybill-ref-id" id="resID">—</div>
+                        </div>
+
+                        <div class="status-block">
+                            <div>
+                                <div class="status-label-text">Current Status</div>
+                                <div class="status-value-text" id="resStatus">Connecting...</div>
+                            </div>
+                            <div class="live-badge" id="liveBadge">
+                                <div class="watchdog-pulse"></div>
+                                Live
                             </div>
                         </div>
-                        <h4 class="text-xl font-black text-slate-900" id="resStatus">Connecting...</h4>
+
+                        <div class="stepper-block no-scrollbar">
+                            <div class="stepper-header">Delivery Timeline</div>
+
+                            <div class="step-row" id="step-1">
+                                <div class="step-left">
+                                    <div class="step-node"><i class="bi bi-clipboard-check"></i></div>
+                                    <div class="step-connector" id="conn-1"></div>
+                                </div>
+                                <div class="step-content">
+                                    <div class="step-name">Registered</div>
+                                    <div class="step-desc">Waybill created and package accepted into the system.</div>
+                                </div>
+                            </div>
+
+                            <div class="step-row" id="step-2">
+                                <div class="step-left">
+                                    <div class="step-node"><i class="bi bi-truck"></i></div>
+                                    <div class="step-connector" id="conn-2"></div>
+                                </div>
+                                <div class="step-content">
+                                    <div class="step-name">In Transit</div>
+                                    <div class="step-desc" id="step-2-desc">Vehicle is en route. Live location is being streamed.</div>
+                                </div>
+                            </div>
+
+                            <div class="step-row" id="step-3">
+                                <div class="step-left">
+                                    <div class="step-node"><i class="bi bi-flag-fill"></i></div>
+                                </div>
+                                <div class="step-content">
+                                    <div class="step-name">Arrived</div>
+                                    <div class="step-desc">Package confirmed at destination. Delivery complete.</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="panel-footer">
+                            <div class="powered-by">
+                                <div class="powered-by-mark"><i class="bi bi-box-seam-fill"></i></div>
+                                Powered by Ledgehold
+                            </div>
+                            <div class="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Central Command</div>
+                        </div>
                     </div>
-                    
-                    <div class="space-y-12 relative flex-1 no-scrollbar overflow-y-auto px-1">
-                        <div id="step-1" class="flex gap-6 relative items-center opacity-30">
-                            <div class="stepper-line"></div>
-                            <div class="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center text-slate-400 z-10 border-4 border-white shadow-sm transition-colors duration-300">
-                                <i class="bi bi-check-lg"></i>
-                            </div>
-                            <div><p class="font-black text-sm uppercase tracking-wider step-label">Registered</p></div>
-                        </div>
-                        <div id="step-2" class="flex gap-6 relative items-center opacity-30">
-                            <div class="stepper-line"></div>
-                            <div class="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center text-slate-400 z-10 border-4 border-white shadow-sm transition-colors duration-300">
-                                <i class="bi bi-truck"></i>
-                            </div>
-                            <div><p class="font-black text-sm uppercase tracking-wider step-label">In Transit</p></div>
-                        </div>
-                        <div id="step-3" class="flex gap-6 relative items-center opacity-30">
-                            <div class="stepper-line"></div>
-                            <div class="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center text-slate-400 z-10 border-4 border-white shadow-sm transition-colors duration-300">
-                                <i class="bi bi-flag-fill"></i>
-                            </div>
-                            <div><p class="font-black text-sm uppercase tracking-wider step-label">Arrived</p></div>
-                        </div>
+
+                    <!-- NOT FOUND -->
+                    <div id="modalNotFound" class="not-found-state">
+                        <div class="w-14 h-14 bg-red-50 rounded-full flex items-center justify-center text-red-400 text-xl mb-4"><i class="bi bi-slash-circle"></i></div>
+                        <h4 class="font-black text-slate-900 text-base uppercase tracking-wide mb-2">Not Found</h4>
+                        <p class="text-sm text-slate-400 font-medium">No record matches this waybill ID.<br>Please check and try again.</p>
                     </div>
+
                 </div>
 
-                <div id="modalNotFound" class="hidden text-center py-20">
-                    <h4 class="font-black text-slate-900 uppercase">Not Found</h4>
-                    <p class="text-sm text-slate-400 mt-2 font-bold">Check your Waybill ID.</p>
-                </div>
-            </div>
+                <!-- MAP PANEL -->
+                <div class="map-panel flex-1 relative" style="min-height:350px;">
+                    <button onclick="closeModal()" class="mobile-close-map"><i class="bi bi-x-lg"></i></button>
+                    <div id="liveMap"></div>
 
-            <!-- RIGHT: MAP & LOCKDOWN OVERLAY -->
-            <div class="flex-1 h-full relative">
-                <button onclick="closeModal()" class="absolute top-6 left-6 z-[3000] w-12 h-12 bg-white/90 backdrop-blur rounded-full flex items-center justify-center shadow-xl border lg:hidden"><i class="bi bi-x-lg"></i></button>
-                
-                <div id="liveMap"></div>
-                
-                <!-- SECURITY OVERLAY -->
-                <div id="lockdownOverlay" class="lockdown-overlay">
-                    <div class="text-center animate-fade">
-                        <div class="w-16 h-16 bg-emerald-500 rounded-full flex items-center justify-center mx-auto mb-4 border-4 border-white shadow-lg">
-                            <i class="bi bi-check-lg text-white fs-2"></i>
+                    <div id="lockdownOverlay" class="lockdown-overlay">
+                        <div class="lockdown-card">
+                            <div class="w-14 h-14 bg-emerald-500 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
+                                <i class="bi bi-check-lg text-white text-xl"></i>
+                            </div>
+                            <h3 class="font-black text-slate-900 text-lg uppercase tracking-tight mb-1">Arrived</h3>
+                            <p class="text-sm font-semibold text-emerald-600 mb-2">Delivery Confirmed</p>
+                            <p class="text-xs text-slate-400 font-medium">Live telemetry has been suspended for this shipment.</p>
                         </div>
-                        <h3 class="text-white font-black uppercase tracking-tighter text-2xl">Arrived at Destination</h3>
-                        <p class="text-white opacity-80 text-xs font-bold mt-2 uppercase tracking-widest">Live Telemetry Suspended</p>
                     </div>
-                </div>
 
-                <div class="absolute bottom-32 lg:bottom-6 right-6 z-[1000]">
-                    <div class="bg-white/90 backdrop-blur p-4 rounded-3xl shadow-2xl border border-white/50 w-48">
-                        <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1" id="signalLabel">Satellite Link</p>
+                    <div class="signal-pill">
+                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5" id="signalLabel">Satellite Link</p>
                         <div class="flex items-center gap-2">
-                            <div class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" id="signalDot"></div>
-                            <span class="font-black text-[10px] text-slate-900 uppercase" id="signalStatus">Monitoring...</span>
+                            <div class="w-2 h-2 rounded-full bg-emerald-500" style="box-shadow:0 0 0 3px rgba(16,185,129,0.15)" id="signalDot"></div>
+                            <span class="font-bold text-[10px] text-slate-800 uppercase tracking-wide" id="signalStatus">Monitoring...</span>
                         </div>
                     </div>
                 </div>
+
             </div>
         </div>
     </div>
 
     <script>
-        const tracker = document.getElementById('tracker');
-        let sheetExpanded = false;
-
         document.getElementById('nodeIdentity').innerText = "Node: " + CONFIG.targetNode.toUpperCase();
+
+        // ── SCROLL & COLLAPSE LOGIC ──
+        window.onscroll = function() {
+            const tracker = document.getElementById('tracker');
+            // Collapse if we scroll down 150px
+            if (window.scrollY > 150) {
+                tracker.classList.remove('tracker-expanded');
+                tracker.classList.add('tracker-collapsed');
+            } else {
+                tracker.classList.remove('tracker-collapsed');
+                tracker.classList.add('tracker-expanded');
+            }
+        };
+
+        function handleTrackerClick() {
+            const tracker = document.getElementById('tracker');
+            if (tracker.classList.contains('tracker-collapsed')) {
+                // Return to top and focus
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+                // We manually force it back to expanded for UX speed
+                tracker.classList.remove('tracker-collapsed');
+                tracker.classList.add('tracker-expanded');
+                setTimeout(() => document.getElementById('waybillInput').focus(), 500);
+            }
+        }
 
         function toggleMobileSheet() {
             const pane = document.getElementById('infoPane');
             const icon = document.getElementById('sheetToggleIcon');
-            const btn = document.getElementById('mobileSheetBtn');
             sheetExpanded = !sheetExpanded;
-            
-            if(sheetExpanded) {
-                pane.classList.replace('minimized', 'expanded');
-                icon.classList.replace('bi-chevron-up', 'bi-chevron-down');
-                btn.classList.replace('bg-blue-600', 'bg-slate-900');
-            } else {
-                pane.classList.replace('expanded', 'minimized');
-                icon.classList.replace('bi-chevron-down', 'bi-chevron-up');
-                btn.classList.replace('bg-slate-900', 'bg-blue-600');
-            }
+            pane.classList.toggle('expanded', sheetExpanded);
+            icon.className = sheetExpanded ? 'bi bi-chevron-down' : 'bi bi-chevron-up';
         }
 
         function initMap(lat, lng) {
             if (currentMap) currentMap.remove();
-            currentMap = L.map('liveMap', { 
-                zoomControl: false, 
-                attributionControl: true,
-                scrollWheelZoom: true 
-            }).setView([lat, lng], 15);
+            currentMap = L.map('liveMap', { zoomControl: false, attributionControl: true, scrollWheelZoom: true }).setView([lat, lng], 15);
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '&copy; OSM contributors'
+                attribution: '&copy; OSM contributors', maxZoom: 19
             }).addTo(currentMap);
             const icon = L.divIcon({
-                html: `<div style="background-color: #3b82f6; width: 18px; height: 18px; border-radius: 50%; border: 4px solid white; box-shadow: 0 0 20px rgba(59, 130, 246, 0.5);"></div>`,
-                iconSize: [18, 18], iconAnchor: [9, 9]
+                className: '',
+                html: `<div style="position:relative;width:22px;height:22px;">
+                    <div style="position:absolute;inset:0;border-radius:50%;background:rgba(59,130,246,0.2);animation:ripple 2s ease-out infinite;"></div>
+                    <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:13px;height:13px;border-radius:50%;background:#3b82f6;border:3px solid white;box-shadow:0 2px 10px rgba(59,130,246,0.5);"></div>
+                </div><style>@keyframes ripple{0%{transform:scale(1);opacity:0.6}100%{transform:scale(2.8);opacity:0}}</style>`,
+                iconSize: null, iconAnchor: null
             });
             mapMarker = L.marker([lat, lng], { icon }).addTo(currentMap);
         }
 
         async function handleTrack() {
             const id = document.getElementById('waybillInput').value.trim().toUpperCase();
-            if(!id) return;
+            if (!id) return;
             document.getElementById('loaderBar').style.display = 'block';
             try {
                 await auth.signInAnonymously();
@@ -312,228 +642,162 @@
                 else {
                     const data = pkgDoc.data();
                     renderModalResult(id, data);
-                    
-                    // SECURITY GUARD: Only sync telemetry if NOT arrived
                     const status = (data.status || "").toLowerCase();
-                    if (!status.includes('arrived')) {
-                        if (data.batchId) syncTelemetry(data.batchId);
-                    } else {
-                        // Apply lockdown immediately for historical IDs
-                        applySecurityLockdown();
-                    }
+                    if (!status.includes('arrived')) { if (data.batchId) syncTelemetry(data.batchId); }
+                    else applySecurityLockdown();
                 }
             } catch (err) { console.error(err); showModalError(); }
             finally { document.getElementById('loaderBar').style.display = 'none'; }
         }
 
-        /**
-         * SECURITY MEASURE: applySecurityLockdown
-         * Blurs map, disables interaction, and overlays arrival text.
-         */
         function applySecurityLockdown() {
             document.getElementById('liveMap').classList.add('map-lockdown');
             document.getElementById('lockdownOverlay').classList.add('active');
             document.getElementById('signalStatus').innerText = "Signal Locked";
-            document.getElementById('signalDot').className = "w-2 h-2 rounded-full bg-slate-400";
-            if(telemetryUnsubscribe) {
-                telemetryUnsubscribe();
-                telemetryUnsubscribe = null;
-            }
+            document.getElementById('signalDot').style.cssText = 'width:8px;height:8px;border-radius:50%;background:#94a3b8;';
+            if (telemetryUnsubscribe) { telemetryUnsubscribe(); telemetryUnsubscribe = null; }
         }
 
         function syncTelemetry(batchId) {
             db.collection(`artifacts/${CONFIG.targetNode}/public/data/logistics_batches`).doc(batchId).get().then(doc => {
                 if (!doc.exists) return;
                 const vehicleTag = doc.data().vehicleTag;
-
                 db.collection(`artifacts/${CONFIG.targetNode}/public/data/delivery_sessions`).onSnapshot(snap => {
-                    const activeSession = snap.docs.find(d => 
-                        d.data().vehicleTag === vehicleTag && 
+                    const activeSession = snap.docs.find(d =>
+                        d.data().vehicleTag === vehicleTag &&
                         (d.data().status === 'ACTIVE' || d.data().status === 'DELAY - FAULT')
                     );
-                    
-                    // IF NO ACTIVE SESSION OR COMPLETED, LOCKDOWN
-                    if (!activeSession) {
-                        // Measures to prevent live tracking once driver ends session
-                        return;
+                    if (!activeSession) return;
+
+                    const isFaultMode = activeSession.data().status === 'DELAY - FAULT';
+                    const signalDot = document.getElementById('signalDot');
+                    const signalStatus = document.getElementById('signalStatus');
+
+                    if (isFaultMode) {
+                        signalStatus.innerText = "Fault Reported";
+                        signalDot.style.background = '#f59e0b';
+                        signalDot.style.boxShadow = '0 0 0 3px rgba(245,158,11,0.15)';
+                    } else {
+                        signalStatus.innerText = "Stream Active";
+                        signalDot.style.background = '#10b981';
+                        signalDot.style.boxShadow = '0 0 0 3px rgba(16,185,129,0.15)';
                     }
-                    
-                    if (activeSession) {
-                        const sessionData = activeSession.data();
-                        const isFaultMode = sessionData.status === 'DELAY - FAULT';
 
-                        const signalDot = document.getElementById('signalDot');
-                        const signalStatus = document.getElementById('signalStatus');
-                        
-                        if (isFaultMode) {
-                            signalStatus.innerText = "Vehicle Fault Reported";
-                            signalStatus.classList.add('text-amber-500');
-                            signalDot.classList.replace('bg-emerald-500', 'bg-amber-500');
-                        } else {
-                            signalStatus.innerText = "Verified Stream Active";
-                            signalStatus.classList.remove('text-amber-500');
+                    if (telemetryUnsubscribe) telemetryUnsubscribe();
+                    if (healthCheckInterval) clearInterval(healthCheckInterval);
+                    healthCheckInterval = setInterval(() => {
+                        if (!lastKnownTimestamp) return;
+                        if (Date.now() / 1000 - lastKnownTimestamp > 240) {
+                            signalStatus.innerText = isFaultMode ? "Signal Lost" : "Signal Suspended";
+                            signalDot.style.background = '#f59e0b';
                         }
+                    }, 10000);
 
-                        if (telemetryUnsubscribe) telemetryUnsubscribe();
-                        
-                        if (healthCheckInterval) clearInterval(healthCheckInterval);
-                        healthCheckInterval = setInterval(() => {
-                            if (!lastKnownTimestamp) return;
-                            const now = Date.now() / 1000;
-                            const ageInSeconds = now - lastKnownTimestamp;
-                            const dot = document.getElementById('signalDot');
-                            const statusLabel = document.getElementById('signalStatus');
-
-                            if (ageInSeconds > 240) {
-                                statusLabel.innerText = isFaultMode ? "Signal Lost" : "Signal Suspended";
-                                dot.classList.replace('bg-emerald-500', 'bg-amber-500');
-                                dot.classList.replace('bg-blue-500', 'bg-amber-500');
-                            }
-                        }, 10000);
-
-                        telemetryUnsubscribe = db.collection(`artifacts/${CONFIG.targetNode}/public/data/delivery_sessions`)
-                            .doc(activeSession.id).collection('location_logs').onSnapshot(logSnap => {
-                                const logs = logSnap.docs.map(l => ({
-                                    ...l.data(),
-                                    isPending: !l.data().timestamp
-                                }))
+                    telemetryUnsubscribe = db.collection(`artifacts/${CONFIG.targetNode}/public/data/delivery_sessions`)
+                        .doc(activeSession.id).collection('location_logs').onSnapshot(logSnap => {
+                            const logs = logSnap.docs.map(l => ({ ...l.data(), isPending: !l.data().timestamp }))
                                 .filter(l => l.lat && l.lng)
                                 .sort((a, b) => {
-                                    if (a.isPending) return -1;
-                                    if (b.isPending) return 1;
+                                    if (a.isPending) return -1; if (b.isPending) return 1;
                                     return (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0);
                                 });
-
-                                if (logs.length > 0) {
-                                    const latest = logs[0];
-                                    if (latest.lat !== lastKnownLat || latest.lng !== lastKnownLng) {
-                                        lastKnownLat = latest.lat;
-                                        lastKnownLng = latest.lng;
-                                        updateMap(latest.lat, latest.lng);
-                                    }
-                                    
-                                    let displayTime;
-                                    if (latest.isPending) {
-                                        displayTime = "Just Now";
-                                        lastKnownTimestamp = Date.now() / 1000; 
-                                    } else if (latest.timestamp) {
-                                        const serverDate = new Date(latest.timestamp.seconds * 1000);
-                                        displayTime = serverDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                                        lastKnownTimestamp = latest.timestamp.seconds; 
-                                    }
-
-                                    document.getElementById('liveBadge').classList.remove('hidden');
-                                    document.getElementById('signalLabel').innerText = "Last Pulse: " + displayTime;
-                                    if (!isFaultMode) {
-                                        document.getElementById('signalStatus').innerText = "Verified Stream Active";
-                                        signalDot.classList.replace('bg-amber-500', 'bg-emerald-500');
-                                    }
+                            if (logs.length > 0) {
+                                const latest = logs[0];
+                                if (latest.lat !== lastKnownLat || latest.lng !== lastKnownLng) {
+                                    lastKnownLat = latest.lat; lastKnownLng = latest.lng;
+                                    updateMap(latest.lat, latest.lng);
                                 }
-                            });
-                    }
+                                let displayTime;
+                                if (latest.isPending) { displayTime = "Just Now"; lastKnownTimestamp = Date.now() / 1000; }
+                                else if (latest.timestamp) {
+                                    displayTime = new Date(latest.timestamp.seconds * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                                    lastKnownTimestamp = latest.timestamp.seconds;
+                                }
+                                document.getElementById('liveBadge').classList.add('show');
+                                document.getElementById('signalLabel').innerText = "Last Pulse: " + displayTime;
+                                if (!isFaultMode) {
+                                    signalStatus.innerText = "Stream Active";
+                                    signalDot.style.background = '#10b981';
+                                    signalDot.style.boxShadow = '0 0 0 3px rgba(16,185,129,0.15)';
+                                }
+                            }
+                        });
                 });
             });
         }
 
         function updateMap(lat, lng) {
-            // MEASURE: If map is locked, refuse all coordinate updates
             if (document.getElementById('liveMap').classList.contains('map-lockdown')) return;
-
             if (lat === 5.6037 && lng === -0.1870 && currentMap && mapMarker.getLatLng().lat !== 5.6037) return;
             if (!currentMap) initMap(lat, lng);
-            else { 
-                mapMarker.setLatLng([lat, lng]); 
-                currentMap.flyTo([lat, lng], 16, { animate: true, duration: 1.5 });
-            }
+            else { mapMarker.setLatLng([lat, lng]); currentMap.flyTo([lat, lng], 16, { animate: true, duration: 1.5 }); }
         }
 
         function renderModalResult(id, data) {
-            document.getElementById('resultModal').classList.remove('hidden');
-            document.getElementById('modalNotFound').classList.add('hidden');
-            document.getElementById('modalDataContainer').classList.remove('hidden');
+            document.getElementById('resultModal').style.display = 'block';
+            document.getElementById('modalNotFound').style.display = 'none';
+            document.getElementById('modalDataContainer').style.display = 'flex';
             document.getElementById('resID').innerText = id;
             document.getElementById('minimizedResID').innerText = id;
-            
+
             const statusText = data.status || "In Transit";
-            document.getElementById('resStatus').innerText = statusText;
-            
-            if (statusText.includes('DELAY')) {
-                document.getElementById('resStatus').className = "text-xl font-black text-amber-500";
-            } else {
-                document.getElementById('resStatus').className = "text-xl font-black text-slate-900";
-            }
-            
+            const resStatus = document.getElementById('resStatus');
+            resStatus.innerText = statusText;
+            resStatus.style.color = statusText.includes('DELAY') ? '#d97706'
+                : statusText.toLowerCase().includes('arrived') ? '#059669' : '#0f172a';
+
             const status = (data.status || "").toLowerCase();
             let step = 0;
             if (status.includes('registered')) step = 1;
             if (status.includes('transit') || status.includes('delay')) step = 2;
             if (status.includes('arrived')) step = 3;
 
-            // MEASURE: Trigger lockdown UI if arrived
             if (step === 3) applySecurityLockdown();
             else {
-                // Reset lockdown if searching a new active ID
                 document.getElementById('liveMap').classList.remove('map-lockdown');
                 document.getElementById('lockdownOverlay').classList.remove('active');
             }
 
-            for(let i=1; i<=3; i++) {
-                const el = document.getElementById(`step-${i}`);
-                const iconBox = el.querySelector('div.w-10');
-                const label = el.querySelector('.step-label');
-                const line = el.querySelector('.stepper-line');
-                
-                el.classList.toggle('opacity-30', i > step);
-                
-                if (i <= step) {
-                    let colorClass = 'bg-blue-600';
-                    let textClass = 'text-blue-600';
-                    let lineClass = 'bg-blue-600';
-                    
-                    if (i === step) {
-                        if (status.includes('delay')) {
-                            colorClass = 'bg-amber-500';
-                            textClass = 'text-amber-500';
-                            lineClass = 'bg-amber-200';
-                        } else if (status.includes('arrived')) {
-                            colorClass = 'bg-emerald-500';
-                            textClass = 'text-emerald-600';
-                            lineClass = 'bg-emerald-500';
-                        }
-                    } else {
-                        if (status.includes('arrived')) {
-                            colorClass = 'bg-emerald-500';
-                            lineClass = 'bg-emerald-500';
-                        }
-                    }
+            document.getElementById('step-2-desc').innerText = status.includes('delay')
+                ? 'Vehicle fault reported. Delivery may be delayed.'
+                : 'Vehicle is en route. Live location is being streamed.';
 
-                    iconBox.className = `w-10 h-10 rounded-full ${colorClass} flex items-center justify-center text-white z-10 border-4 border-white shadow-sm`;
-                    label.className = `font-black text-sm uppercase tracking-wider step-label ${textClass}`;
-                    if (line) line.className = `stepper-line ${lineClass}`;
-                } else {
-                    iconBox.className = `w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center text-slate-400 z-10 border-4 border-white shadow-sm`;
-                    label.className = `font-black text-sm uppercase tracking-wider step-label text-slate-400`;
-                    if (line) line.className = `stepper-line bg-slate-100`;
+            for (let i = 1; i <= 3; i++) {
+                const el = document.getElementById(`step-${i}`);
+                el.className = 'step-row';
+                const conn = document.getElementById(`conn-${i}`);
+                if (conn) conn.style.background = '';
+
+                if (i < step) {
+                    el.classList.add('is-done');
+                    if (conn) conn.style.background = '#10b981';
+                } else if (i === step) {
+                    if (status.includes('delay')) el.classList.add('is-fault');
+                    else if (status.includes('arrived')) el.classList.add('is-arrived');
+                    else el.classList.add('is-active');
                 }
             }
-            if(!currentMap) initMap(5.6037, -0.1870); 
+
+            if (!currentMap) initMap(5.6037, -0.1870);
         }
 
         function showModalError() {
-            document.getElementById('resultModal').classList.remove('hidden');
-            document.getElementById('modalDataContainer').classList.add('hidden');
-            document.getElementById('modalNotFound').classList.remove('hidden');
+            document.getElementById('resultModal').style.display = 'block';
+            document.getElementById('modalDataContainer').style.display = 'none';
+            document.getElementById('modalNotFound').style.display = 'flex';
         }
 
-    window.closeModal = () => {
-        document.getElementById('resultModal').classList.add('hidden');
-        document.getElementById('liveMap').classList.remove('map-lockdown');
-        document.getElementById('lockdownOverlay').classList.remove('active');
-        if(telemetryUnsubscribe) telemetryUnsubscribe();
-        if(healthCheckInterval) clearInterval(healthCheckInterval);
-        if(currentMap) { currentMap.remove(); currentMap = null; }
-        lastKnownLat = null; lastKnownLng = null; lastKnownTimestamp = null;
-    };
+        window.closeModal = () => {
+            document.getElementById('resultModal').style.display = 'none';
+            document.getElementById('liveMap').classList.remove('map-lockdown');
+            document.getElementById('lockdownOverlay').classList.remove('active');
+            if (telemetryUnsubscribe) telemetryUnsubscribe();
+            if (healthCheckInterval) clearInterval(healthCheckInterval);
+            if (currentMap) { currentMap.remove(); currentMap = null; }
+            lastKnownLat = null; lastKnownLng = null; lastKnownTimestamp = null;
+            sheetExpanded = false;
+            document.getElementById('infoPane').classList.remove('expanded');
+        };
     </script>
 </body>
 </html>
