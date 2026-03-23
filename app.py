@@ -6,6 +6,7 @@ import time
 import re
 import json
 import datetime
+import threading
 import firebase_admin
 from firebase_admin import credentials, firestore, initialize_app
 from datetime import date, timedelta
@@ -16,7 +17,7 @@ load_dotenv(override=True)
 
 app = Flask(__name__)
 
-# --- BRANDING REDIRECT ENGINE ---
+# --- BRANDING REDIRECT ENGINE --- (PRESERVED)
 @app.before_request
 def handle_branding_redirect():
     host = request.host.lower()
@@ -25,8 +26,7 @@ def handle_branding_redirect():
         new_url = request.url.replace(request.host, 'prolyfiq.store', 1)
         return redirect(new_url, code=301)
 
-# --- SECURE CREDENTIALS & CONFIGURATION ---
-# Restored: Paystack Secret Key
+# --- SECURE CREDENTIALS & CONFIGURATION --- (PRESERVED)
 PAYSTACK_SECRET_KEY = "sk_test_205609e95584b8704c90e2c8c72b6f1dbcee60db"
 
 # Hubtel Infrastructure
@@ -40,10 +40,32 @@ ADMIN_PIN = os.environ.get("ADMIN_PIN")
 
 # Compliance & Entity Logic
 COMPLIANCE_MODE = False
-# Restored: Global APP_ID definition
 APP_ID = os.getenv('__app_id', 'ledgehold-ghana')
 
-# --- FIREBASE INFRASTRUCTURE HANDSHAKE ---
+# --- LEDGEHOLD STATUS CONSTANTS ---
+# Single source of truth for all Firestore status strings
+class SessionStatus:
+    ACTIVE = "ACTIVE"
+    FAULT = "DELAY - FAULT"
+    COMPLETED = "COMPLETED"
+
+class VehicleStatus:
+    IDLE = "IDLE"
+    ASSIGNED = "ASSIGNED"
+    ACTIVE = "ACTIVE"
+    FAULT = "DELAY - FAULT"
+
+class BatchStatus:
+    CREATED = "Batch Created"
+    IN_TRANSIT = "In Transit"
+    ARRIVED = "Arrived"
+
+class WaybillStatus:
+    REGISTERED = "Registered"
+    IN_TRANSIT = "In Transit"
+    ARRIVED = "Arrived"
+
+# --- FIREBASE INFRASTRUCTURE HANDSHAKE --- (PRESERVED)
 def get_firebase_context():
     """Consolidated context provider for frontend templates"""
     return {
@@ -53,7 +75,7 @@ def get_firebase_context():
         "compliance_mode": COMPLIANCE_MODE
     }
 
-# Initialization Safety Guard (Rule: Do not initialize multiple apps)
+# Initialization Safety Guard
 if not firebase_admin._apps:
     prod_cred_path = "/etc/secrets/service-account.json"
     local_cred_path = "service-account.json"
@@ -66,7 +88,7 @@ if not firebase_admin._apps:
         print("Security Protocol: Local Node Active")
     else:
         cred = None
-        print("Warning: No service-account.json found. Database operations will use default/environment creds.")
+        print("Warning: No service-account.json found.")
 
     if cred:
         initialize_app(cred)
@@ -75,29 +97,59 @@ if not firebase_admin._apps:
 
 db = firestore.client()
 
-# --- CONTEXT PROCESSOR ---
+# --- CONTEXT PROCESSOR --- (PRESERVED)
 @app.context_processor
 def inject_globals():
     return dict(compliance_mode=COMPLIANCE_MODE)
 
 # --- UTILITIES ---
-def trigger_internal_sms(phone, message):
-    """Encapsulated SMS Relay logic for backend use"""
-    if not phone or not message: return
-    try:
-        target = '233' + re.sub(r'\D', '', str(phone))[-9:]
-        params = {
-            "clientid": HUBTEL_CLIENT_ID,
-            "clientsecret": HUBTEL_CLIENT_SECRET,
-            "from": HUBTEL_SENDER_ID,
-            "to": target,
-            "content": message
-        }
-        requests.get("https://smsc.hubtel.com/v1/messages/send", params=params, timeout=5)
-    except Exception as e:
-        print(f"[SMS FAIL] {phone}: {str(e)}")
 
-# --- ROUTES ---
+def trigger_internal_sms(phone, message):
+    """
+    FIXED: Non-blocking SMS relay — runs in background thread
+    No longer blocks endpoint response on large batches
+    """
+    if not phone or not message:
+        return
+
+    def send():
+        try:
+            target = '233' + re.sub(r'\D', '', str(phone))[-9:]
+            params = {
+                "clientid": HUBTEL_CLIENT_ID,
+                "clientsecret": HUBTEL_CLIENT_SECRET,
+                "from": HUBTEL_SENDER_ID,
+                "to": target,
+                "content": message
+            }
+            requests.get(
+                "https://smsc.hubtel.com/v1/messages/send",
+                params=params,
+                timeout=5
+            )
+        except Exception as e:
+            print(f"[SMS FAIL] {phone}: {str(e)}")
+
+    thread = threading.Thread(target=send, daemon=True)
+    thread.start()
+
+def validate_request(data, required_fields):
+    """Validates that all required fields are present and non-empty"""
+    if not data:
+        return False, "Request body is empty"
+    for field in required_fields:
+        value = data.get(field)
+        if value is None or str(value).strip() == '':
+            return False, f"Missing or empty required field: {field}"
+    return True, None
+
+def normalize_app_id(app_id):
+    """Normalizes appId to prevent artifacts/None paths"""
+    if not app_id:
+        return None
+    return str(app_id).strip().lower()
+
+# --- ROUTES --- (PRESERVED)
 
 @app.route('/')
 def home():
@@ -113,10 +165,10 @@ def home():
         welcome_type = "primary"
 
     food_is_active = datetime.datetime.now().weekday() >= 4
-    return render_template('home.html', 
-                         welcome_msg=welcome_msg, 
-                         welcome_type=welcome_type,
-                         food_active=food_is_active)
+    return render_template('home.html',
+                           welcome_msg=welcome_msg,
+                           welcome_type=welcome_type,
+                           food_active=food_is_active)
 
 @app.route('/healthz')
 def health_check():
@@ -135,126 +187,352 @@ def admin_controls():
 
 @app.route('/api/send-sms', methods=['POST'])
 def api_send_sms():
+    """
+    FIXED: Auth check added to prevent open SMS relay abuse
+    Requires admin credentials in request headers
+    """
+    auth_id = request.headers.get('X-Admin-ID')
+    auth_pin = request.headers.get('X-Admin-PIN')
+    if auth_id != ADMIN_ID or auth_pin != ADMIN_PIN:
+        return jsonify({"success": False, "message": "Unauthorized"}), 401
+
     data = request.json
+    if not data or not data.get('phone') or not data.get('message'):
+        return jsonify({"success": False, "message": "Missing phone or message"}), 400
+
     trigger_internal_sms(data.get('phone'), data.get('message'))
     return jsonify({"success": True}), 200
 
-# --- DRIVER INTERFACE API ---
+@app.route('/tracking')
+def tracking():
+    return render_template('tracking.html', **get_firebase_context())
+
+@app.route('/landing')
+def landing():
+    return render_template('landing.html', **get_firebase_context())
+
+# ================================================================
+# DRIVER INTERFACE API — LEDGEHOLD LOGISTICS
+# ================================================================
 
 @app.route('/api/driver/session/start', methods=['POST'])
 def start_delivery_session():
     """STAGE 1: INITIALIZE TRANSIT & CASCADE STATUS"""
     try:
         data = request.json
-        app_id, vehicle_tag = data.get('appId'), data.get('vehicleTag')
+
+        # FIXED: Input validation
+        valid, error = validate_request(
+            data, ['appId', 'vehicleTag', 'driverName']
+        )
+        if not valid:
+            return jsonify({"success": False, "error": error}), 400
+
+        app_id = normalize_app_id(data.get('appId'))
+        if not app_id:
+            return jsonify({"success": False, "error": "Invalid appId"}), 400
+
+        vehicle_tag = data.get('vehicleTag').strip()
+        driver_name = data.get('driverName', '').strip()
         session_id = f"SES-{int(time.time() * 1000)}"
-        
-        # 1. Create Session
-        db.collection('artifacts').document(app_id).collection('public').document('data')\
-          .collection('delivery_sessions').document(session_id).set({
-            "id": session_id, "vehicleTag": vehicle_tag, "status": "ACTIVE",
-            "startTime": firestore.SERVER_TIMESTAMP, "lastUpdated": firestore.SERVER_TIMESTAMP
+
+        base = db.collection('artifacts').document(app_id)\
+                 .collection('public').document('data')
+
+        # FIXED: Atomic batch write
+        fs_batch = db.batch()
+
+        # 1. Create Session — FIXED: driverName included
+        session_ref = base.collection('delivery_sessions').document(session_id)
+        fs_batch.set(session_ref, {
+            "id": session_id,
+            "vehicleTag": vehicle_tag,
+            "driverName": driver_name,
+            "status": SessionStatus.ACTIVE,
+            "startTime": firestore.SERVER_TIMESTAMP,
+            "lastUpdated": firestore.SERVER_TIMESTAMP
         })
 
-        # 2. Lock Vehicle
-        fleet_ref = db.collection('artifacts').document(app_id).collection('public').document('data').collection('fleet_vehicles')
-        veh_snap = fleet_ref.where('tagName', '==', vehicle_tag).limit(1).get()
-        if veh_snap:
-            veh_snap[0].reference.update({"status": "IN-TRANSIT"})
+        # 2. Lock Vehicle — FIXED: status now ACTIVE not IN-TRANSIT
+        fleet_ref = base.collection('fleet_vehicles')
+        veh_snap = fleet_ref.where(
+            'tagName', '==', vehicle_tag
+        ).limit(1).get()
 
-        # 3. CASCADE: Update Batch & Waybills
-        batch_ref = db.collection('artifacts').document(app_id).collection('public').document('data').collection('logistics_batches')
-        batch_snap = batch_ref.where('vehicleTag', '==', vehicle_tag).where('status', '==', 'Batch Created').limit(1).get()
-        
+        if veh_snap:
+            fs_batch.update(veh_snap[0].reference, {
+                "status": VehicleStatus.ACTIVE
+            })
+
+        # 3. Update Batch status
+        batch_ref = base.collection('logistics_batches')
+        batch_snap = batch_ref.where(
+            'vehicleTag', '==', vehicle_tag
+        ).where(
+            'status', '==', BatchStatus.CREATED
+        ).limit(1).get()
+
+        pkg_data_list = []
+
         if batch_snap:
             batch_doc = batch_snap[0]
             pkg_ids = batch_doc.to_dict().get('packageIds', [])
-            batch_doc.reference.update({"status": "In Transit"})
-            
+            fs_batch.update(batch_doc.reference, {
+                "status": BatchStatus.IN_TRANSIT
+            })
+
+            # 4. Update Waybill statuses
             for p_id in pkg_ids:
-                pkg_ref = db.collection('artifacts').document(app_id).collection('public').document('data').collection('logistics_packages').document(p_id)
+                pkg_ref = base.collection('logistics_packages').document(p_id)
                 pkg_snap = pkg_ref.get()
                 if pkg_snap.exists:
                     p_data = pkg_snap.to_dict()
-                    pkg_ref.update({"status": "In transit"})
-                    msg = f"Hello {p_data.get('customerName')}, your package ({p_data.get('waybillId')}) is now in transit!. Track live on our portal ledgehold.xyz/tracking"
-                    trigger_internal_sms(p_data.get('recipientPhone'), msg)
+                    fs_batch.update(pkg_ref, {
+                        "status": WaybillStatus.IN_TRANSIT
+                    })
+                    pkg_data_list.append(p_data)
+
+        # Commit all writes atomically
+        fs_batch.commit()
+
+        # FIXED: SMS sent AFTER commit — async non-blocking
+        for p_data in pkg_data_list:
+            msg = (
+                f"Hello {p_data.get('customerName')}, your package "
+                f"({p_data.get('waybillId')}) is now in transit! "
+                f"Track live: ledgehold.xyz/tracking"
+            )
+            trigger_internal_sms(p_data.get('recipientPhone'), msg)
 
         return jsonify({"success": True, "sessionId": session_id}), 200
+
     except Exception as e:
+        print(f"[Session Start Error] {str(e)}")
         return jsonify({"success": False, "error": str(e)}), 500
+
 
 @app.route('/api/driver/session/stop', methods=['POST'])
 def end_delivery_session():
     """STAGE 2: CONFIRM ARRIVAL & ARCHIVE"""
     try:
         data = request.json
-        app_id, s_id, vehicle_tag = data.get('appId'), data.get('sessionId'), data.get('vehicleTag')
+
+        valid, error = validate_request(
+            data, ['appId', 'sessionId', 'vehicleTag']
+        )
+        if not valid:
+            return jsonify({"success": False, "error": error}), 400
+
+        app_id = normalize_app_id(data.get('appId'))
+        if not app_id:
+            return jsonify({"success": False, "error": "Invalid appId"}), 400
+
+        s_id = data.get('sessionId').strip()
+        vehicle_tag = data.get('vehicleTag').strip()
+
+        base = db.collection('artifacts').document(app_id)\
+                 .collection('public').document('data')
+
+        fs_batch = db.batch()
 
         # 1. Archive Session
-        db.collection('artifacts').document(app_id).collection('public').document('data')\
-          .collection('delivery_sessions').document(s_id).update({
-              "status": "COMPLETED", "endTime": firestore.SERVER_TIMESTAMP
-          })
+        session_ref = base.collection('delivery_sessions').document(s_id)
+        fs_batch.update(session_ref, {
+            "status": SessionStatus.COMPLETED,
+            "endTime": firestore.SERVER_TIMESTAMP
+        })
 
         # 2. Release Vehicle
-        fleet_ref = db.collection('artifacts').document(app_id).collection('public').document('data').collection('fleet_vehicles')
-        veh_snap = fleet_ref.where('tagName', '==', vehicle_tag).limit(1).get()
-        if veh_snap:
-            veh_snap[0].reference.update({"status": "IDLE", "currentBatchId": None})
+        fleet_ref = base.collection('fleet_vehicles')
+        veh_snap = fleet_ref.where(
+            'tagName', '==', vehicle_tag
+        ).limit(1).get()
 
-        # 3. CASCADE: Finalize Batch & Waybills
-        batch_ref = db.collection('artifacts').document(app_id).collection('public').document('data').collection('logistics_batches')
-        batch_snap = batch_ref.where('vehicleTag', '==', vehicle_tag).where('status', '==', 'In Transit').limit(1).get()
-        
+        if veh_snap:
+            fs_batch.update(veh_snap[0].reference, {
+                "status": VehicleStatus.IDLE,
+                "currentBatchId": None
+            })
+
+        # 3. Finalize Batch
+        batch_ref = base.collection('logistics_batches')
+        batch_snap = batch_ref.where(
+            'vehicleTag', '==', vehicle_tag
+        ).where(
+            'status', '==', BatchStatus.IN_TRANSIT
+        ).limit(1).get()
+
+        pkg_data_list = []
+
         if batch_snap:
             batch_doc = batch_snap[0]
-            batch_doc.reference.update({"status": "Has arrived at destination"})
+            fs_batch.update(batch_doc.reference, {
+                "status": BatchStatus.ARRIVED
+            })
+
             for p_id in batch_doc.to_dict().get('packageIds', []):
-                pkg_ref = db.collection('artifacts').document(app_id).collection('public').document('data').collection('logistics_packages').document(p_id)
+                pkg_ref = base.collection('logistics_packages').document(p_id)
                 pkg_snap = pkg_ref.get()
                 if pkg_snap.exists:
                     p_data = pkg_snap.to_dict()
-                    pkg_ref.update({"status": "Has arrived at destination", "deliveredAt": int(time.time() * 1000)})
-                    msg = f"Hello {p_data.get('customerName')}, your package {p_data.get('waybillId')} has arrived at the destination!"
-                    trigger_internal_sms(p_data.get('recipientPhone'), msg)
+                    fs_batch.update(pkg_ref, {
+                        "status": WaybillStatus.ARRIVED,
+                        "deliveredAt": int(time.time() * 1000)
+                    })
+                    pkg_data_list.append(p_data)
+
+        fs_batch.commit()
+
+        # SMS after commit — async non-blocking
+        for p_data in pkg_data_list:
+            msg = (
+                f"Hello {p_data.get('customerName')}, your package "
+                f"{p_data.get('waybillId')} has arrived at the destination!"
+            )
+            trigger_internal_sms(p_data.get('recipientPhone'), msg)
 
         return jsonify({"success": True}), 200
+
     except Exception as e:
+        print(f"[Session Stop Error] {str(e)}")
         return jsonify({"success": False, "error": str(e)}), 500
+
 
 @app.route('/api/driver/telemetry', methods=['POST'])
 def stream_gps():
     try:
         data = request.json
-        app_id, s_id, lat, lng = data.get('appId'), data.get('sessionId'), data.get('lat'), data.get('lng')
-        
-        db.collection('artifacts').document(app_id).collection('public').document('data')\
-          .collection('delivery_sessions').document(s_id).collection('location_logs').document().set({
-            "lat": lat, "lng": lng, "timestamp": firestore.SERVER_TIMESTAMP
-        })
-        
-        db.collection('artifacts').document(app_id).collection('public').document('data')\
-          .collection('delivery_sessions').document(s_id).update({
+
+        valid, error = validate_request(
+            data, ['appId', 'sessionId', 'lat', 'lng']
+        )
+        if not valid:
+            return jsonify({"success": False, "error": error}), 400
+
+        app_id = normalize_app_id(data.get('appId'))
+        if not app_id:
+            return jsonify({"success": False, "error": "Invalid appId"}), 400
+
+        s_id = data.get('sessionId').strip()
+        lat = data.get('lat')
+        lng = data.get('lng')
+
+        base = db.collection('artifacts').document(app_id)\
+                 .collection('public').document('data')
+
+        base.collection('delivery_sessions').document(s_id)\
+            .collection('location_logs').document().set({
+                "lat": lat,
+                "lng": lng,
+                "timestamp": firestore.SERVER_TIMESTAMP
+            })
+
+        base.collection('delivery_sessions').document(s_id).update({
             "currentLat": lat,
             "currentLng": lng,
             "lastUpdated": firestore.SERVER_TIMESTAMP
         })
-        
+
         return jsonify({"success": True}), 200
-    except Exception as e: return jsonify({"success": False, "error": str(e)}), 500
+
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
 
 @app.route('/api/driver/fault', methods=['POST'])
 def report_trip_fault():
     try:
         data = request.json
-        db.collection('artifacts').document(data.get('appId')).collection('public').document('data')\
-          .collection('delivery_sessions').document(data.get('sessionId')).update({
-            "status": "DELAY - FAULT", "faultReason": data.get('reason', 'Mechanical Delay'),
-            "faultTimestamp": firestore.SERVER_TIMESTAMP
-        })
+
+        valid, error = validate_request(data, ['appId', 'sessionId'])
+        if not valid:
+            return jsonify({"success": False, "error": error}), 400
+
+        app_id = normalize_app_id(data.get('appId'))
+        if not app_id:
+            return jsonify({"success": False, "error": "Invalid appId"}), 400
+
+        s_id = data.get('sessionId').strip()
+
+        db.collection('artifacts').document(app_id)\
+          .collection('public').document('data')\
+          .collection('delivery_sessions').document(s_id).update({
+              "status": SessionStatus.FAULT,
+              "faultReason": data.get('reason', 'Mechanical Delay'),
+              "faultTimestamp": firestore.SERVER_TIMESTAMP
+          })
+
         return jsonify({"success": True}), 200
-    except Exception as e: return jsonify({"success": False, "error": str(e)}), 500
+
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@app.route('/api/driver/active', methods=['POST'])
+def resume_delivery_session():
+    """
+    NEW: FAULT RECOVERY ENDPOINT
+    Called by Vehicle Fixed — Continue button via relay.js resumeSession()
+    Resets session status from DELAY - FAULT back to ACTIVE
+    Also resets vehicle status back to ACTIVE
+    """
+    try:
+        data = request.json
+
+        valid, error = validate_request(data, ['appId', 'sessionId'])
+        if not valid:
+            return jsonify({"success": False, "error": error}), 400
+
+        app_id = normalize_app_id(data.get('appId'))
+        if not app_id:
+            return jsonify({"success": False, "error": "Invalid appId"}), 400
+
+        s_id = data.get('sessionId').strip()
+
+        base = db.collection('artifacts').document(app_id)\
+                 .collection('public').document('data')
+
+        # Get session to retrieve vehicleTag
+        session_ref = base.collection('delivery_sessions').document(s_id)
+        session_snap = session_ref.get()
+
+        if not session_snap.exists:
+            return jsonify({
+                "success": False,
+                "error": "Session not found"
+            }), 404
+
+        session_data = session_snap.to_dict()
+        vehicle_tag = session_data.get('vehicleTag')
+
+        fs_batch = db.batch()
+
+        # Reset session status to ACTIVE
+        fs_batch.update(session_ref, {
+            "status": SessionStatus.ACTIVE,
+            "faultResolvedAt": firestore.SERVER_TIMESTAMP,
+            "lastUpdated": firestore.SERVER_TIMESTAMP
+        })
+
+        # Reset vehicle status back to ACTIVE
+        if vehicle_tag:
+            fleet_ref = base.collection('fleet_vehicles')
+            veh_snap = fleet_ref.where(
+                'tagName', '==', vehicle_tag
+            ).limit(1).get()
+
+            if veh_snap:
+                fs_batch.update(veh_snap[0].reference, {
+                    "status": VehicleStatus.ACTIVE
+                })
+
+        fs_batch.commit()
+
+        return jsonify({"success": True}), 200
+
+    except Exception as e:
+        print(f"[Session Resume Error] {str(e)}")
+        return jsonify({"success": False, "error": str(e)}), 500
 
 @app.route('/api/marketplace/listings', methods=['GET'])
 def get_all_listings():
