@@ -203,14 +203,6 @@ def api_send_sms():
     trigger_internal_sms(data.get('phone'), data.get('message'))
     return jsonify({"success": True}), 200
 
-@app.route('/tracking')
-def tracking():
-    return render_template('tracking.html', **get_firebase_context())
-
-@app.route('/landing')
-def landing():
-    return render_template('landing.html', **get_firebase_context())
-
 # ================================================================
 # DRIVER INTERFACE API — LEDGEHOLD LOGISTICS
 # ================================================================
