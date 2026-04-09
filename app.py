@@ -2,7 +2,7 @@ from flask import Flask, render_template, request, jsonify, redirect
 import requests
 import os
 import random
-import time 
+import time
 import re
 import json
 import datetime
@@ -11,11 +11,14 @@ import firebase_admin
 from firebase_admin import credentials, firestore, initialize_app
 from datetime import date, timedelta
 from dotenv import load_dotenv
+from auth import auth_bp, require_auth, require_role
 
 # Load environment variables
 load_dotenv(override=True)
 
 app = Flask(__name__)
+
+app.register_blueprint(auth_bp)
 
 # --- BRANDING REDIRECT ENGINE --- (PRESERVED)
 @app.before_request
@@ -26,7 +29,7 @@ def handle_branding_redirect():
         new_url = request.url.replace(request.host, 'prolyfiq.store', 1)
         return redirect(new_url, code=301)
 
-# --- SECURE CREDENTIALS & CONFIGURATION --- (PRESERVED)
+# --- SECURE TEST CREDENTIALS & CONFIGURATION --- (PRESERVED)
 PAYSTACK_SECRET_KEY = "sk_test_205609e95584b8704c90e2c8c72b6f1dbcee60db"
 
 # Hubtel Infrastructure
@@ -186,15 +189,12 @@ def admin_controls():
     return render_template('admin.html', **get_firebase_context())
 
 @app.route('/api/send-sms', methods=['POST'])
+@require_auth
 def api_send_sms():
     """
     FIXED: Auth check added to prevent open SMS relay abuse
     Requires admin credentials in request headers
     """
-    auth_id = request.headers.get('X-Admin-ID')
-    auth_pin = request.headers.get('X-Admin-PIN')
-    if auth_id != ADMIN_ID or auth_pin != ADMIN_PIN:
-        return jsonify({"success": False, "message": "Unauthorized"}), 401
 
     data = request.json
     if not data or not data.get('phone') or not data.get('message'):
@@ -204,12 +204,87 @@ def api_send_sms():
     return jsonify({"success": True}), 200
 
 # ================================================================
+# BATCH CREATION API — WITH METADATA CACHING
+# ================================================================
+
+@app.route('/api/admin/batch/create', methods=['POST'])
+@require_role('admin')
+def create_batch():
+    """
+    CREATE BATCH WITH METADATA CACHE
+    Eliminates N+1 reads by storing essential package metadata
+    """
+    try:
+        data = request.json
+        
+        valid, error = validate_request(data, ['appId', 'packageIds', 'vehicleTag'])
+        if not valid:
+            return jsonify({"success": False, "error": error}), 400
+        
+        app_id = normalize_app_id(data.get('appId'))
+        if not app_id:
+            return jsonify({"success": False, "error": "Invalid appId"}), 400
+        
+        package_ids = data.get('packageIds', [])
+        vehicle_tag = data.get('vehicleTag').strip()
+        
+        if not package_ids:
+            return jsonify({"success": False, "error": "No packages selected"}), 400
+        
+        base = db.collection('artifacts').document(app_id)\
+                 .collection('public').document('data')
+        
+        # ONE-TIME FETCH: Get all package documents and cache metadata
+        package_metadata = []
+        for pkg_id in package_ids:
+            pkg_ref = base.collection('logistics_packages').document(pkg_id)
+            pkg_snap = pkg_ref.get()
+            
+            if pkg_snap.exists:
+                pkg_data = pkg_snap.to_dict()
+                # Cache only essential metadata for SMS notifications
+                package_metadata.append({
+                    "id": pkg_id,
+                    "waybillId": pkg_data.get('waybillId', ''),
+                    "customerName": pkg_data.get('customerName', ''),
+                    "recipientPhone": pkg_data.get('recipientPhone', '')
+                })
+        
+        # Create batch ID
+        batch_id = f"BATCH-{int(time.time() * 1000)}"
+        
+        # Create batch document with metadata cache
+        batch_ref = base.collection('logistics_batches').document(batch_id)
+        batch_ref.set({
+            "id": batch_id,
+            "packageIds": package_ids,  # Keep for reference updates
+            "packageMetadata": package_metadata,  # NEW: Cached metadata for read-free SMS
+            "vehicleTag": vehicle_tag,
+            "status": BatchStatus.CREATED,
+            "createdAt": firestore.SERVER_TIMESTAMP
+        })
+        
+        return jsonify({
+            "success": True, 
+            "batchId": batch_id,
+            "packageCount": len(package_metadata)
+        }), 200
+        
+    except Exception as e:
+        print(f"[Batch Create Error] {str(e)}")
+        return jsonify({"success": False, "error": str(e)}), 500
+
+# ================================================================
 # DRIVER INTERFACE API — LEDGEHOLD LOGISTICS
 # ================================================================
 
 @app.route('/api/driver/session/start', methods=['POST'])
+@require_auth
 def start_delivery_session():
-    """STAGE 1: INITIALIZE TRANSIT & CASCADE STATUS"""
+    """
+    STAGE 1: INITIALIZE TRANSIT & CASCADE STATUS
+    FIXED: Uses cached metadata from batch - NO loop-based reads
+    """
     try:
         data = request.json
 
@@ -256,7 +331,7 @@ def start_delivery_session():
                 "status": VehicleStatus.ACTIVE
             })
 
-        # 3. Update Batch status
+        # 3. Update Batch status and get cached metadata
         batch_ref = base.collection('logistics_batches')
         batch_snap = batch_ref.where(
             'vehicleTag', '==', vehicle_tag
@@ -268,26 +343,34 @@ def start_delivery_session():
 
         if batch_snap:
             batch_doc = batch_snap[0]
-            pkg_ids = batch_doc.to_dict().get('packageIds', [])
+            batch_data = batch_doc.to_dict()
+            pkg_ids = batch_data.get('packageIds', [])
+            
+            # NEW: Get cached metadata from batch document (NO EXTRA READS!)
+            package_metadata = batch_data.get('packageMetadata', [])
+            
             fs_batch.update(batch_doc.reference, {
                 "status": BatchStatus.IN_TRANSIT
             })
 
-            # 4. Update Waybill statuses
+            # 4. Update Waybill statuses - USING CACHED METADATA
             for p_id in pkg_ids:
                 pkg_ref = base.collection('logistics_packages').document(p_id)
-                pkg_snap = pkg_ref.get()
-                if pkg_snap.exists:
-                    p_data = pkg_snap.to_dict()
-                    fs_batch.update(pkg_ref, {
-                        "status": WaybillStatus.IN_TRANSIT
-                    })
-                    pkg_data_list.append(p_data)
+                # Update without reading - we have the reference
+                fs_batch.update(pkg_ref, {
+                    "status": WaybillStatus.IN_TRANSIT
+                })
+                
+                # Find matching metadata from cache
+                for meta in package_metadata:
+                    if meta.get('id') == p_id:
+                        pkg_data_list.append(meta)
+                        break
 
         # Commit all writes atomically
         fs_batch.commit()
 
-        # FIXED: SMS sent AFTER commit — async non-blocking
+        # FIXED: SMS sent AFTER commit — async non-blocking using cached data
         for p_data in pkg_data_list:
             msg = (
                 f"Hello {p_data.get('customerName')}, your package "
@@ -304,8 +387,12 @@ def start_delivery_session():
 
 
 @app.route('/api/driver/session/stop', methods=['POST'])
+@require_auth
 def end_delivery_session():
-    """STAGE 2: CONFIRM ARRIVAL & ARCHIVE"""
+    """
+    STAGE 2: CONFIRM ARRIVAL & ARCHIVE
+    FIXED: Uses cached metadata from batch - NO loop-based reads
+    """
     try:
         data = request.json
 
@@ -346,7 +433,7 @@ def end_delivery_session():
                 "currentBatchId": None
             })
 
-        # 3. Finalize Batch
+        # 3. Finalize Batch - GET CACHED METADATA
         batch_ref = base.collection('logistics_batches')
         batch_snap = batch_ref.where(
             'vehicleTag', '==', vehicle_tag
@@ -358,24 +445,33 @@ def end_delivery_session():
 
         if batch_snap:
             batch_doc = batch_snap[0]
+            batch_data = batch_doc.to_dict()
+            pkg_ids = batch_data.get('packageIds', [])
+            
+            # NEW: Get cached metadata from batch document (NO EXTRA READS!)
+            package_metadata = batch_data.get('packageMetadata', [])
+            
             fs_batch.update(batch_doc.reference, {
                 "status": BatchStatus.ARRIVED
             })
 
-            for p_id in batch_doc.to_dict().get('packageIds', []):
+            # Update waybills and collect metadata from cache
+            for p_id in pkg_ids:
                 pkg_ref = base.collection('logistics_packages').document(p_id)
-                pkg_snap = pkg_ref.get()
-                if pkg_snap.exists:
-                    p_data = pkg_snap.to_dict()
-                    fs_batch.update(pkg_ref, {
-                        "status": WaybillStatus.ARRIVED,
-                        "deliveredAt": int(time.time() * 1000)
-                    })
-                    pkg_data_list.append(p_data)
+                fs_batch.update(pkg_ref, {
+                    "status": WaybillStatus.ARRIVED,
+                    "deliveredAt": int(time.time() * 1000)
+                })
+                
+                # Find matching metadata from cache
+                for meta in package_metadata:
+                    if meta.get('id') == p_id:
+                        pkg_data_list.append(meta)
+                        break
 
         fs_batch.commit()
 
-        # SMS after commit — async non-blocking
+        # SMS after commit — async non-blocking using cached data
         for p_data in pkg_data_list:
             msg = (
                 f"Hello {p_data.get('customerName')}, your package "
@@ -391,6 +487,7 @@ def end_delivery_session():
 
 
 @app.route('/api/driver/telemetry', methods=['POST'])
+@require_auth
 def stream_gps():
     try:
         data = request.json
@@ -432,6 +529,7 @@ def stream_gps():
 
 
 @app.route('/api/driver/fault', methods=['POST'])
+@require_auth
 def report_trip_fault():
     try:
         data = request.json
@@ -461,6 +559,7 @@ def report_trip_fault():
 
 
 @app.route('/api/driver/active', methods=['POST'])
+@require_auth
 def resume_delivery_session():
     """
     NEW: FAULT RECOVERY ENDPOINT
@@ -736,6 +835,10 @@ def handshake():
 @app.route('/way_admin')
 def way_admin():
     return render_template('way_admin.html', **get_firebase_context())
+
+@app.route('/login')
+def login_page():
+    return render_template('login.html')
 
 @app.route('/cms')
 def admin():
