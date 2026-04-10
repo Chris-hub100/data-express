@@ -551,11 +551,10 @@ def list_dispatchers():
         return jsonify({'success': False, 'message': 'Failed to fetch team'}), 500
     
 
-# --- 1. THE ONBOARDING HANDSHAKE ---
-# --- 1. THE ONBOARDING HANDSHAKE ---
+# --- 1. THE ONBOARDING HANDSHAKE (FIXED) ---
 @auth_bp.route('/api/driver/onboard', methods=['POST'])
 def onboard_driver():
-    db = _get_db() # Ensure we use the lazy-loaded client
+    db = _get_db()
     data = request.json
     node_id = data.get('nodeId')
     ref_pin = data.get('referencePin')
@@ -577,7 +576,7 @@ def onboard_driver():
         if str(firm_data.get('onboardingPin')) != str(ref_pin):
             return jsonify({"message": "Incorrect Reference PIN"}), 401
 
-        # B. Locate Driver Record (Query returns a LIST)
+        # B. Locate Driver Record
         driver_query = db.collection('artifacts').document(node_id)\
                          .collection('public').document('data')\
                          .collection('drivers').where('phone', '==', phone).limit(1).get()
@@ -585,14 +584,14 @@ def onboard_driver():
         hashed_pin = generate_password_hash(secret_pin)
 
         if len(driver_query) > 0:
-            # PRE-REGISTERED: Get the first document in the list
-            driver_doc = driver_query 
+            # ✅ FIXED: Get the first document from the list
+            driver_doc = driver_query[0]
             driver_data = driver_doc.to_dict()
             
             if driver_data.get('hasAccount'):
                 return jsonify({"message": "Account already bound to a device. Contact Dispatcher."}), 403
             
-            # Update the existing record using its reference
+            # ✅ FIXED: Use the document reference to update
             driver_doc.reference.update({
                 'name': full_name,
                 'hashedPin': hashed_pin,
@@ -621,7 +620,7 @@ def onboard_driver():
         return jsonify({"message": "Internal Server Error"}), 500
 
 
-# --- 2. THE DAILY VERIFICATION ---
+# --- 2. THE DAILY VERIFICATION (FIXED) ---
 @auth_bp.route('/api/driver/verify', methods=['POST'])
 def verify_driver():
     db = _get_db()
@@ -631,8 +630,11 @@ def verify_driver():
     provided_pin = data.get('pin')
     current_device = data.get('deviceId')
 
+    if not all([node_id, phone, provided_pin, current_device]):
+        return jsonify({"message": "Missing required fields"}), 400
+
     try:
-        # Search for the driver by phone (Returns a LIST)
+        # Search for the driver by phone
         driver_query = db.collection('artifacts').document(node_id)\
                          .collection('public').document('data')\
                          .collection('drivers').where('phone', '==', phone).limit(1).get()
@@ -640,23 +642,50 @@ def verify_driver():
         if len(driver_query) == 0:
             return jsonify({"message": "Driver profile not found"}), 404
 
-        # Access the first document's data
-        driver_doc = driver_query
+        # ✅ FIXED: Get the first document from the list
+        driver_doc = driver_query[0]
         driver_data = driver_doc.to_dict()
 
         # A. Check Device Binding
-        if driver_data.get('deviceId') != current_device:
-            return jsonify({"message": "Device mismatch. This account is locked to another phone."}), 403
+        stored_device = driver_data.get('deviceId')
+        if stored_device and stored_device != current_device:
+            return jsonify({
+                "message": "Device mismatch. This account is locked to another phone."
+            }), 403
 
-        # B. Verify 6-Digit Secret PIN
+        # B. Check if account is active
+        if not driver_data.get('hasAccount', False):
+            return jsonify({
+                "message": "Account not fully onboarded. Please complete registration."
+            }), 403
+
+        # C. Verify 6-Digit Secret PIN
+        stored_hash = driver_data.get('hashedPin')
+        if not stored_hash:
+            return jsonify({"message": "Account not fully onboarded"}), 400
+
+        # Special case: Biometric bypass (if implemented)
         if provided_pin == 'BIOMETRIC_BYPASS':
-            return jsonify({"message": "Auth Successful"}), 200
+            return jsonify({
+                "message": "Auth Successful",
+                "driverName": driver_data.get('name', 'Driver'),
+                "phone": phone
+            }), 200
 
-        # Note: Werkzeug check_password_hash handles the salt automatically
-        if not check_password_hash(driver_data.get('hashedPin'), str(provided_pin)):
+        # Verify the PIN
+        if not check_password_hash(stored_hash, str(provided_pin)):
             return jsonify({"message": "Invalid Secret PIN"}), 401
 
-        return jsonify({"message": "Auth Successful"}), 200
+        # Update last login timestamp
+        driver_doc.reference.update({
+            'lastLogin': firestore.SERVER_TIMESTAMP
+        })
+
+        return jsonify({
+            "message": "Auth Successful",
+            "driverName": driver_data.get('name', 'Driver'),
+            "phone": phone
+        }), 200
 
     except Exception as e:
         print(f"Verification Error: {e}")
