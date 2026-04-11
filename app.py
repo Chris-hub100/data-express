@@ -279,7 +279,6 @@ def create_batch():
 # ================================================================
 
 @app.route('/api/driver/session/start', methods=['POST'])
-@require_auth
 def start_delivery_session():
     """
     STAGE 1: INITIALIZE TRANSIT & CASCADE STATUS
@@ -387,7 +386,6 @@ def start_delivery_session():
 
 
 @app.route('/api/driver/session/stop', methods=['POST'])
-@require_auth
 def end_delivery_session():
     """
     STAGE 2: CONFIRM ARRIVAL & ARCHIVE
@@ -487,7 +485,6 @@ def end_delivery_session():
 
 
 @app.route('/api/driver/telemetry', methods=['POST'])
-@require_auth
 def stream_gps():
     try:
         data = request.json
@@ -529,7 +526,6 @@ def stream_gps():
 
 
 @app.route('/api/driver/fault', methods=['POST'])
-@require_auth
 def report_trip_fault():
     try:
         data = request.json
@@ -559,7 +555,6 @@ def report_trip_fault():
 
 
 @app.route('/api/driver/active', methods=['POST'])
-@require_auth
 def resume_delivery_session():
     """
     NEW: FAULT RECOVERY ENDPOINT
