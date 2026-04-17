@@ -1130,6 +1130,7 @@ nav {
             document.getElementById('mainDashboardContent').classList.remove('hidden');
             syncFirmSecurity();
             startDataSync(); // Start only active listener
+            watchDriversCollection();
             syncAdministrativeAnnouncements();
         }
 
@@ -1196,14 +1197,25 @@ nav {
                 if (window.currentSidePanel === 'fleet') renderFleetPanel();
             });
 
-            // Drivers
+            // Drivers - REPLACE THE EXISTING DRIVERS LISTENER WITH THIS
             db.collection(`${basePath}/drivers`)
-              .orderBy('timestamp', 'desc')
-              .onSnapshot(snap => {
+            .orderBy('timestamp', 'desc')
+            .onSnapshot(snap => {
+                const previousCount = allDrivers.length;
                 allDrivers = [];
                 snap.forEach(doc => allDrivers.push({id: doc.id, ...doc.data()}));
                 document.getElementById('driverBadge').innerText = allDrivers.length;
-                if (window.currentSidePanel === 'drivers') renderDriversPanel();
+                
+                // ADD THIS BLOCK - Auto-refresh panel if open
+                if (window.currentSidePanel === 'drivers') {
+                    // Only re-render if the count changed or if panel is open
+                    if (previousCount !== allDrivers.length) {
+                        renderDriversPanel();
+                    } else {
+                        // Still re-render to catch any field updates
+                        renderDriversPanel();
+                    }
+                }
             });
 
             // Delivery sessions (active sessions only for transit monitor)
@@ -1257,19 +1269,22 @@ nav {
 
     db.collection('artifacts').doc(nodeId).onSnapshot(doc => {
         if (doc.exists) {
-            // 1. SAVE DATA IMMEDIATELY
             window.firmData = doc.data();
             console.log("[Security] Data Packet Received:", window.firmData.onboardingPin);
 
-            // 2. AGGRESSIVE REFRESH
-            // Instead of checking if the panel is open, we just try to update the mono-span.
-            // If the panel is closed, this line does nothing. If open, it fixes the dashes instantly.
-            const pinDisplay = document.querySelector('.font-mono');
-            if (pinDisplay) {
-                pinDisplay.innerText = window.firmData.onboardingPin || "----";
+            // UPDATE PIN DISPLAY IN REAL TIME - ADD THIS BLOCK
+            const pinDisplay = document.querySelector('#onboardingPinDisplay');
+            if (pinDisplay && window.firmData.onboardingPin) {
+                pinDisplay.innerText = window.firmData.onboardingPin;
             }
             
-            // Still call the full render if the panel is definitely open
+            // Also update any .font-mono elements if they exist
+            const monoDisplay = document.querySelector('.font-mono');
+            if (monoDisplay && window.firmData.onboardingPin) {
+                monoDisplay.innerText = window.firmData.onboardingPin;
+            }
+            
+            // Re-render driver panel if it's currently open
             if (window.currentSidePanel === 'drivers') {
                 renderDriversPanel();
             }
@@ -2816,6 +2831,8 @@ async function deleteBroadcast(msgId, nodeId) {
         // DRIVER MANAGEMENT
         // ============================================================
         async function renderDriversPanel() {
+            console.log("Total drivers in allDrivers:", allDrivers.length);
+console.log("All drivers data:", JSON.stringify(allDrivers, null, 2));
     if ((!window.firmData || window.firmData.onboardingPin === undefined) && CONFIG.appId) {
         const snap = await db.collection('artifacts').doc(CONFIG.appId).get();
         if (snap.exists) window.firmData = snap.data();
@@ -2910,21 +2927,41 @@ async function deleteBroadcast(msgId, nodeId) {
     if (pinSpan) pinSpan.classList.add('animate-pulse');
 
     try {
-        await db.collection('artifacts').doc(nodeId).update({
-            onboardingPin: newPin,
-            lastPinRotation: firebase.firestore.FieldValue.serverTimestamp()
-        });
+    await db.collection('artifacts').doc(nodeId).update({
+        onboardingPin: newPin,
+        lastPinRotation: firebase.firestore.FieldValue.serverTimestamp()
+    });
 
-        // THE "HEADS UP": Notification for the user
-        showToast(`Security PIN Rotated: ${newPin}`, "success");
-        console.log(`[Security] PIN successfully updated to ${newPin}`);
+    // ADD THIS - Update UI immediately without waiting for listener
+    window.firmData = window.firmData || {};
+    window.firmData.onboardingPin = newPin;
+    
+    const pinDisplay = document.querySelector('#onboardingPinDisplay');
+    if (pinDisplay) pinDisplay.innerText = newPin;
+    
+    const monoDisplay = document.querySelector('.font-mono');
+    if (monoDisplay) monoDisplay.innerText = newPin;
+    
+    showToast(`Security PIN Rotated: ${newPin}`, "success");
+    console.log(`[Security] PIN successfully updated to ${newPin}`);
 
-    } catch (error) {
-        console.error("Rotation Failed:", error);
-        showToast("Security Update Failed", "warning");
-    } finally {
-        if (pinSpan) pinSpan.classList.remove('animate-pulse');
-    }
+} catch (error) {
+    console.error("Rotation Failed:", error);
+    showToast("Security Update Failed", "warning");
+}
+}
+
+        function watchDriversCollection() {
+    const basePath = `artifacts/${CONFIG.appId}/public/data`;
+    
+    // This listener specifically handles UI updates when panel is open
+    db.collection(`${basePath}/drivers`)
+      .onSnapshot(snap => {
+          if (window.currentSidePanel === 'drivers') {
+              // Refresh the panel content when ANY change happens
+              renderDriversPanel();
+          }
+      });
 }
 
         window.openAddDriverModal = function(driverId = null) {

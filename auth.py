@@ -584,20 +584,21 @@ def onboard_driver():
         hashed_pin = generate_password_hash(secret_pin)
 
         if len(driver_query) > 0:
-            # ✅ FIXED: Get the first document from the list
+            # FIXED: Get the first document from the list
             driver_doc = driver_query[0]
             driver_data = driver_doc.to_dict()
             
             if driver_data.get('hasAccount'):
                 return jsonify({"message": "Account already bound to a device. Contact Dispatcher."}), 403
             
-            # ✅ FIXED: Use the document reference to update
+            #  FIXED: Use the document reference to update
             driver_doc.reference.update({
                 'name': full_name,
                 'hashedPin': hashed_pin,
                 'deviceId': device_id,
                 'hasAccount': True,
-                'onboardedAt': firestore.SERVER_TIMESTAMP
+                'onboardedAt': firestore.SERVER_TIMESTAMP,
+                'timestamp': firestore.SERVER_TIMESTAMP    # ← ADDED
             })
         else:
             # NEW ENTRY: Create a brand new driver record
@@ -610,7 +611,8 @@ def onboard_driver():
                 'deviceId': device_id,
                 'hasAccount': True,
                 'onboardedAt': firestore.SERVER_TIMESTAMP,
-                'license': "" 
+                'timestamp': firestore.SERVER_TIMESTAMP,    # ← ADDED
+                'license': ""
             })
 
         return jsonify({"message": "Onboarding Successful"}), 200
