@@ -502,51 +502,29 @@ def stream_gps():
         s_id = data.get('sessionId').strip()
         lat = data.get('lat')
         lng = data.get('lng')
+        
+        # Extract powerState - default to 'OPERATIONAL' for backward compatibility
+        power_state = data.get('powerState', 'OPERATIONAL')
 
         base = db.collection('artifacts').document(app_id)\
                  .collection('public').document('data')
 
+        # Store telemetry with powerState in location_logs
         base.collection('delivery_sessions').document(s_id)\
             .collection('location_logs').document().set({
                 "lat": lat,
                 "lng": lng,
-                "timestamp": firestore.SERVER_TIMESTAMP
+                "timestamp": firestore.SERVER_TIMESTAMP,
+                "powerState": power_state  # ← STORED HERE
             })
 
+        # Update session document with latest powerState for quick dispatcher access
         base.collection('delivery_sessions').document(s_id).update({
             "currentLat": lat,
             "currentLng": lng,
-            "lastUpdated": firestore.SERVER_TIMESTAMP
+            "lastUpdated": firestore.SERVER_TIMESTAMP,
+            "latestPowerState": power_state  # ← STORED HERE TOO
         })
-
-        return jsonify({"success": True}), 200
-
-    except Exception as e:
-        return jsonify({"success": False, "error": str(e)}), 500
-
-
-@app.route('/api/driver/fault', methods=['POST'])
-def report_trip_fault():
-    try:
-        data = request.json
-
-        valid, error = validate_request(data, ['appId', 'sessionId'])
-        if not valid:
-            return jsonify({"success": False, "error": error}), 400
-
-        app_id = normalize_app_id(data.get('appId'))
-        if not app_id:
-            return jsonify({"success": False, "error": "Invalid appId"}), 400
-
-        s_id = data.get('sessionId').strip()
-
-        db.collection('artifacts').document(app_id)\
-          .collection('public').document('data')\
-          .collection('delivery_sessions').document(s_id).update({
-              "status": SessionStatus.FAULT,
-              "faultReason": data.get('reason', 'Mechanical Delay'),
-              "faultTimestamp": firestore.SERVER_TIMESTAMP
-          })
 
         return jsonify({"success": True}), 200
 
